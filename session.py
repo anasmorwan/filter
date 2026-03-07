@@ -75,3 +75,16 @@ def register_student_message():
 def update_ai_timestamp():
     session["last_ai_message"] = time.time()
     session["messages_since_last_ai"] = 0
+
+def update_chat_stats(user_id, text):
+
+    stats = session["stats"]
+
+    stats["messages_since_last_ai"] += 1
+
+    stats["unique_users"].add(user_id)
+
+    stats["last_message_time"] = time.time()
+
+    if "?" in text:
+        stats["questions_count"] += 1
