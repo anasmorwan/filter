@@ -1,15 +1,17 @@
 from pyrogram import Client, filters
 from flask import Flask
 import os
-from session import start_session, stop_session, session_is_active
-from filter import should_store_message
 from collections import deque
 import time
+
+
 from dotenv import load_dotenv # اختياري إذا كنت تستخدم ملف .env
-from  import check_message_window,  
+from queue_manager import check_message_window,  process_message_window
 from session import start_session, stop_session, session_is_active
-# تحميل المتغيرات من ملف .env إذا كان موجوداً
-load_dotenv()
+from session import start_session, stop_session, session_is_active
+from filter import should_store_message
+
+
 
 # جلب القيم من نظام التشغيل
 API_ID = os.getenv("TELEGRAM_API_ID")
@@ -34,6 +36,9 @@ bot_app = Client(
 # استبدل CHAT_ID بالمعرف الفعلي للمحادثة
 CHAT_ID = int(os.getenv("CHAT_ID"))
 ADMIN_ID = int(os.getenv("ADMIN_ID"))
+
+# تحميل المتغيرات من ملف .env إذا كان موجوداً
+load_dotenv()
 
 
 
