@@ -8,7 +8,15 @@ recent_messages = deque(maxlen=100)
 # تتبع نشاط المستخدم
 user_last_message = {}
 user_last_time = {}
-
+LOW_VALUE_WORDS = {
+    "ok", "okay", "k",
+    "yes", "no", "yeah", "yep", "nah", "nope",
+    "lol", "haha", "hehe",
+    "hi", "hello", "hey",
+    "thanks", "thank you", "thx", "ty",
+    "nice", "cool",
+    "same", "true",
+}
 # ---------- طول الرسالة ----------
 def is_too_short(text):
     return len(text.strip()) < 3
@@ -82,6 +90,29 @@ def is_spam(text):
             return True
 
     return False
+# ---------- تنظيف  ----------
+def clean_text(text):
+    t = text.lower().strip()
+    t = re.sub(r"[^\w\s]", "", t)
+    t = " ".join(t.split())
+    return t
+
+# ---------- فلترة الضحك  ----------
+def is_laughing(text):
+    t = clean_text(text)
+    return bool(re.match(r"^(ha)+$|^(lol)+$", t))
+
+# ---------- قيمة أقل  ----------
+def is_low_value(text):
+    t = clean_text(text)
+
+    if t in LOW_VALUE_WORDS:
+        return True
+
+    if is_laughing(t):
+        return True
+
+    return False
 
 
 # ---------- الدالة الرئيسية ----------
@@ -90,18 +121,15 @@ def should_store_message(text, user_id=None):
     if is_too_short(text):
         return False
 
-    if is_spam(text):
+    if is_low_value(text):
         return False
 
-    if is_only_emoji(text):
-        return False
-
-    if not is_english(text):
+    if is_spam(text) or is_only_emoji(text) or not is_english(text):
         return False
 
     if is_duplicate(text):
         return False
-
+    
     if user_id and is_user_spamming(user_id, text):
         return False
 
