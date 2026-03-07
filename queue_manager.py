@@ -30,3 +30,4 @@ def process_message_window():
 
     print("Total messages:", len(message_queue), flush=True)
 
+    # هنا لاحقًا سنرسلها للـ AI
