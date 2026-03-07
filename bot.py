@@ -43,8 +43,6 @@ ADMIN_ID = int(os.getenv("ADMIN_ID"))
 
 
 
-WINDOW_SECONDS = 15
-last_processing_time = time.time()
 
 
 
