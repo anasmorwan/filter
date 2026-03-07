@@ -41,22 +41,7 @@ ADMIN_ID = int(os.getenv("ADMIN_ID"))
 
 #........جمع الرسائل .........
 
-
-
-
-
-
-
     # هنا لاحقًا سنرسلها للـ AI
-
-
-
-
-
-
-from collections import deque
-
-message_queue = deque(maxlen=50)  # آخر 50 رسالة فقط
 
 def process_message(user, text, timestamp):
     if not should_store_message(text):
