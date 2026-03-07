@@ -11,8 +11,8 @@ load_dotenv()
 # جلب القيم من نظام التشغيل
 API_ID = os.getenv("TELEGRAM_API_ID")
 API_HASH = os.getenv("TELEGRAM_API_HASH")
-SESSION_STRING = os.getenv("TELEGRAM_SESSION")
-
+# SESSION_STRING = os.getenv("TELEGRAM_SESSION")
+BOT_TOKEN = os.getenv("BOT_TOKEN")
 # إذا لم تكن تستخدم SESSION_STRING حالياً، اتركها None وسيقوم البوت بإنشاء ملف .session تلقائياً
 
 app = Client(
