@@ -1,5 +1,7 @@
 WINDOW_SECONDS = 15
 last_processing_time = time.time()
+from collections import deque
+message_queue = deque(maxlen=50)  # آخر 50 رسالة فقط
 
 
 # ----- 15 second messages window -----
