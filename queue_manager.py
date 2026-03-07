@@ -1,3 +1,7 @@
+WINDOW_SECONDS = 15
+last_processing_time = time.time()
+
+
 # ----- 15 second messages window -----
 def check_message_window():
 
