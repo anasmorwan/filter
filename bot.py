@@ -31,41 +31,12 @@ CHAT_ID = os.getenv("CHAT_ID")
 #........  MVP steps ...........
 
 #........جمع الرسائل .........
-session = {
-    "active": True,
-    "topic": "emotions",
-    "difficulty": "intermediate",
-    "start_time": "20:00"
-}
+
 import time
 
 WINDOW_SECONDS = 15
 last_processing_time = time.time()
 
-
-
-
-def start_session(topic, difficulty):
-
-    session["active"] = True
-    session["topic"] = topic
-    session["difficulty"] = difficulty
-    session["start_time"] = time.time()
-
-    message_queue.clear()
-
-    print("\n=== SESSION STARTED ===")
-    print("Topic:", topic)
-    print("Difficulty:", difficulty)
-
-def stop_session():
-
-    session["active"] = False
-
-    print("Session stopped")
-
-def session_is_active():
-    return session["active"]
 
 
 # ----- 15 second messages window -----
