@@ -4,6 +4,7 @@ session = {
     "active": False,
     "topic": None,
     "difficulty": None,
+    "mode": "teaching",
     "start_time": None
 }
 
