@@ -1,8 +1,11 @@
-import os
 from pyrogram import Client, filters
+from flask import Flask
+import os
+from session import start_session, stop_session, session_is_active
 from filter import should_store_message
+from collections import deque
+import time
 from dotenv import load_dotenv # اختياري إذا كنت تستخدم ملف .env
-
 
 from session import start_session, stop_session, session_is_active
 # تحميل المتغيرات من ملف .env إذا كان موجوداً
@@ -15,17 +18,21 @@ API_HASH = os.getenv("TELEGRAM_API_HASH")
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 # إذا لم تكن تستخدم SESSION_STRING حالياً، اتركها None وسيقوم البوت بإنشاء ملف .session تلقائياً
 
-app = Client(
+
+
+# Pyrogram Client
+bot_app = Client(
     "english_conv_bot",
-    api_id=API_ID,
-    api_hash=API_HASH,
-    bot_token=BOT_TOKEN,
+    api_id=int(os.getenv("TELEGRAM_API_ID")),
+    api_hash=os.getenv("TELEGRAM_API_HASH"),
+    bot_token=os.getenv("BOT_TOKEN"),
     in_memory=True
 )
 
 
+
 # استبدل CHAT_ID بالمعرف الفعلي للمحادثة
-CHAT_ID = os.getenv("CHAT_ID")
+CHAT_ID = int(os.getenv("CHAT_ID"))
 
 
 
@@ -34,7 +41,7 @@ CHAT_ID = os.getenv("CHAT_ID")
 
 #........جمع الرسائل .........
 
-import time
+
 
 WINDOW_SECONDS = 15
 last_processing_time = time.time()
@@ -72,7 +79,7 @@ def process_message_window():
 
 
 
-@app.on_message(filters.chat(CHAT_ID))
+@bot_app.on_message(filters.chat(CHAT_ID))
 def handle_message(client, message):
 
     if not session_is_active():
@@ -131,7 +138,7 @@ def process_message(user, text, timestamp):
 
 # ............. Handlers and commands........
 
-@app.on_message(filters.command("startsession") & filters.chat(CHAT_ID))
+@bot_app.on_message(filters.command("startsession") & filters.chat(CHAT_ID))
 def start_cmd(client, message):
 
     parts = message.text.split()
@@ -148,14 +155,14 @@ def start_cmd(client, message):
     start_session(topic, difficulty)
 
 
-@app.on_message(filters.command("stopsession") & filters.chat(CHAT_ID))
+@bot_app.on_message(filters.command("stopsession") & filters.chat(CHAT_ID))
 def stop_cmd(client, message):
 
     stop_session()
 
 
 
-@app.on_message(filters.command("id", prefixes=".") & filters.me)
+@bot_app.on_message(filters.command("id", prefixes=".") & filters.me)
 async def get_chat_id(client, message):
     # جلب آيدي المحادثة الحالية
     chat_id = message.chat.id
@@ -168,7 +175,7 @@ async def get_chat_id(client, message):
         f"**Message ID:** `{message_id}`"
     )
 
-@app.on_message(filters.command("ping") & filters.chat(CHAT_ID))
+@bot_app.on_message(filters.command("ping") & filters.chat(CHAT_ID))
 def ping(client, message):
     message.reply_text("Bot is alive!")
 
@@ -176,16 +183,19 @@ def ping(client, message):
 # bot.py
 from flask import Flask
 
-app_http = Flask(__name__)
+# Flask app فقط لو تريد Web Service
+flask_app = Flask(__name__)
 
-@app_http.route("/")
+
+@flask_app.route("/")
 def index():
     return "Bot is alive!"
 
 if __name__ == "__main__":
     from threading import Thread
+
     # تشغيل Flask في Thread منفصل
-    Thread(target=lambda: app_http.run(host="0.0.0.0", port=int(os.environ.get("PORT", 10000)))).start()
+    Thread(target=lambda: flask_app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 10000)))).start()
 
     # تشغيل Pyrogram
-    app.run()
+    bot_app.run()
