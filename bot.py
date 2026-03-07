@@ -168,5 +168,12 @@ async def get_chat_id(client, message):
         f"**Message ID:** `{message_id}`"
     )
 
+@app.on_message(filters.command("ping") & filters.chat(CHAT_ID))
+def ping(client, message):
+    message.reply_text("Bot is alive!")
+
+print("Bot is starting...")
+app.run()
+
 
 app.run()
