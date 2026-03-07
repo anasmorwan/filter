@@ -67,12 +67,12 @@ def process_message_window():
     if not message_queue:
         return
 
-    print("\n=== PROCESSING WINDOW ===")
+    print("\n=== PROCESSING WINDOW ===", flush=True)
 
     for msg in message_queue:
-        print(msg)
+        print(msg, flush=True)
 
-    print("Total messages:", len(message_queue))
+    print("Total messages:", len(message_queue), flush=True)
 
     # هنا لاحقًا سنرسلها للـ AI
 
@@ -99,12 +99,13 @@ def process_message(user, text, timestamp):
     message_queue.append(msg)
     check_message_window()
     
-    print("\n--- NEW MESSAGE RECEIVED ---")
-    print(msg)
+    print("\n--- NEW MESSAGE RECEIVED ---", flush=True)
+    print(msg, flush=True)
 
-    print("\nCurrent Queue:")
+
+    print("\nCurrent Queue:", flush=True)
     for m in message_queue:
-        print(m)
+        print(m, flush=True)
 
 
 
