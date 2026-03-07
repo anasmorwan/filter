@@ -33,7 +33,7 @@ bot_app = Client(
 
 # استبدل CHAT_ID بالمعرف الفعلي للمحادثة
 CHAT_ID = int(os.getenv("CHAT_ID"))
-
+ADMIN_ID = int(os.getenv("ADMIN_ID"))
 
 
 
@@ -117,6 +117,17 @@ def process_message(user, text, timestamp):
 async def ping(client, message):
     # أضفنا await وجعلنا الدالة async
     await message.reply_text("Bot is alive!")
+
+@bot_app.on_message(filters.command("status") & filters.user("ADMIN_ID"))
+async def check_status(client, message):
+    queue_content = "\n".join([f"- {m['user']}: {m['text']}" for m in message_queue])
+    status_text = (
+        f"📊 **Current Status**\n"
+        f"Messages in Queue: {len(message_queue)}\n\n"
+        f"**Queue Content:**\n{queue_content if queue_content else 'Empty'}"
+    )
+    await message.reply_text(status_text)
+
 
 @bot_app.on_message(filters.command("startsession") & filters.chat(CHAT_ID))
 async def start_cmd(client, message):
