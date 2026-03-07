@@ -79,23 +79,6 @@ def process_message_window():
 
 
 
-@bot_app.on_message(filters.chat(CHAT_ID))
-def handle_message(client, message):
-
-    if not session_is_active():
-        return
-
-    if not message.text:
-        return
-
-    if message.from_user.is_bot:
-        return
-
-    user = message.from_user.first_name
-    text = message.text
-    timestamp = message.date
-
-    process_message(user, text, timestamp)
 
 
 from collections import deque
@@ -127,57 +110,65 @@ def process_message(user, text, timestamp):
 
 
 
-# ........... Final project (AI & Voice calls) ..............
-
-    
-
-
-
-
-
-
 # ............. Handlers and commands........
+# لاحظ: نقلنا الأوامر لتكون في الأعلى، وأضفنا async/await
+
+@bot_app.on_message(filters.command("ping") & (filters.chat(CHAT_ID) | filters.private))
+async def ping(client, message):
+    # أضفنا await وجعلنا الدالة async
+    await message.reply_text("Bot is alive!")
 
 @bot_app.on_message(filters.command("startsession") & filters.chat(CHAT_ID))
-def start_cmd(client, message):
-
+async def start_cmd(client, message):
     parts = message.text.split()
-
     topic = "general"
     difficulty = "normal"
 
     if len(parts) >= 2:
         topic = parts[1]
-
     if len(parts) >= 3:
         difficulty = parts[2]
 
     start_session(topic, difficulty)
-
+    await message.reply_text(f"Session started! Topic: {topic}, Difficulty: {difficulty}")
 
 @bot_app.on_message(filters.command("stopsession") & filters.chat(CHAT_ID))
-def stop_cmd(client, message):
-
+async def stop_cmd(client, message):
     stop_session()
+    await message.reply_text("Session stopped.")
 
-
-
-@bot_app.on_message(filters.command("id", prefixes=".") & filters.me)
+@bot_app.on_message(filters.command("id", prefixes=".") & (filters.chat(CHAT_ID) | filters.private))
 async def get_chat_id(client, message):
-    # جلب آيدي المحادثة الحالية
+    # أزلنا filters.me لأنه لا يعمل مع البوتات
     chat_id = message.chat.id
-    # جلب آيدي الرسالة (اختياري)
     message_id = message.id
     
-    # تعديل الرسالة التي أرسلتها لتظهر الآيدي بدلاً من الأمر
-    await message.edit_text(
+    # بدلاً من edit_text (التي قد تفشل إذا لم يكن البوت هو مرسل الرسالة الأصلية) نستخدم reply
+    await message.reply_text(
         f"**Chat ID:** `{chat_id}`\n"
         f"**Message ID:** `{message_id}`"
     )
 
-@bot_app.on_message(filters.command("ping") & filters.chat(CHAT_ID))
-def ping(client, message):
-    message.reply_text("Bot is alive!")
+# ........... الدوال العامة يجب أن تكون في الأسفل ...........
+
+@bot_app.on_message(filters.chat(CHAT_ID))
+async def handle_message(client, message):
+    # هذه الدالة تلتقط أي رسالة أخرى لم تكن أمراً (لأنها في الأسفل)
+    if not session_is_active():
+        return
+
+    if not message.text:
+        return
+
+    if message.from_user and message.from_user.is_bot:
+        return
+
+    user = message.from_user.first_name if message.from_user else "Unknown"
+    text = message.text
+    timestamp = message.date
+
+    # استدعاء الدالة الخاصة بك (بما أنها دالة عادية، لا تحتاج await)
+    process_message(user, text, timestamp)
 
 
 # bot.py
