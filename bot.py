@@ -14,11 +14,13 @@ API_HASH = os.getenv("TELEGRAM_API_HASH")
 SESSION_STRING = os.getenv("TELEGRAM_SESSION")
 
 # إذا لم تكن تستخدم SESSION_STRING حالياً، اتركها None وسيقوم البوت بإنشاء ملف .session تلقائياً
+
 app = Client(
-    "my_userbot",
+    "english_conv_bot",
     api_id=API_ID,
     api_hash=API_HASH,
-    session_string="SESSION_STRING"
+    bot_token=BOT_TOKEN,
+    in_memory=True
 )
 
 
