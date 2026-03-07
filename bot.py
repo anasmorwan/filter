@@ -1,6 +1,6 @@
 import os
 from pyrogram import Client, filters
-from filter.py import should_store_message
+from filter import should_store_message
 from dotenv import load_dotenv # اختياري إذا كنت تستخدم ملف .env
 
 
