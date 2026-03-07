@@ -172,8 +172,20 @@ async def get_chat_id(client, message):
 def ping(client, message):
     message.reply_text("Bot is alive!")
 
-print("Bot is starting...")
-app.run()
 
+# bot.py
+from flask import Flask
 
-app.run()
+app_http = Flask(__name__)
+
+@app_http.route("/")
+def index():
+    return "Bot is alive!"
+
+if __name__ == "__main__":
+    from threading import Thread
+    # تشغيل Flask في Thread منفصل
+    Thread(target=lambda: app_http.run(host="0.0.0.0", port=int(os.environ.get("PORT", 10000)))).start()
+
+    # تشغيل Pyrogram
+    app.run()
