@@ -3,6 +3,8 @@ from pyrogram import Client, filters
 from filter.py import should_store_message
 from dotenv import load_dotenv # اختياري إذا كنت تستخدم ملف .env
 
+
+from session import start_session, stop_session, session_is_active
 # تحميل المتغيرات من ملف .env إذا كان موجوداً
 load_dotenv()
 
