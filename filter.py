@@ -16,6 +16,19 @@ def is_english(text):
 
 
 
+#__________ spam detecter______
+def is_spam(text):
+    # هذا النمط يبحث عن أي نص يبدأ بـ http أو https أو www 
+    # ويحتوي على نطاق (domain) مثل .com أو .net إلخ
+    url_pattern = r'(https?://[^\s]+|www\.[^\s]+)'
+    
+    # البحث عن النمط داخل النص
+    if re.search(url_pattern, text):
+        return True  # وجد رابطاً، إذاً نعتبرها سبام
+    
+    return False # لم يجد أي روابط
+
+
 
 
 #________ 
