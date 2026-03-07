@@ -6,7 +6,7 @@ from filter import should_store_message
 from collections import deque
 import time
 from dotenv import load_dotenv # اختياري إذا كنت تستخدم ملف .env
-
+from  import check_message_window,  
 from session import start_session, stop_session, session_is_active
 # تحميل المتغيرات من ملف .env إذا كان موجوداً
 load_dotenv()
@@ -41,7 +41,7 @@ ADMIN_ID = int(os.getenv("ADMIN_ID"))
 
 #........جمع الرسائل .........
 
-    # هنا لاحقًا سنرسلها للـ AI
+
 
 def process_message(user, text, timestamp):
     if not should_store_message(text):
