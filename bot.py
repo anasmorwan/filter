@@ -86,18 +86,16 @@ from collections import deque
 message_queue = deque(maxlen=50)  # آخر 50 رسالة فقط
 
 def process_message(user, text, timestamp):
-
     if not should_store_message(text):
         return
 
-    msg = {
-        "user": user,
-        "text": text,
-        "time": timestamp
-    }
-
+    msg = {"user": user, "text": text, "time": timestamp}
     message_queue.append(msg)
-    check_message_window()
+
+    if "?" in text or "define" in text:  # مثال على رسالة مهمة
+        send_to_ai([msg])  # ترسل فورًا
+    else:
+        check_message_window()  # تتابع Window
     
     print("\n--- NEW MESSAGE RECEIVED ---", flush=True)
     print(msg, flush=True)
