@@ -1,16 +1,38 @@
 import time
 
 session = {
+
     "active": False,
+
     "topic": None,
-    "difficulty": None,
+    "difficulty": "normal",
+
     "mode": "teaching",
-    "start_time": None
+
+    "current_question": None,
+
+    "start_time": None,
+
+    "last_ai_message": 0,
+
+    # إحصائيات الشات
+    "stats": {
+
+        "messages_since_last_ai": 0,
+
+        "unique_users": set(),
+
+        "questions_count": 0,
+
+        "answers_count": 0,
+
+        "last_message_time": 0
+
+    }
 }
 
 
 def start_session(topic="general", difficulty="normal"):
-
     session["active"] = True
     session["topic"] = topic
     session["difficulty"] = difficulty
@@ -22,17 +44,34 @@ def start_session(topic="general", difficulty="normal"):
 
 
 def stop_session():
-
     session["active"] = False
-
     print("\n=== SESSION STOPPED ===")
 
 
 def session_is_active():
-
     return session["active"]
 
 
 def get_session_info():
-
     return session
+
+
+def get_session_mode():
+    return session["mode"]
+
+
+def set_session_mode(mode):
+    session["mode"] = mode
+
+
+def set_current_question(question):
+    session["current_question"] = question
+
+
+def register_student_message():
+    session["messages_since_last_ai"] += 1
+
+
+def update_ai_timestamp():
+    session["last_ai_message"] = time.time()
+    session["messages_since_last_ai"] = 0
