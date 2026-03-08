@@ -6,7 +6,7 @@ import time
 
 
 from dotenv import load_dotenv # اختياري إذا كنت تستخدم ملف .env
-from queue_manager import check_message_window,  process_message_window
+# from queue_manager import check_message_window,  process_message_window
 from session import start_session, stop_session, session_is_active
 from filter import should_store_message
 from buffer import add_message, should_process_window, pop_window_messages
