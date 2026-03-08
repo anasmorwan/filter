@@ -102,11 +102,34 @@ Then ask a simple engaging question.
 }
 
 
-"lesson_intro": """
-Start a new English conversation lesson.
+"teacher_intro": """
+Start a new lesson.
 
-1. Welcome the students.
-2. Introduce today's topic.
-3. Ask an engaging warm-up question.
-Keep it short and friendly.
+1 welcome students
+2 introduce the topic
+3 ask a warm-up question
+"""
+
+
+"teacher_hint": """
+Students seem stuck.
+
+Give a small hint to guide them without giving the answer.
+"""
+
+
+"teacher_followup": """
+Students gave answers.
+
+Ask a follow-up question to deepen the discussion.
+"""
+
+"teacher_direct": """
+Invite a specific student to share their opinion.
+"""
+
+"teacher_check": """
+Check if students understood the concept.
+
+Ask a simple comprehension question.
 """
