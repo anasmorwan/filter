@@ -225,7 +225,7 @@ async def get_chat_id(client, message):
     )
 
 # ........... الدوال العامة يجب أن تكون في الأسفل ...........
-@bot_app.on_message(filters.chat(CHAT_ID) & filters.text & ~filters.command(None))
+@bot_app.on_message(filters.chat(CHAT_ID) & filters.text & ~filters.command())
 async def handle_message(client, message):
 
     if not session_is_active():
