@@ -2,21 +2,35 @@ def map_action_to_intent(action):
 
     mapping = {
 
-        "ANSWER_QUESTION": "teacher_answer",
+"INTRO_LESSON": "teacher_intro",
 
-        "EVALUATE_STUDENT_ANSWERS": "teacher_evaluate",
+"WAKE_UP_SESSION": "teacher_wakeup",
 
-        "SUMMARIZE_AND_NEXT": "teacher_summary",
+"ANSWER_QUESTION": "teacher_answer",
 
-        "GENERAL_COMMENT": "teacher_comment",
+"EVALUATE_STUDENT_ANSWERS": "teacher_evaluate",
 
-        "WAKE_UP_SESSION": "teacher_wakeup",
+"GIVE_HINT": "teacher_hint",
 
-        "ENCOURAGE_DISCUSSION": "teacher_encourage",
+"ASK_FOLLOWUP": "teacher_followup",
 
-        "CORRECT_MISTAKES": "teacher_correct",
+"ENCOURAGE_DISCUSSION": "teacher_encourage",
 
-        "ASK_NEXT_TOPIC_QUESTION": "teacher_question"
+"CORRECT_MISTAKES": "teacher_correct",
+
+"CALL_ON_STUDENT": "teacher_direct",
+
+"SUMMARIZE_DISCUSSION": "teacher_summary",
+
+"ASK_NEW_TOPIC_QUESTION": "teacher_question",
+
+"LIGHT_COMMENT": "teacher_comment",
+
+"REFRAME_TOPIC": "teacher_reframe",
+
+"CHECK_UNDERSTANDING": "teacher_check",
+
+"GENERAL_COMMENT": "teacher_comment"
 
     }
 
