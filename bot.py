@@ -52,19 +52,21 @@ ADMIN_ID = int(os.getenv("ADMIN_ID"))
 #........  MVP steps ...........
 
 #........جمع الرسائل .........
-
 def process_message(user, user_id, text, timestamp):
+
     if not session_is_active():
         return
 
     if not should_store_message(text, user_id):
         return
 
-    msg_type, confidence = classify_message(message.text)
+    # تصنيف الرسالة
+    msg_type, confidence = classify_message(text)
 
+    # تحديث ذاكرة الطالب
     update_student_memory(
-        message.from_user.id,
-        message.from_user.first_name,
+        user_id,
+        user,
         msg_type
     )
 
@@ -73,41 +75,55 @@ def process_message(user, user_id, text, timestamp):
         "user_id": user_id,
         "text": text,
         "type": msg_type,
+        "confidence": confidence,
         "time": timestamp
     }
 
     add_message(msg)
+
     print("\n--- NEW MESSAGE RECEIVED ---", flush=True)
     print("Stored:", msg, flush=True)
 
-    # إذا سؤال → معالجة فورية
+    # --- معالجة فورية للأسئلة ---
     if msg_type == "question":
+
         action = decide_next_action([msg])
+
         handle_action(action, [msg])
+
         return
 
-    # معالجة window إذا انتهت الفترة
+
+    # --- معالجة window ---
     if should_process_window():
+
         messages = pop_window_messages()
+
         if not messages:
             return
 
         action = decide_next_action(messages)
+
         handle_action(action, messages)
+        
 
 
 def handle_action(action, messages):
 
-    if action == "IGNORE":
+    # لا يوجد رد
+    if action == "WAIT":
         return
 
-    # جميع الأكشنات الآن تعتمد على AI
+    print(f"\n--- ACTION DECIDED: {action} ---", flush=True)
+
+    # توليد الرد
     response = generate_ai_response(action, messages)
 
-    if action in ["ANSWER", "HINT", "COMMENT", "NEW_QUESTION"]:
-        # يمكن هنا استخدام send_text(response) لإرسال البوت
-        print(f"\n--- AI RESPONSE ({action}) ---\n{response}", flush=True)
-        
+    # إرسال الرد (حالياً print فقط)
+    print(f"\n--- AI RESPONSE ---\n{response}", flush=True)
+
+    # هنا لاحقاً يمكن إرسال الرسالة للتيليجرام
+    # send_text(response)
 
 
 """
