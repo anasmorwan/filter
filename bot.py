@@ -3,6 +3,9 @@ from flask import Flask
 import os
 from collections import deque
 import time
+import logging
+logging.basicConfig(level=logging.INFO)
+
 
 
 from dotenv import load_dotenv # اختياري إذا كنت تستخدم ملف .env
@@ -15,6 +18,8 @@ from decision_engine import decide_next_action
 from ai import generate_ai_response
 from buffer import clear_buffer
 
+# تحميل المتغيرات من ملف .env إذا كان موجوداً
+load_dotenv()
 
 # جلب القيم من نظام التشغيل
 API_ID = os.getenv("TELEGRAM_API_ID")
@@ -40,8 +45,7 @@ bot_app = Client(
 CHAT_ID = int(os.getenv("CHAT_ID"))
 ADMIN_ID = int(os.getenv("ADMIN_ID"))
 
-# تحميل المتغيرات من ملف .env إذا كان موجوداً
-load_dotenv()
+
 
 
 
@@ -129,18 +133,24 @@ async def ping(client, message):
     # أضفنا await وجعلنا الدالة async
     await message.reply_text("Bot is alive!")
 
-@bot_app.on_message(filters.command("status") & filters.user("ADMIN_ID"))
+
+
+
+@bot_app.on_message(filters.command("status") & filters.user(ADMIN_ID))
 async def check_status(client, message):
-    queue_content = "\n".join([f"- {m['user']}: {m['text']}" for m in message_queue])
+    messages = get_recent_messages(10)
+    queue_content = "\n".join(
+    [f"- {m['user']}: {m['text']}" for m in messages]
+    )
     status_text = (
         f"📊 **Current Status**\n"
-        f"Messages in Queue: {len(message_queue)}\n\n"
+        f"Messages in Queue: {len(messages)}\n\n"
         f"**Queue Content:**\n{queue_content if queue_content else 'Empty'}"
     )
     await message.reply_text(status_text)
 
 
-@bot_app.on_message(filters.command("startsession") & filters.chat(CHAT_ID))
+@bot_app.on_message(filters.command("startsession") & (filters.chat(CHAT_ID) | filters.user(ADMIN_ID)))
 async def start_cmd(client, message):
     parts = message.text.split()
     topic = "general"
@@ -153,8 +163,8 @@ async def start_cmd(client, message):
 
     start_session(topic, difficulty)
     await message.reply_text(f"Session started! Topic: {topic}, Difficulty: {difficulty}")
-
-@bot_app.on_message(filters.command("stopsession") & filters.chat(CHAT_ID))
+    
+@bot_app.on_message(filters.command("stopsession") & (filters.chat(CHAT_ID) | filters.user(ADMIN_ID)))
 async def stop_cmd(client, message):
 
     stop_session()
@@ -192,7 +202,16 @@ async def test_ai(client, message):
                      f"\nUsers involved: {', '.join([m['user'] for m in sample_messages])}"
 
         await message.reply_text(reply_text)
-        
+
+@bot_app.on_message(filters.command("session"))
+async def session_status(client, message):
+
+    if session_is_active():
+        await message.reply_text("Session is ACTIVE")
+    else:
+        await message.reply_text("Session is STOPPED")
+
+
 @bot_app.on_message(filters.command("id", prefixes=".") & (filters.chat(CHAT_ID) | filters.private))
 async def get_chat_id(client, message):
     # أزلنا filters.me لأنه لا يعمل مع البوتات
@@ -206,10 +225,9 @@ async def get_chat_id(client, message):
     )
 
 # ........... الدوال العامة يجب أن تكون في الأسفل ...........
-
-@bot_app.on_message(filters.chat(CHAT_ID))
+@bot_app.on_message(filters.chat(CHAT_ID) & filters.text & ~filters.command(None))
 async def handle_message(client, message):
-    # هذه الدالة تلتقط أي رسالة أخرى لم تكن أمراً (لأنها في الأسفل)
+
     if not session_is_active():
         return
 
@@ -224,9 +242,8 @@ async def handle_message(client, message):
     timestamp = message.date
     user_id = message.from_user.id
 
-    # استدعاء الدالة الخاصة بك (بما أنها دالة عادية، لا تحتاج await)
-    process_message(user, text, timestamp)
-
+    process_message(user, user_id, text, timestamp)
+    
 
 # bot.py
 from flask import Flask
