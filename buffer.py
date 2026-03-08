@@ -2,7 +2,10 @@
 
 import time
 from collections import deque
+from session import get_session_info
 
+
+    
 WINDOW_SECONDS = 15
 MAX_BUFFER_SIZE = 100
 
@@ -31,18 +34,21 @@ def get_buffer():
 def clear_buffer():
     message_buffer.clear()
 
-
 def should_process_window():
 
     global last_window_time
 
+    session = get_session_info()
+    window = session["window_seconds"]
+
     now = time.time()
 
-    if now - last_window_time >= WINDOW_SECONDS:
+    if now - last_window_time >= window:
         last_window_time = now
         return True
 
     return False
+
 
 
 def pop_window_messages():
