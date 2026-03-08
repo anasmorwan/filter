@@ -2,6 +2,7 @@ import time
 
 session = {
     "active": False,
+    "start_time": None,
     "topic": None,
     "difficulty": "normal",
     "stage": "INTRO",
