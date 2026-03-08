@@ -20,6 +20,9 @@ def build_prompt(action, context):
     """
     بناء prompt مع system + action prompt
     """
+    question = session.get("current_question")
+
+    
     conversation = ""
     for msg in context:
         conversation += f"{msg['user']}: {msg['text']}\n"
@@ -29,12 +32,15 @@ def build_prompt(action, context):
     prompt = f"""
 {TEACHER_SYSTEM_PROMPT}
 
+Current Question:
+{question}
+
 Conversation:
 {conversation}
 
-Instruction:
-{action_prompt}
-"""
+Teacher task:
+{intent_prompt}
+    """
     return prompt
 
 def call_ai(prompt):
