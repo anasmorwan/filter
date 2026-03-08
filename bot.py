@@ -8,8 +8,10 @@ import time
 from dotenv import load_dotenv # اختياري إذا كنت تستخدم ملف .env
 from queue_manager import check_message_window,  process_message_window
 from session import start_session, stop_session, session_is_active
-from session import start_session, stop_session, session_is_active
 from filter import should_store_message
+from buffer import add_message, should_process_window, pop_window_messages
+from message_classifier import classify_message
+from decision_engine import decide_next_action
 
 
 
@@ -46,32 +48,61 @@ load_dotenv()
 
 #........جمع الرسائل .........
 
+def process_message(user, user_id, text, timestamp):
 
-
-def process_message(user, text, timestamp):
     if not should_store_message(text):
         return
 
-    msg = {"user": user, "text": text, "time": timestamp}
-    message_queue.append(msg)
+    msg_type = classify_message(text)
 
-    if "?" in text or "define" in text:  # مثال على رسالة مهمة
-        send_to_ai([msg])  # ترسل فورًا
-    else:
-        check_message_window()  # تتابع Window
-    
+    msg = {
+        "user": user,
+        "user_id": user_id,
+        "text": text,
+        "type": msg_type,
+        "time": timestamp
+    }
+
+    add_message(msg)
     print("\n--- NEW MESSAGE RECEIVED ---", flush=True)
-    print(msg, flush=True)
+    print("Stored:", msg, flush=True)
+
+    # إذا سؤال → معالجة فورية
+    if msg_type == "question":
+
+        action = decide_next_action([msg])
+
+        handle_action(action, [msg])
+
+        return
+
+    # معالجة window
+    if should_process_window():
+
+        messages = pop_window_messages()
+
+        action = decide_next_action(messages)
+
+        handle_action(action, messages)
 
 
-    print("\nCurrent Queue:", flush=True)
-    for m in message_queue:
-        print(m, flush=True)
 
+def handle_action(action, messages):
 
+    if action == "IGNORE":
+        return
 
+    if action == "COMMENT":
+        send_comment(messages)
 
+    if action == "ANSWER":
+        send_answer(messages)
 
+    if action == "HINT":
+        send_hint(messages)
+
+    if action == "NEW_QUESTION":
+        send_question()
 # ............. Handlers and commands........
 # لاحظ: نقلنا الأوامر لتكون في الأعلى، وأضفنا async/await
 
@@ -139,6 +170,7 @@ async def handle_message(client, message):
     user = message.from_user.first_name if message.from_user else "Unknown"
     text = message.text
     timestamp = message.date
+    user_id = message.from_user.id
 
     # استدعاء الدالة الخاصة بك (بما أنها دالة عادية، لا تحتاج await)
     process_message(user, text, timestamp)
