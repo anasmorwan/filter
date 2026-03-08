@@ -23,7 +23,7 @@ pytgcalls = PyTgCalls(userbot)
 # -------------------------
 # إعداد القناة/المجموعة
 # -------------------------
-VOICE_CHAT_ID = int(os.environ.get("VOICE_CHAT_ID"))
+VOICE_CHAT_ID = int(os.environ.get("CHAT_ID"))
 
 # -------------------------
 # قائمة انتظار للردود الصوتية
