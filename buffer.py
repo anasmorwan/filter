@@ -42,3 +42,5 @@ def add_message(msg):
     message_queue.append(msg)
 
 
+def get_recent_messages(n=5):
+    return list(message_queue)[-n:]
