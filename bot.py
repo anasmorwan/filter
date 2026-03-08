@@ -118,12 +118,6 @@ def handle_action(action, messages):
     if action == "WAIT":
         return
 
-    print(f"\n--- ACTION DECIDED: {action} ---", flush=True)
-
-    response = generate_ai_response(action, messages)
-
-    print(f"\n--- AI RESPONSE ---\n{response}", flush=True)
-
     # حفظ السؤال الحالي
     if action in [
         "INTRO_LESSON",
@@ -131,6 +125,29 @@ def handle_action(action, messages):
         "ASK_FOLLOWUP"
     ]:
         session["current_question"] = response
+
+
+    print(f"\n--- ACTION DECIDED: {action} ---", flush=True)
+
+    response = generate_ai_response(action, messages)
+
+    print(f"\n--- AI RESPONSE ---\n{response}", flush=True)
+
+
+    # إذا كان انتهاء الدرس
+    if action == "LESSON_WRAPPING_UP":
+        # إذا بقيت أسئلة في البفر → نترك AI يرد عليها أولاً
+        pending_questions = [m for m in messages if m["type"] == "question"]
+        if pending_questions:
+            print("\n--- Pending questions before closing ---", flush=True)
+            # سيعاد توجيهها لـ AI قبل الإغلاق
+            for q in pending_questions:
+                handle_action("ANSWER_QUESTION", [q])
+        else:
+            # لا توجد أسئلة معلقة → أغلق الجلسة
+            session["active"] = False
+            print("\n=== SESSION CLOSED ===", flush=True)
+            
 
 
 """
