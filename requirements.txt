@@ -14,9 +14,18 @@ flask
 gTTS
 pydub
 
-# Async utilities
-asyncio
 
-# Voice chat (Userbot) - تثبيت من GitHub لأن PyPI لا تحتوي على النسخ الحديثة
-git+https://github.com/pyrogram/tgcalls.git@main
-git+https://github.com/pytgcalls/pytgcalls.git@main
+
+pyrogram==2.0.106
+tgcrypto
+
+openai
+groq
+python-dotenv
+
+flask
+
+gTTS
+pydub
+
+pytgcalls==0.0.24
