@@ -1,39 +1,45 @@
-def generate_ai_response():
+from openai import OpenAI
+from prompts import TEACHER_SYSTEM_PROMPT, ACTION_PROMPTS
 
-    context = list(message_queue)[-5:]
+client = OpenAI(api_key="YOUR_API_KEY")
 
-    prompt = build_prompt(context)
+def generate_ai_response(action, messages):
+    """
+    توليد الرد المناسب حسب action و context الرسائل
+    """
+
+    context = list(messages)[-5:]  # آخر 5 رسائل فقط
+
+    prompt = build_prompt(action, context)
 
     response = call_ai(prompt)
-
     return response
 
 
-def build_prompt(context):
+def build_prompt(action, context):
+    """
+    بناء prompt مع system + action prompt
+    """
 
     conversation = ""
-
     for msg in context:
         conversation += f"{msg['user']}: {msg['text']}\n"
 
+    action_prompt = ACTION_PROMPTS.get(action, "")
+
     prompt = f"""
-You are an English teacher helping students think in English.
+{TEACHER_SYSTEM_PROMPT}
 
 Conversation:
 {conversation}
 
-Respond like a teacher speaking slowly and clearly.
+Instruction:
+{action_prompt}
 """
-
     return prompt
 
 
-from openai import OpenAI
-
-client = OpenAI(api_key="YOUR_API_KEY")
-
 def call_ai(prompt):
-
     response = client.chat.completions.create(
         model="gpt-4o-mini",
         messages=[
@@ -41,7 +47,4 @@ def call_ai(prompt):
             {"role": "user", "content": prompt}
         ]
     )
-
     return response.choices[0].message.content
-
-
