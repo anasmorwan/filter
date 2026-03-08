@@ -60,7 +60,13 @@ def process_message(user, user_id, text, timestamp):
     if not should_store_message(text, user_id):
         return
 
-    msg_type = classify_message(text)
+    msg_type, confidence = classify_message(message.text)
+
+    update_student_memory(
+        message.from_user.id,
+        message.from_user.first_name,
+        msg_type
+    )
 
     msg = {
         "user": user,
