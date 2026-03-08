@@ -225,8 +225,12 @@ async def get_chat_id(client, message):
     )
 
 # ........... الدوال العامة يجب أن تكون في الأسفل ...........
-@bot_app.on_message(filters.chat(CHAT_ID) & filters.text & ~filters.command())
+@bot_app.on_message(filters.chat(CHAT_ID) & filters.text)
 async def handle_message(client, message):
+
+    # تجاهل الأوامر
+    if message.text.startswith("/"):
+        return
 
     if not session_is_active():
         return
@@ -243,7 +247,6 @@ async def handle_message(client, message):
     user_id = message.from_user.id
 
     process_message(user, user_id, text, timestamp)
-    
 
 # bot.py
 from flask import Flask
