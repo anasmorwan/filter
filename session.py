@@ -1,8 +1,10 @@
 import time
+
 session = {
     "active": False,
     "topic": None,
     "difficulty": "normal",
+    "stage": "INTRO",
     "current_question": None,
     "last_ai_message": 0,
     "topic_progress": 0,
