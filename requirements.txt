@@ -1,11 +1,22 @@
+# Telegram client
 pyrogram==2.0.106
 tgcrypto
+
+# AI & prompts
 openai
-python-dotenv
-flask
 groq
+python-dotenv
+
+# Web service
+flask
+
+# Text-to-Speech
 gTTS
 pydub
+
+# Async utilities
 asyncio
+
+# Voice chat (Userbot)
+tgcalls==3.0.0.dev6
 pytgcalls==2.1.0
-tgcalls==2.0.0
