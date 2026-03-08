@@ -2,7 +2,7 @@
 
 import time
 from collections import Counter
-from session import get_session_info, update_ai_timestamp
+from session import get_session_info, update_ai_timestamp, get_session_minutes
 
 
 MIN_AI_COOLDOWN = 5      # أقل وقت بين ردود AI
@@ -118,6 +118,7 @@ def decide_next_action(messages):
 
     session = get_session_info()
     stage = session["stage"]
+    session_minutes = get_session_minutes()
 
     now = time.time()
     time_since_ai = now - session["last_ai_message"]
@@ -205,6 +206,13 @@ def decide_next_action(messages):
         session["stage"] = "WARMUP"
         session["topic_progress"] = 0
         return "ASK_NEW_TOPIC_QUESTION"
+
+
+    if session_minutes > 50 and session["topic_progress"] > 60:
+        return "OUTRO_LESSON"
+
+    if session_minutes > 70:
+        return "OUTRO_LESSON"
 
 
     return "GENERAL_COMMENT"
