@@ -227,7 +227,7 @@ async def test_ai(client, message):
         await message.reply_text("No messages in the buffer to test AI.")
         return
 
-    for action in ["ANSWER", "COMMENT", "HINT", "NEW_QUESTION"]:
+    for action in ["ANSWER_QUESTION", "WAKE_UP_SESSION", "GIVE_HINT", "ASK_NEW_TOPIC_QUESTION", " INTRO_LESSON", "EVALUATE_STUDENT_ANSWERS", "GIVE_FEEDBACK_ON_ANSWERS", " ASK_FOLLOWUP", "ENCOURAGE_DISCUSSION", " SUMMARIZE_DISCUSSION"]:
         # استدعاء AI للحصول على الرد
         response = generate_ai_response(action, sample_messages)
 
