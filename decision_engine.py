@@ -148,28 +148,45 @@ def decide_next_action(messages):
 
     update_ai_timestamp()
 
-    # ---------- منطق المدرس ----------
+
+    if stage == "INTRO":
+        return "INTRO_LESSON"
+
 
     if stats["total"] == 0:
         return "WAKE_UP_SESSION"
 
+
     if stats["questions"] > 0 and stats["answers"] == 0:
         return "ANSWER_QUESTION"
+
 
     if stats["questions"] > 0 and stats["answers"] > 0:
         return "EVALUATE_STUDENT_ANSWERS"
 
+
+    if stats["answers"] >= 2 and progress < 40:
+        return "ASK_FOLLOWUP"
+
+
     if stats["answers"] >= 2 and progress < 60:
-        session["topic_progress"] += 15
+        session["topic_progress"] += 10
         return "ENCOURAGE_DISCUSSION"
+
+
+    if stats["short_answers"] > stats["answers"]:
+        return "GIVE_HINT"
+
 
     if progress >= 60 and stats["answers"] >= 3:
         session["conversation_stage"] = "SUMMARY"
-        return "SUMMARIZE_AND_NEXT"
+        return "SUMMARIZE_DISCUSSION"
+
 
     if stage == "SUMMARY":
         session["topic_progress"] = 0
         session["conversation_stage"] = "DISCUSSION"
-        return "ASK_NEXT_TOPIC_QUESTION"
+        return "ASK_NEW_TOPIC_QUESTION"
+
 
     return "GENERAL_COMMENT"
