@@ -119,7 +119,6 @@ def decide_next_action(messages):
     session = get_session_info()
     stage = session["stage"]
     session_minutes = get_session_minutes()
-
     now = time.time()
     time_since_ai = now - session["last_ai_message"]
 
@@ -208,12 +207,73 @@ def decide_next_action(messages):
         return "ASK_NEW_TOPIC_QUESTION"
 
 
-    if session_minutes > 50 and session["topic_progress"] > 60:
-        return "OUTRO_LESSON"
-
     if session_minutes > 70:
         return "OUTRO_LESSON"
+
+    # ----- منطق نهاية الدرس -----
+    if session_minutes > 50 or session["topic_progress"] >= 80:
+        # إذا هناك أسئلة معلقة → الرد عليها قبل الإغلاق
+        if stats["questions"] > 0:
+            return "ANSWER_QUESTION"
+        else:
+            return "LESSON_WRAPPING_UP"
+
 
 
     return "GENERAL_COMMENT"
 
+
+
+
+# decision_engine.py
+
+def decide_next_action(messages):
+    session = get_session_info()
+    now = time.time()
+    time_since_ai = now - session["last_ai_message"]
+
+    stats = {
+        "total": len(messages),
+        "questions": sum(1 for m in messages if m["type"] == "question"),
+        "answers": sum(1 for m in messages if m["type"] in ["answer", "short_answer"]),
+        "unique_users": len(set(m["user_id"] for m in messages))
+    }
+
+    # فحص فترة التبريد
+    if time_since_ai < COOLDOWN:
+        return "WAIT"
+
+    priority_score = calculate_priority(stats, time_since_ai)
+
+    # ----- منطق المدرس -----
+    if priority_score < THRESHOLD:
+        return "WAIT"
+
+    update_ai_timestamp()
+
+    # الطلاب ساكتون
+    if stats["total"] == 0:
+        return "WAKE_UP_SESSION"
+
+    # أسئلة جديدة
+    if stats["questions"] > 0 and stats["answers"] == 0:
+        return "ANSWER_QUESTION"
+
+    # أسئلة + إجابات → تقييم
+    if stats["questions"] > 0 and stats["answers"] > 0:
+        return "EVALUATE_STUDENT_ANSWERS"
+
+    # تشجيع النقاش
+    if stats["answers"] >= 2 and session["topic_progress"] < 60:
+        session["topic_progress"] += 15
+        return "ENCOURAGE_DISCUSSION"
+
+    # تلخيص وإنتقال للموضوع التالي
+    if session["conversation_stage"] == "SUMMARY" and session["topic_progress"] >= 60:
+        session["conversation_stage"] = "DISCUSSION"
+        session["topic_progress"] = 0
+        return "ASK_NEXT_TOPIC_QUESTION"
+
+
+    
+    return "GENERAL_COMMENT"
