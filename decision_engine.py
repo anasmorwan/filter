@@ -117,6 +117,7 @@ def calculate_priority(stats, session, time_since_ai):
 def decide_next_action(messages):
 
     session = get_session_info()
+    stage = session["stage"]
 
     now = time.time()
     time_since_ai = now - session["last_ai_message"]
@@ -150,11 +151,18 @@ def decide_next_action(messages):
 
 
     if stage == "INTRO":
+        session["stage"] = "WARMUP"
         return "INTRO_LESSON"
+
+    if stage == "WARMUP" and stats["answers"] >= 2:
+        session["stage"] = "DISCUSSION"
 
 
     if stats["total"] == 0:
         return "WAKE_UP_SESSION"
+
+    if stats["answers"] >= 3:
+        session["current_question"] = None
 
 
     if stats["questions"] > 0 and stats["answers"] == 0:
@@ -187,11 +195,17 @@ def decide_next_action(messages):
         session["conversation_stage"] = "SUMMARY"
         return "SUMMARIZE_DISCUSSION"
 
+    if stage == "DISCUSSION" and session["topic_progress"] >= 60:
+        session["stage"] = "SUMMARY"
+        return "SUMMARIZE_DISCUSSION"
+
+
 
     if stage == "SUMMARY":
+        session["stage"] = "WARMUP"
         session["topic_progress"] = 0
-        session["conversation_stage"] = "DISCUSSION"
         return "ASK_NEW_TOPIC_QUESTION"
 
 
     return "GENERAL_COMMENT"
+
