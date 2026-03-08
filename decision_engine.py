@@ -38,11 +38,18 @@ def analyze_messages(messages):
         elif msg_type == "reaction":
             stats["reactions"] += 1
 
+        if stats["total"] > 10:
+            session["window_seconds"] = 8
+
+        elif stats["total"] < 3:
+            session["window_seconds"] = 18
+
         stats["users"].add(msg["user_id"])
 
     stats["unique_users"] = len(stats["users"])
 
     return stats
+
 
 
 def evaluate_chat_state(stats):
