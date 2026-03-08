@@ -12,7 +12,7 @@ from filter import should_store_message
 from buffer import add_message, should_process_window, pop_window_messages
 from message_classifier import classify_message
 from decision_engine import decide_next_action
-
+from ai import generate_ai_response
 
 
 # جلب القيم من نظام التشغيل
@@ -50,7 +50,7 @@ load_dotenv()
 
 def process_message(user, user_id, text, timestamp):
 
-    if not should_store_message(text):
+    if not should_store_message(text, user_id):
         return
 
     msg_type = classify_message(text)
@@ -69,24 +69,36 @@ def process_message(user, user_id, text, timestamp):
 
     # إذا سؤال → معالجة فورية
     if msg_type == "question":
-
         action = decide_next_action([msg])
-
         handle_action(action, [msg])
-
         return
 
-    # معالجة window
+    # معالجة window إذا انتهت الفترة
     if should_process_window():
-
         messages = pop_window_messages()
+        if not messages:
+            return
 
         action = decide_next_action(messages)
-
         handle_action(action, messages)
 
 
+def handle_action(action, messages):
 
+    if action == "IGNORE":
+        return
+
+    # جميع الأكشنات الآن تعتمد على AI
+    response = generate_ai_response(action, messages)
+
+    if action in ["ANSWER", "HINT", "COMMENT", "NEW_QUESTION"]:
+        # يمكن هنا استخدام send_text(response) لإرسال البوت
+        print(f"\n--- AI RESPONSE ({action}) ---\n{response}", flush=True)
+        
+
+
+"""
+الدالة القديمة
 def handle_action(action, messages):
 
     if action == "IGNORE":
@@ -103,6 +115,9 @@ def handle_action(action, messages):
 
     if action == "NEW_QUESTION":
         send_question()
+        """
+
+
 # ............. Handlers and commands........
 # لاحظ: نقلنا الأوامر لتكون في الأعلى، وأضفنا async/await
 
