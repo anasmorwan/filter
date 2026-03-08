@@ -155,7 +155,14 @@ async def start_cmd(client, message):
 async def stop_cmd(client, message):
     stop_session()
     await message.reply_text("Session stopped.")
-
+    
+@bot_app.on_message(filters.command("test_ai") & filters.user(ADMIN_ID))
+async def test_ai(client, message):
+    sample_messages = pop_window_messages()  # أو أخذ آخر N رسائل من buffer
+    for action in ["ANSWER", "COMMENT", "HINT", "NEW_QUESTION"]:
+        response = generate_ai_response(action, sample_messages)
+        await message.reply_text(f"Action: {action}\nResponse:\n{response}")
+        
 @bot_app.on_message(filters.command("id", prefixes=".") & (filters.chat(CHAT_ID) | filters.private))
 async def get_chat_id(client, message):
     # أزلنا filters.me لأنه لا يعمل مع البوتات
