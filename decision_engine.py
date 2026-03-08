@@ -164,6 +164,11 @@ def decide_next_action(messages):
     if stats["questions"] > 0 and stats["answers"] > 0:
         return "EVALUATE_STUDENT_ANSWERS"
 
+    if session["current_question"]:
+
+        if stats["answers_count"] >= 3:
+            return "GIVE_FEEDBACK_ON_ANSWERS"
+
 
     if stats["answers"] >= 2 and progress < 40:
         return "ASK_FOLLOWUP"
