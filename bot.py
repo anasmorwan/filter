@@ -13,6 +13,8 @@ from buffer import add_message, should_process_window, pop_window_messages, get_
 from message_classifier import classify_message
 from decision_engine import decide_next_action
 from ai import generate_ai_response
+from buffer import clear_buffer
+
 
 # جلب القيم من نظام التشغيل
 API_ID = os.getenv("TELEGRAM_API_ID")
@@ -154,7 +156,10 @@ async def start_cmd(client, message):
 
 @bot_app.on_message(filters.command("stopsession") & filters.chat(CHAT_ID))
 async def stop_cmd(client, message):
+
     stop_session()
+    clear_buffer()
+
     await message.reply_text("Session stopped.")
     
 @bot_app.on_message(filters.command("test_ai") & filters.user(ADMIN_ID))
