@@ -131,7 +131,7 @@ def handle_action(action, messages):
     print(f"\n--- ACTION DECIDED: {action} ---", flush=True)
 
     response = generate_ai_response(action, messages)
-    await broadcast_ai_response(response)
+    asyncio.create_task(broadcast_ai_response(response))
 
     print(f"\n--- AI RESPONSE ---\n{response}", flush=True)
 
