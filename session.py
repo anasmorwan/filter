@@ -1,5 +1,4 @@
 import time
-
 session = {
 
     "active": False,
@@ -11,25 +10,26 @@ session = {
 
     "current_question": None,
 
+    "last_ai_question": None,
+
+    "recent_questions": [],
+
     "start_time": None,
 
     "last_ai_message": 0,
 
-    # إحصائيات الشات
+    "window_seconds": 15,
+
     "stats": {
 
         "messages_since_last_ai": 0,
-
         "unique_users": set(),
-
         "questions_count": 0,
-
         "answers_count": 0,
-
         "last_message_time": 0
-
     }
 }
+
 
 
 def start_session(topic="general", difficulty="normal"):
