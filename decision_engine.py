@@ -10,127 +10,86 @@ SILENCE_HINT_TIME = 10  # وقت الصمت قبل إعطاء hint
 NEW_QUESTION_TIME = 25  # وقت تغيير السؤال
 
 
-def analyze_messages(messages):
+COOLDOWN = 8       # فترة منع الرد المتكرر
+SILENCE_LIMIT = 20 # مدة الصمت قبل التدخل
+THRESHOLD = 90     # حد الأولوية للتدخل
+
+def calculate_priority(stats, time_since_ai, confusion):
     """
-    يحلل نافذة الرسائل
+    حساب أولوية تدخل المدرس بناءً على النشاط والالتباس
     """
-    session = get_session_info()
+    score = 0
 
-    stats = {
-        "total": 0,
-        "questions": 0,
-        "answers": 0,
-        "reactions": 0,
-        "users": set()
-    }
-
-    for msg in messages:
-
-        stats["total"] += 1
-
-        msg_type = msg["type"]
-
-        if msg_type == "question":
-            stats["questions"] += 1
-
-        elif msg_type in ["answer", "short_answer"]:
-            stats["answers"] += 1
-
-        elif msg_type == "reaction":
-            stats["reactions"] += 1
-
-        if stats["total"] > 10:
-            session["window_seconds"] = 8
-
-        elif stats["total"] < 3:
-            session["window_seconds"] = 18
-
-        stats["users"].add(msg["user_id"])
-
-    stats["unique_users"] = len(stats["users"])
-
-    return stats
-
-
-
-def evaluate_chat_state(stats):
-
-    """
-    يحول الإحصائيات إلى حالة الشات
-    """
-
+    # الصمت يزيد الرغبة في التدخل
     if stats["total"] == 0:
-        return "silent"
+        score += (time_since_ai / SILENCE_LIMIT) * 120
 
+    # أسئلة الطلاب
     if stats["questions"] > 0:
-        return "students_asking"
+        if stats["answers"] == 0:
+            score += 70
+        else:
+            score += 30
 
-    if stats["answers"] >= 3:
-        return "students_answering"
+    # نشاط الطلاب يقلل التدخل
+    if stats["unique_users"] >= 3 and stats["answers"] >= 2:
+        score -= 40
 
-    if stats["reactions"] >= stats["answers"]:
-        return "low_value_chat"
+    # الالتباس يزيد التدخل
+    score += confusion * 10
 
-    return "normal"
+    # مرور الوقت
+    score += time_since_ai * 1.2
 
+    return score
 
 def decide_next_action(messages):
-
     session = get_session_info()
-
     now = time.time()
+    time_since_ai = now - session["last_ai_message"]
 
-    last_ai = session["last_ai_message"]
+    # --- جمع إحصاءات الطلاب ---
+    stats = {
+        "total": len(messages),
+        "questions": sum(1 for m in messages if m["type"] == "question"),
+        "answers": sum(1 for m in messages if m["type"] in ["answer","short_answer"]),
+        "unique_users": len(set(m["user_id"] for m in messages))
+    }
 
-    time_since_ai = now - last_ai
+    # --- متغيرات الحالة التعليمية ---
+    confusion = session.get("student_confusion", 0)           # 0-10
+    stage = session.get("conversation_stage", "DISCUSSION")   # مرحلة الدرس
+    progress = session.get("topic_progress", 0)               # 0-100%
+    goal = session.get("learning_goal", "general topic")
 
-    mode = session["mode"]
-
-    stats = analyze_messages(messages)
-
-    chat_state = evaluate_chat_state(stats)
-
-    print("\n--- DECISION ENGINE ---")
-    print("Mode:", mode)
-    print("Chat state:", chat_state)
-    print("Messages:", stats["total"])
-    print("Unique users:", stats["unique_users"])
-    print("-----------------------", flush=True)
-
-    # ---------- cooldown ----------
-    if time_since_ai < MIN_AI_COOLDOWN:
+    # --- فترة التبريد ---
+    if time_since_ai < COOLDOWN:
         return "WAIT"
 
-    # ---------- students asking ----------
-    if chat_state == "students_asking":
+    priority_score = calculate_priority(stats, time_since_ai, confusion)
+    print(f"[AI Brain] Score: {priority_score:.1f} | Stage: {stage} | Progress: {progress}% | Confusion: {confusion}")
+
+    if priority_score >= THRESHOLD:
         update_ai_timestamp()
-        return "ANSWER"
 
-    # ---------- students answering ----------
-    if chat_state == "students_answering":
+        # --- اتخاذ القرار بحسب مرحلة الدرس ---
+        if stage == "INTRO":
+            return "ASK_INITIAL_QUESTION"
 
-        if stats["unique_users"] >= 2:
-            update_ai_timestamp()
-            return "COMMENT"
+        if stage == "DISCUSSION":
+            if stats["questions"] > 0 and stats["answers"] == 0:
+                return "ANSWER_QUESTION"
+            if stats["answers"] >= 2:
+                return "EVALUATE_STUDENT_ANSWERS"
+            return "GENERAL_COMMENT"
 
-        return "WAIT"
+        if stage == "CORRECTION":
+            return "CORRECT_MISTAKES"
 
-    # ---------- low value chat ----------
-    if chat_state == "low_value_chat":
-        return "IGNORE"
+        if stage == "SUMMARY":
+            return "SUMMARIZE_AND_NEXT"
 
-    # ---------- silence ----------
-    if chat_state == "silent":
-
-        if time_since_ai > SILENCE_HINT_TIME:
-            update_ai_timestamp()
-            return "HINT"
-
-        return "WAIT"
-
-    # ---------- normal flow ----------
-    if time_since_ai > NEW_QUESTION_TIME:
-        update_ai_timestamp()
-        return "NEW_QUESTION"
+        if stage == "NEXT_TOPIC":
+            return "ASK_NEXT_TOPIC_QUESTION"
 
     return "WAIT"
