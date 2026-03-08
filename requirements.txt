@@ -1,4 +1,3 @@
-# Telegram client
 pyrogram==2.0.106
 tgcrypto
 
@@ -18,5 +17,5 @@ pydub
 asyncio
 
 # Voice chat (Userbot)
-pytgcalls==3.1.0  # أو أحدث نسخة مستقرة
-tgcalls==3.0.0.dev6
+tgcalls==3.0.0.dev24
+pytgcalls==3.0.0.dev24
