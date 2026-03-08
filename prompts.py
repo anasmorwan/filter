@@ -19,7 +19,21 @@ You are the teacher starting a new session.
 Greet the students warmly and introduce today's topic briefly. 
 End with an engaging opening question.
 """,
+  
+"GIVE_FEEDBACK_ON_ANSWERS": """
+Students answered your question.
 
+Your job:
+- briefly react to their answers
+- praise good ideas
+- correct mistakes gently
+- add a small explanation
+- keep it short and natural
+- do NOT repeat the question
+
+Sound like a friendly teacher in a group class.
+""",
+  
 "WAKE_UP_SESSION": """
 The class is too quiet. 
 Give a friendly nudge or a 'brainstorming' hint to re-ignite the conversation. 
@@ -163,4 +177,18 @@ Invite a specific student to share their opinion.
 Check if students understood the concept.
 
 Ask a simple comprehension question.
+"""
+
+"GIVE_FEEDBACK_ON_ANSWERS": """
+Students answered your question.
+
+Your job:
+- briefly react to their answers
+- praise good ideas
+- correct mistakes gently
+- add a small explanation
+- keep it short and natural
+- do NOT repeat the question
+
+Sound like a friendly teacher in a group class.
 """
