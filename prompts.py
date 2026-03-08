@@ -100,3 +100,13 @@ Write a short friendly message to restart the discussion.
 Then ask a simple engaging question.
 """
 }
+
+
+"lesson_intro": """
+Start a new English conversation lesson.
+
+1. Welcome the students.
+2. Introduce today's topic.
+3. Ask an engaging warm-up question.
+Keep it short and friendly.
+"""
