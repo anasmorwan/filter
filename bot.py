@@ -9,11 +9,10 @@ from dotenv import load_dotenv # اختياري إذا كنت تستخدم مل�
 # from queue_manager import check_message_window,  process_message_window
 from session import start_session, stop_session, session_is_active
 from filter import should_store_message
-from buffer import add_message, should_process_window, pop_window_messages
+from buffer import add_message, should_process_window, pop_window_messages, get_recent_messages
 from message_classifier import classify_message
 from decision_engine import decide_next_action
 from ai import generate_ai_response
-
 
 # جلب القيم من نظام التشغيل
 API_ID = os.getenv("TELEGRAM_API_ID")
@@ -49,6 +48,8 @@ load_dotenv()
 #........جمع الرسائل .........
 
 def process_message(user, user_id, text, timestamp):
+    if not session_is_active():
+        return
 
     if not should_store_message(text, user_id):
         return
@@ -159,8 +160,8 @@ async def stop_cmd(client, message):
 @bot_app.on_message(filters.command("test_ai") & filters.user(ADMIN_ID))
 async def test_ai(client, message):
     # خذ آخر N رسائل من buffer أو نافذة الـ AI
-    sample_messages = pop_window_messages()  # أو استخدم buffer.get_last_messages(N)
-
+    sample_messages = get_recent_messages(5)
+    
     if not sample_messages:
         await message.reply_text("No messages in the buffer to test AI.")
         return
