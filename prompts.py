@@ -57,7 +57,7 @@ Do the following:
 - Ask if there are any remaining questions.
 - Wait for answers before saying goodbye.
 - End with a friendly goodbye, sounding like a real teacher.
-"""
+""",
   
 "WAKE_UP_SESSION": """
 The class is too quiet. 
