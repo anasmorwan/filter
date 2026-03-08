@@ -14,82 +14,162 @@ COOLDOWN = 8       # فترة منع الرد المتكرر
 SILENCE_LIMIT = 20 # مدة الصمت قبل التدخل
 THRESHOLD = 90     # حد الأولوية للتدخل
 
-def calculate_priority(stats, time_since_ai, confusion):
+
+
+def analyze_messages(messages):
     """
-    حساب أولوية تدخل المدرس بناءً على النشاط والالتباس
+    تحليل الرسائل مع استخدام درجة الثقة
     """
+
+    stats = {
+        "total": 0,
+        "questions": 0,
+        "answers": 0,
+        "short_answers": 0,
+        "reactions": 0,
+        "confidence_sum": 0,
+        "unique_users": set()
+    }
+
+    for m in messages:
+
+        msg_type = m.get("type")
+        conf = m.get("confidence", 0.7)
+
+        stats["total"] += 1
+        stats["confidence_sum"] += conf
+        stats["unique_users"].add(m["user_id"])
+
+        if msg_type == "question":
+            stats["questions"] += conf
+
+        elif msg_type == "answer":
+            stats["answers"] += conf
+
+        elif msg_type == "short_answer":
+            stats["short_answers"] += conf
+
+        elif msg_type == "reaction":
+            stats["reactions"] += conf
+
+    stats["unique_users"] = len(stats["unique_users"])
+
+    return stats
+
+
+def estimate_confusion(stats):
+    """
+    تقدير مستوى ارتباك الطلاب
+    """
+
+    confusion = 0
+
+    if stats["questions"] > 1:
+        confusion += 3
+
+    if stats["short_answers"] > stats["answers"]:
+        confusion += 2
+
+    if stats["reactions"] > stats["answers"]:
+        confusion += 1
+
+    return min(confusion, 10)
+
+
+def calculate_priority(stats, session, time_since_ai):
+
     score = 0
 
-    # الصمت يزيد الرغبة في التدخل
+    # --- الصمت ---
     if stats["total"] == 0:
         score += (time_since_ai / SILENCE_LIMIT) * 120
 
-    # أسئلة الطلاب
-    if stats["questions"] > 0:
-        if stats["answers"] == 0:
-            score += 70
-        else:
-            score += 30
+    # --- الأسئلة ---
+    score += stats["questions"] * 40
 
-    # نشاط الطلاب يقلل التدخل
-    if stats["unique_users"] >= 3 and stats["answers"] >= 2:
-        score -= 40
+    # --- الإجابات ---
+    score += stats["answers"] * 20
 
-    # الالتباس يزيد التدخل
-    score += confusion * 10
+    # --- ردود قصيرة ---
+    score += stats["short_answers"] * 10
 
-    # مرور الوقت
-    score += time_since_ai * 1.2
+    # --- تفاعل سطحي يقلل الأولوية ---
+    score -= stats["reactions"] * 10
+
+    # --- نشاط الطلاب ---
+    if stats["unique_users"] >= 3:
+        score -= 20
+
+    # --- تقدم الموضوع ---
+    progress = session.get("topic_progress", 0)
+    score += progress * 0.5
+
+    # --- ارتباك الطلاب ---
+    confusion = session.get("student_confusion", 0)
+    score += confusion * 12
+
+    # --- مرور الوقت ---
+    score += time_since_ai * 1.3
 
     return score
 
+
 def decide_next_action(messages):
+
     session = get_session_info()
+
     now = time.time()
     time_since_ai = now - session["last_ai_message"]
 
-    # --- جمع إحصاءات الطلاب ---
-    stats = {
-        "total": len(messages),
-        "questions": sum(1 for m in messages if m["type"] == "question"),
-        "answers": sum(1 for m in messages if m["type"] in ["answer","short_answer"]),
-        "unique_users": len(set(m["user_id"] for m in messages))
-    }
-
-    # --- متغيرات الحالة التعليمية ---
-    confusion = session.get("student_confusion", 0)           # 0-10
-    stage = session.get("conversation_stage", "DISCUSSION")   # مرحلة الدرس
-    progress = session.get("topic_progress", 0)               # 0-100%
-    goal = session.get("learning_goal", "general topic")
-
-    # --- فترة التبريد ---
     if time_since_ai < COOLDOWN:
         return "WAIT"
 
-    priority_score = calculate_priority(stats, time_since_ai, confusion)
-    print(f"[AI Brain] Score: {priority_score:.1f} | Stage: {stage} | Progress: {progress}% | Confusion: {confusion}")
+    stats = analyze_messages(messages)
 
-    if priority_score >= THRESHOLD:
-        update_ai_timestamp()
+    # تقدير ارتباك الطلاب
+    confusion = estimate_confusion(stats)
+    session["student_confusion"] = confusion
 
-        # --- اتخاذ القرار بحسب مرحلة الدرس ---
-        if stage == "INTRO":
-            return "ASK_INITIAL_QUESTION"
+    priority = calculate_priority(stats, session, time_since_ai)
 
-        if stage == "DISCUSSION":
-            if stats["questions"] > 0 and stats["answers"] == 0:
-                return "ANSWER_QUESTION"
-            if stats["answers"] >= 2:
-                return "EVALUATE_STUDENT_ANSWERS"
-            return "GENERAL_COMMENT"
+    stage = session.get("conversation_stage", "DISCUSSION")
+    progress = session.get("topic_progress", 0)
 
-        if stage == "CORRECTION":
-            return "CORRECT_MISTAKES"
+    print(
+        f"[AI Brain] score={priority:.1f} "
+        f"questions={stats['questions']:.1f} "
+        f"answers={stats['answers']:.1f} "
+        f"users={stats['unique_users']} "
+        f"confusion={confusion}"
+    )
 
-        if stage == "SUMMARY":
-            return "SUMMARIZE_AND_NEXT"
+    if priority < THRESHOLD:
+        return "WAIT"
 
-        if stage == "NEXT_TOPIC":
-            return "ASK_NEXT_TOPIC_QUESTION"
+    update_ai_timestamp()
 
-    return "WAIT"
+    # ---------- منطق المدرس ----------
+
+    if stats["total"] == 0:
+        return "WAKE_UP_SESSION"
+
+    if stats["questions"] > 0 and stats["answers"] == 0:
+        return "ANSWER_QUESTION"
+
+    if stats["questions"] > 0 and stats["answers"] > 0:
+        return "EVALUATE_STUDENT_ANSWERS"
+
+    if stats["answers"] >= 2 and progress < 60:
+        session["topic_progress"] += 15
+        return "ENCOURAGE_DISCUSSION"
+
+    if progress >= 60 and stats["answers"] >= 3:
+        session["conversation_stage"] = "SUMMARY"
+        return "SUMMARIZE_AND_NEXT"
+
+    if stage == "SUMMARY":
+        session["topic_progress"] = 0
+        session["conversation_stage"] = "DISCUSSION"
+        return "ASK_NEXT_TOPIC_QUESTION"
+
+    return "GENERAL_COMMENT"
