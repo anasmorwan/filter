@@ -80,3 +80,8 @@ def update_chat_stats(user_id, text):
 
     if "?" in text:
         stats["questions_count"] += 1
+
+
+
+def get_session_minutes():
+    return (time.time() - session["start_time"]) / 60
