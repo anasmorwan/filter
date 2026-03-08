@@ -211,6 +211,10 @@ async def session_status(client, message):
     else:
         await message.reply_text("Session is STOPPED")
 
+@bot_app.on_message(filters.command("where"))
+async def where(client, message):
+    await message.reply_text(f"Chat ID: {message.chat.id}")
+
 
 @bot_app.on_message(filters.command("id", prefixes=".") & (filters.chat(CHAT_ID) | filters.private))
 async def get_chat_id(client, message):
@@ -225,17 +229,16 @@ async def get_chat_id(client, message):
     )
 
 # ........... الدوال العامة يجب أن تكون في الأسفل ...........
-@bot_app.on_message(filters.chat(CHAT_ID) & filters.text)
+@bot_app.on_message(filters.text)
 async def handle_message(client, message):
 
-    # تجاهل الأوامر
+    print("MESSAGE RECEIVED:", message.text, flush=True)
+
     if message.text.startswith("/"):
         return
 
     if not session_is_active():
-        return
-
-    if not message.text:
+        print("Session not active", flush=True)
         return
 
     if message.from_user and message.from_user.is_bot:
@@ -247,7 +250,7 @@ async def handle_message(client, message):
     user_id = message.from_user.id
 
     process_message(user, user_id, text, timestamp)
-
+    
 # bot.py
 from flask import Flask
 
