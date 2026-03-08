@@ -14,6 +14,7 @@ def analyze_messages(messages):
     """
     يحلل نافذة الرسائل
     """
+    session = get_session_info()
 
     stats = {
         "total": 0,
