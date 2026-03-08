@@ -158,10 +158,34 @@ async def stop_cmd(client, message):
     
 @bot_app.on_message(filters.command("test_ai") & filters.user(ADMIN_ID))
 async def test_ai(client, message):
-    sample_messages = pop_window_messages()  # أو أخذ آخر N رسائل من buffer
+    # خذ آخر N رسائل من buffer أو نافذة الـ AI
+    sample_messages = pop_window_messages()  # أو استخدم buffer.get_last_messages(N)
+
+    if not sample_messages:
+        await message.reply_text("No messages in the buffer to test AI.")
+        return
+
     for action in ["ANSWER", "COMMENT", "HINT", "NEW_QUESTION"]:
+        # استدعاء AI للحصول على الرد
         response = generate_ai_response(action, sample_messages)
-        await message.reply_text(f"Action: {action}\nResponse:\n{response}")
+
+        # إعداد سجل شامل للاختبار
+        ai_test_log = {
+            "action": action,
+            "response": response,
+            "messages_window": sample_messages,
+            "msg_types": [m["type"] for m in sample_messages],
+            "users": [m["user"] for m in sample_messages],
+            "timestamp": time.time()
+        }
+
+        # إرسال كل شيء بصيغة مرتبة للبوت
+        reply_text = f"Action: {action}\nResponse:\n{response}\n\n" \
+                     f"Messages in Window:\n" + \
+                     "\n".join([f"- {m['user']} ({m['type']}): {m['text']}" for m in sample_messages]) + \
+                     f"\nUsers involved: {', '.join([m['user'] for m in sample_messages])}"
+
+        await message.reply_text(reply_text)
         
 @bot_app.on_message(filters.command("id", prefixes=".") & (filters.chat(CHAT_ID) | filters.private))
 async def get_chat_id(client, message):
