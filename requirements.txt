@@ -1,12 +1,13 @@
+# Core
 pyrogram==2.0.106
 tgcrypto
 
-# AI & prompts
+# AI
 openai
 groq
 python-dotenv
 
-# Web service
+# Web server
 flask
 
 # Text-to-Speech
@@ -16,6 +17,6 @@ pydub
 # Async utilities
 asyncio
 
-# Voice chat (Userbot)
-tgcalls==3.0.0.dev24
-pytgcalls==3.0.0.dev24
+# Voice chat (Userbot) - تثبيت من GitHub لأن PyPI لا تحتوي على النسخ الحديثة
+git+https://github.com/pyrogram/tgcalls.git@main
+git+https://github.com/pytgcalls/pytgcalls.git@main
