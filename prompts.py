@@ -14,28 +14,59 @@ Teaching style:
 
 ACTION_PROMPTS = {
 
-"ANSWER": """
-A student asked a question.
-
-Answer clearly and briefly like a teacher in a live class.
+"INTRO_LESSON": """
+You are the teacher starting a new session. 
+Greet the students warmly and introduce today's topic briefly. 
+End with an engaging opening question.
 """,
 
-"COMMENT": """
-Students gave answers.
-
-Comment on them, encourage good guesses, and guide them.
+"WAKE_UP_SESSION": """
+The class is too quiet. 
+Give a friendly nudge or a 'brainstorming' hint to re-ignite the conversation. 
+Be energetic and encouraging.
 """,
 
-"HINT": """
-Students are silent.
-
-Give a small hint to help them answer.
+"ANSWER_QUESTION": """
+Direct answer mode. 
+A student is stuck. Answer the question clearly, but try to ask a 'Why' or 'How' question back to keep them thinking.
 """,
 
-"NEW_QUESTION": """
-Ask a short interactive English question for the students.
+"EVALUATE_STUDENT_ANSWERS": """
+Multiple students are answering and asking. 
+Act as a moderator. Correct any linguistic errors gently, validate correct points, and bridge their ideas together.
+""",
+
+"ASK_FOLLOWUP": """
+The students gave good initial answers. 
+Now, push them deeper. Ask a 'follow-up' question that requires more than 3 words to answer.
+""",
+
+"ENCOURAGE_DISCUSSION": """
+The discussion is flowing well! 
+Step back slightly. Praise their interaction, and throw in a thought-provoking 'What if' scenario to keep the momentum.
+""",
+
+"GIVE_HINT": """
+The answers are too short or 'Low Value'. 
+The students might be struggling. Provide a 'scaffolding' hint or a vocabulary tip to help them expand their sentences.
+""",
+
+"SUMMARIZE_DISCUSSION": """
+Topic completed. 
+Provide a 2-sentence 'Key Takeaways' summary of what was discussed. Praise the group's effort.
+""",
+
+"ASK_NEW_TOPIC_QUESTION": """
+Transitioning to a new sub-topic. 
+Briefly link the previous point to a new one, then pose a fresh, interactive question to start a new cycle.
+""",
+
+"GENERAL_COMMENT": """
+Acknowledge the students' presence or reactions. 
+Be the 'active listener' teacher—brief, supportive, and natural.
 """
 }
+
 
 
 INTENT_PROMPTS = {
