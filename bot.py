@@ -17,6 +17,7 @@ from message_classifier import classify_message
 from decision_engine import decide_next_action
 from ai import generate_ai_response
 from buffer import clear_buffer
+from voice import broadcast_ai_response
 
 # تحميل المتغيرات من ملف .env إذا كان موجوداً
 load_dotenv()
@@ -130,6 +131,7 @@ def handle_action(action, messages):
     print(f"\n--- ACTION DECIDED: {action} ---", flush=True)
 
     response = generate_ai_response(action, messages)
+    await broadcast_ai_response(response)
 
     print(f"\n--- AI RESPONSE ---\n{response}", flush=True)
 
