@@ -1,27 +1,15 @@
 import time
 session = {
-
     "active": False,
-
     "topic": None,
     "difficulty": "normal",
-
-    "mode": "teaching",
-
     "current_question": None,
-
-    "last_ai_question": None,
-
-    "recent_questions": [],
-
-    "start_time": None,
-
     "last_ai_message": 0,
-
-    "window_seconds": 15,
-
+    "topic_progress": 0,
+    "learning_goal": None,
+    "student_confusion": 0,
+    "conversation_stage": "INTRO",
     "stats": {
-
         "messages_since_last_ai": 0,
         "unique_users": set(),
         "questions_count": 0,
@@ -29,6 +17,7 @@ session = {
         "last_message_time": 0
     }
 }
+
 
 
 
