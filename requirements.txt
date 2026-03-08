@@ -18,5 +18,5 @@ pydub
 asyncio
 
 # Voice chat (Userbot)
+pytgcalls==3.1.0  # أو أحدث نسخة مستقرة
 tgcalls==3.0.0.dev6
-pytgcalls==2.1.0
