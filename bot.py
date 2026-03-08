@@ -110,20 +110,22 @@ def process_message(user, user_id, text, timestamp):
 
 def handle_action(action, messages):
 
-    # لا يوجد رد
     if action == "WAIT":
         return
 
     print(f"\n--- ACTION DECIDED: {action} ---", flush=True)
 
-    # توليد الرد
     response = generate_ai_response(action, messages)
 
-    # إرسال الرد (حالياً print فقط)
     print(f"\n--- AI RESPONSE ---\n{response}", flush=True)
 
-    # هنا لاحقاً يمكن إرسال الرسالة للتيليجرام
-    # send_text(response)
+    # حفظ السؤال الحالي
+    if action in [
+        "INTRO_LESSON",
+        "ASK_NEW_TOPIC_QUESTION",
+        "ASK_FOLLOWUP"
+    ]:
+        session["current_question"] = response
 
 
 """
