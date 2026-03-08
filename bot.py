@@ -93,6 +93,11 @@ def process_message(user, user_id, text, timestamp):
 
         return
 
+    if session["current_question"]:
+
+        if msg_type in ["answer", "short_answer"]:
+            session["stats"]["answers_count"] += 1
+
 
     # --- معالجة window ---
     if should_process_window():
