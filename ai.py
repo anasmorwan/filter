@@ -39,7 +39,7 @@ Conversation:
 {conversation}
 
 Teacher task:
-{intent_prompt}
+{action_prompt}
     """
     return prompt
 
