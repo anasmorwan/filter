@@ -1,6 +1,7 @@
 from groq import Groq
 from prompts import TEACHER_SYSTEM_PROMPT, ACTION_PROMPTS
 import os
+from session import get_session_info
 
 
 
@@ -20,6 +21,7 @@ def build_prompt(action, context):
     """
     بناء prompt مع system + action prompt
     """
+    session = get_session_info()
     question = session.get("current_question")
 
     
