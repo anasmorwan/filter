@@ -10,10 +10,10 @@ from collections import deque
 # -------------------------
 # إعداد Userbot للحساب الشخصي
 # -------------------------
-session = os.environ.get("SESSION_STRING")
+SESSION = os.environ.get("SESSION_STRING")
 
 userbot = Client(
-    "my_account", # اسم الجلسة
+    SESSION,
     api_id=int(os.environ.get("TELEGRAM_API_ID")),
     api_hash=os.environ.get("TELEGRAM_API_HASH")
 )
