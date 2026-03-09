@@ -7,8 +7,10 @@ import logging
 logging.basicConfig(level=logging.INFO)
 import asyncio
 from pyrogram import Client, idle
-
+from pyrogram.types import Message
 from dotenv import load_dotenv # اختياري إذا كنت تستخدم ملف .env
+
+
 # from queue_manager import check_message_window,  process_message_window
 from session import start_session, stop_session, session_is_active, get_session_info
 from filter import should_store_message
@@ -274,6 +276,39 @@ async def session_status(client, message):
 async def where(client, message):
     await message.reply_text(f"Chat ID: {message.chat.id}")
 
+
+
+
+@bot_app.on_message(filters.command("get_vc_id") & filters.user(your_user_id))
+async def get_vc_id_handler(client: Client, message: Message):
+    """
+    استخدام: /get_vc_id اسم_المجموعة
+    يرجع chat_id و voice_chat_id إذا كان هناك غرفة صوتية نشطة.
+    """
+    if len(message.command) < 2:
+        await message.reply_text("❌ يرجى كتابة اسم المجموعة بعد الأمر.\nمثال: /get_vc_id MyGroup")
+        return
+
+    target_name = " ".join(message.command[1:])  # اسم المجموعة أو القناة
+
+    try:
+        # جلب info للمحادثة مباشرة بالاسم
+        chat = await client.get_chat(target_name)
+        chat_id = chat.id
+        vc_id = getattr(chat, "id", None)
+
+        # الحصول على معلومات كاملة للـ Voice Chat
+        full = await client.get_chat(chat_id)
+        if getattr(full, "has_active_voice_chat", False):
+            vc_id = full.id
+            reply = f"✅ Group: {chat.title}\nChat ID: {chat_id}\nActive Voice Chat ID: {vc_id}"
+        else:
+            reply = f"ℹ️ Group: {chat.title}\nChat ID: {chat_id}\nNo active voice chat found."
+
+        await message.reply_text(reply)
+
+    except Exception as e:
+        await message.reply_text(f"❌ حدث خطأ: {e}")
 
 @bot_app.on_message(filters.command("id", prefixes=".") & (filters.chat(CHAT_ID) | filters.private))
 async def get_chat_id(client, message):
