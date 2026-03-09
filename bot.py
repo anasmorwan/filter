@@ -19,6 +19,10 @@ from ai import generate_ai_response
 from buffer import clear_buffer
 from voice import broadcast_ai_response
 from memory import update_student_memory
+
+# تأكد أن voice.py يحتوي على userbot و pytgcalls و start_voice_engine
+from voice import broadcast_ai_response, userbot, pytgcalls, start_voice_engine
+
 # تحميل المتغيرات من ملف .env إذا كان موجوداً
 load_dotenv()
 
@@ -47,13 +51,10 @@ CHAT_ID = int(os.getenv("CHAT_ID"))
 ADMIN_ID = int(os.getenv("ADMIN_ID"))
 
 
-
-
-
 #........  MVP steps ...........
 
 #........جمع الرسائل .........
-def process_message(user, user_id, text, timestamp):
+async def process_message(user, user_id, text, timestamp):
     session = get_session_info()
 
     if not session_is_active():
@@ -91,7 +92,7 @@ def process_message(user, user_id, text, timestamp):
 
         action = decide_next_action([msg])
 
-        handle_action(action, [msg])
+        await handle_action(action, messages) # أضفنا await
 
         return
 
@@ -111,11 +112,11 @@ def process_message(user, user_id, text, timestamp):
 
         action = decide_next_action(messages)
 
-        handle_action(action, messages)
-        
+        await handle_action(action, messages) # أضفنا await
 
 
-def handle_action(action, messages):
+
+async def handle_action(action, messages):
     session = get_session_info()
 
     if action == "WAIT":
@@ -126,8 +127,8 @@ def handle_action(action, messages):
     print(f"\n--- ACTION DECIDED: {action} ---", flush=True)
 
     response = generate_ai_response(action, messages)
-    asyncio.create_task(broadcast_ai_response(response))
-
+    await broadcast_ai_response(response)
+    
     print(f"\n--- AI RESPONSE ---\n{response}", flush=True)
     # حفظ السؤال الحالي
     if action in [
@@ -147,7 +148,7 @@ def handle_action(action, messages):
             print("\n--- Pending questions before closing ---", flush=True)
             # سيعاد توجيهها لـ AI قبل الإغلاق
             for q in pending_questions:
-                handle_action("ANSWER_QUESTION", [q])
+                await handle_action("ANSWER_QUESTION", [q])
         else:
             # لا توجد أسئلة معلقة → أغلق الجلسة
             session["active"] = False
@@ -300,7 +301,7 @@ async def handle_message(client, message):
     timestamp = message.date
     user_id = message.from_user.id
 
-    process_message(user, user_id, text, timestamp)
+    await process_message(user, message.from_user.id, message.text, message.date)
     
 # bot.py
 from flask import Flask
@@ -317,7 +318,19 @@ if __name__ == "__main__":
     from threading import Thread
 
     # تشغيل Flask في Thread منفصل
-    Thread(target=lambda: flask_app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 10000)))).start()
-
+    Thread(target=lambda: flask_app.run(host="0.0.0.0", port=port, use_reloader=False)).start()
+    
     # تشغيل Pyrogram
-    bot_app.run()
+  #  bot_app.run()
+    async def start_all():
+        print("🚀 Starting Bot and Voice Engine...")
+        await bot_app.start()    # تشغيل بوت الأوامر
+        await userbot.start()    # تشغيل حساب المدرس (Userbot)
+        await start_voice_engine() # تشغيل محرك الاتصال الصوتي
+        
+        print("✅ Everything is Online!")
+        await idle() # إبقاء النظام يعمل
+
+    # استخدام loop لتشغيل المهمة الشاملة
+    asyncio.get_event_loop().run_until_complete(start_all())
+
