@@ -63,7 +63,7 @@ async def play_next():
     is_playing = True
 
     text = voice_queue.popleft()
-    audio_file = text_to_speech(text)
+    audio_file = generate_audio_sync(text)
 
     try:
         print(f"🎙️ Playing Audio: {audio_file}")
