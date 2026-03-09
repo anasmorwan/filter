@@ -11,10 +11,9 @@ from collections import deque
 # إعداد Userbot للحساب الشخصي
 # -------------------------
 userbot = Client(
-    "voice_userbot",
-    api_id=int(os.environ.get("TELEGRAM_API_ID")),
-    api_hash=os.environ.get("TELEGRAM_API_HASH"),
-    session_string=os.environ.get("SESSION_STRING")
+    os.environ["SESSION_STRING"],
+    api_id=int(os.environ["TELEGRAM_API_ID"]),
+    api_hash=os.environ["TELEGRAM_API_HASH"]
 )
 
 pytgcalls = PyTgCalls(userbot)
