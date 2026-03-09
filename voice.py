@@ -22,6 +22,8 @@ userbot = Client(
 
 # إنشاء كائن الاتصال الصوتي
 pytgcalls = PyTgCalls(userbot)
+# أضف هذا المتغير في الأعلى للتأكد من حالة التشغيل
+is_engine_ready = False
 
 # -------------------------
 # إعدادات القناة والانتظار
@@ -29,6 +31,8 @@ pytgcalls = PyTgCalls(userbot)
 VOICE_CHAT_ID = int(os.environ.get("CHAT_ID"))
 voice_queue = deque()
 is_playing = False
+
+
 
 def text_to_speech(text, filename="ai_response.wav"):
     tts = gTTS(text=text, lang='en')
@@ -38,29 +42,38 @@ def text_to_speech(text, filename="ai_response.wav"):
     return filename
 
 async def play_next():
-    global is_playing
-    if not voice_queue or is_playing:
-        return
+    global is_playing, is_engine_ready
     
+    # لا تحاول التشغيل إذا لم يكن المحرك جاهزاً أو كان هناك صوت يعمل
+    if not voice_queue or is_playing or not is_engine_ready:
+        return
+
     is_playing = True
     text = voice_queue.popleft()
-    audio_file = text_to_speech(text)
     
     try:
-        # تشغيل الصوت باستخدام المكتبة الحديثة
+        audio_file = text_to_speech(text)
+        print(f"🎙️ Generated Audio: {audio_file}")
+        # أضفه قبل سطر pytgcalls.play
+        await userbot.send_audio(chat_id=VOICE_CHAT_ID, audio=audio_file, caption="DEBUG: AI Voice Test")
+
+
+        # الطريقة الصحيحة للنسخ الحديثة
         await pytgcalls.play(
             VOICE_CHAT_ID,
             MediaStream(audio_file)
         )
         
-        # حساب مدة الملف للانتظار قبل الرسالة التالية
         duration = AudioSegment.from_wav(audio_file).duration_seconds
-        await asyncio.sleep(duration + 0.5)
+        await asyncio.sleep(duration + 1)
+        
     except Exception as e:
-        print(f"Error during playback: {e}")
+        print(f"❌ Error during playback: {e}")
     
     is_playing = False
-    await play_next()
+    # محاولة تشغيل التالي من القائمة
+    asyncio.create_task(play_next()) 
+
 
 async def broadcast_ai_response(response_text):
     voice_queue.append(response_text)
@@ -68,9 +81,10 @@ async def broadcast_ai_response(response_text):
         await play_next()
 
 async def start_voice_engine():
-    # تشغيل محرك المكالمات الصوتي
+    global is_engine_ready
     await pytgcalls.start()
-    print("Voice Engine Started!")
+    is_engine_ready = True  # نغير الحالة هنا فقط بعد الاكتمال
+    print("✅ Voice Engine Started and Ready!")
 
 if __name__ == "__main__":
     async def main():
