@@ -10,10 +10,12 @@ from collections import deque
 # -------------------------
 # إعداد Userbot للحساب الشخصي
 # -------------------------
+session = os.environ.get("SESSION_STRING")
+
 userbot = Client(
-    os.environ["SESSION_STRING"],
-    api_id=int(os.environ["TELEGRAM_API_ID"]),
-    api_hash=os.environ["TELEGRAM_API_HASH"]
+    session,
+    api_id=int(os.environ.get("TELEGRAM_API_ID")),
+    api_hash=os.environ.get("TELEGRAM_API_HASH")
 )
 
 pytgcalls = PyTgCalls(userbot)
