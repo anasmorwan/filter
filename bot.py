@@ -137,6 +137,9 @@ async def handle_action(action, messages):
 
     response = generate_ai_response(action, messages)
     await broadcast_ai_response(response)
+    # ✅ تحديث وقت آخر نطق للبوت لكي يتم تصفير العداد
+    from session import update_ai_timestamp
+    update_ai_timestamp()
     
     print(f"\n--- AI RESPONSE ---\n{response}", flush=True)
     # حفظ السؤال الحالي
