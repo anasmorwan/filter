@@ -1,25 +1,18 @@
-# decision_engine.py
-
 import time
 from collections import Counter
 from session import get_session_info, update_ai_timestamp, get_session_minutes
 
 
-MIN_AI_COOLDOWN = 5      # أقل وقت بين ردود AI
-SILENCE_HINT_TIME = 10  # وقت الصمت قبل إعطاء hint
-NEW_QUESTION_TIME = 25  # وقت تغيير السؤال
+MIN_AI_COOLDOWN = 5
+SILENCE_HINT_TIME = 10
+NEW_QUESTION_TIME = 25
 
-
-COOLDOWN = 8       # فترة منع الرد المتكرر
-SILENCE_LIMIT = 20 # مدة الصمت قبل التدخل
-THRESHOLD = 90     # حد الأولوية للتدخل
-
+COOLDOWN = 8
+SILENCE_LIMIT = 20
+THRESHOLD = 90
 
 
 def analyze_messages(messages):
-    """
-    تحليل الرسائل مع استخدام درجة الثقة
-    """
 
     stats = {
         "total": 0,
@@ -28,7 +21,8 @@ def analyze_messages(messages):
         "short_answers": 0,
         "reactions": 0,
         "confidence_sum": 0,
-        "unique_users": set()
+        "unique_users": set(),
+        "answers_count": 0  # تمت إضافته بدون حذف أي متغير
     }
 
     for m in messages:
@@ -45,9 +39,11 @@ def analyze_messages(messages):
 
         elif msg_type == "answer":
             stats["answers"] += conf
+            stats["answers_count"] += 1
 
         elif msg_type == "short_answer":
             stats["short_answers"] += conf
+            stats["answers_count"] += 1
 
         elif msg_type == "reaction":
             stats["reactions"] += conf
@@ -58,9 +54,6 @@ def analyze_messages(messages):
 
 
 def estimate_confusion(stats):
-    """
-    تقدير مستوى ارتباك الطلاب
-    """
 
     confusion = 0
 
@@ -73,6 +66,9 @@ def estimate_confusion(stats):
     if stats["reactions"] > stats["answers"]:
         confusion += 1
 
+    if stats["answers"] == 0 and stats["questions"] > 0:
+        confusion += 2
+
     return min(confusion, 10)
 
 
@@ -80,36 +76,36 @@ def calculate_priority(stats, session, time_since_ai):
 
     score = 0
 
-    # --- الصمت ---
+    # الصمت
     if stats["total"] == 0:
         score += (time_since_ai / SILENCE_LIMIT) * 120
 
-    # --- الأسئلة ---
-    score += stats["questions"] * 40
+    # الأسئلة أهم شيء في الحصة
+    score += stats["questions"] * 50
 
-    # --- الإجابات ---
-    score += stats["answers"] * 20
+    # الإجابات
+    score += stats["answers"] * 25
 
-    # --- ردود قصيرة ---
-    score += stats["short_answers"] * 10
+    # الردود القصيرة
+    score += stats["short_answers"] * 15
 
-    # --- تفاعل سطحي يقلل الأولوية ---
-    score -= stats["reactions"] * 10
+    # التفاعل السطحي يقلل تدخل AI
+    score -= stats["reactions"] * 5
 
-    # --- نشاط الطلاب ---
+    # نشاط الطلاب
     if stats["unique_users"] >= 3:
-        score -= 20
+        score -= 25
 
-    # --- تقدم الموضوع ---
+    # تقدم الموضوع
     progress = session.get("topic_progress", 0)
-    score += progress * 0.5
+    score += progress * 0.4
 
-    # --- ارتباك الطلاب ---
+    # ارتباك الطلاب
     confusion = session.get("student_confusion", 0)
     score += confusion * 12
 
-    # --- مرور الوقت ---
-    score += time_since_ai * 1.3
+    # مرور الوقت
+    score += min(time_since_ai * 1.3, 60)
 
     return score
 
@@ -117,23 +113,30 @@ def calculate_priority(stats, session, time_since_ai):
 def decide_next_action(messages):
 
     session = get_session_info()
-    stage = session["stage"]
+
+    stage = session.get("stage", "INTRO")
+    conversation_stage = session.get("conversation_stage", "DISCUSSION")
+
     session_minutes = get_session_minutes()
+
     now = time.time()
-    time_since_ai = now - session["last_ai_message"]
+
+    # حماية من last_ai_message غير المهيأ
+    last_ai = session.get("last_ai_message", now)
+
+    time_since_ai = now - last_ai
+    time_since_ai = max(0, min(time_since_ai, 120))
 
     if time_since_ai < COOLDOWN:
         return "WAIT"
 
     stats = analyze_messages(messages)
 
-    # تقدير ارتباك الطلاب
     confusion = estimate_confusion(stats)
     session["student_confusion"] = confusion
 
     priority = calculate_priority(stats, session, time_since_ai)
 
-    stage = session.get("conversation_stage", "DISCUSSION")
     progress = session.get("topic_progress", 0)
 
     print(
@@ -149,6 +152,9 @@ def decide_next_action(messages):
 
     update_ai_timestamp()
 
+    # --------------------------------
+    # مراحل الدرس
+    # --------------------------------
 
     if stage == "INTRO":
         session["stage"] = "WARMUP"
@@ -157,67 +163,86 @@ def decide_next_action(messages):
     if stage == "WARMUP" and stats["answers"] >= 2:
         session["stage"] = "DISCUSSION"
 
+    # --------------------------------
+    # صمت في الصف
+    # --------------------------------
 
     if stats["total"] == 0:
-        return "WAKE_UP_SESSION"
 
-    if stats["answers"] >= 3:
-        session["current_question"] = None
+        if time_since_ai > SILENCE_LIMIT:
+            return "WAKE_UP_SESSION"
 
+        return "WAIT"
+
+    # --------------------------------
+    # أسئلة الطلاب
+    # --------------------------------
 
     if stats["questions"] > 0 and stats["answers"] == 0:
         return "ANSWER_QUESTION"
 
-
     if stats["questions"] > 0 and stats["answers"] > 0:
         return "EVALUATE_STUDENT_ANSWERS"
 
-    if session["current_question"]:
+    # --------------------------------
+    # متابعة السؤال الحالي
+    # --------------------------------
+
+    if session.get("current_question"):
 
         if stats["answers_count"] >= 3:
+            session["current_question"] = None
             return "GIVE_FEEDBACK_ON_ANSWERS"
 
+    # --------------------------------
+    # توسيع النقاش
+    # --------------------------------
 
     if stats["answers"] >= 2 and progress < 40:
+        session["topic_progress"] = progress + 5
         return "ASK_FOLLOWUP"
 
-
     if stats["answers"] >= 2 and progress < 60:
-        session["topic_progress"] += 10
+        session["topic_progress"] = progress + 10
         return "ENCOURAGE_DISCUSSION"
 
+    # --------------------------------
+    # الطلاب مرتبكون
+    # --------------------------------
 
     if stats["short_answers"] > stats["answers"]:
         return "GIVE_HINT"
 
+    # --------------------------------
+    # تلخيص النقاش
+    # --------------------------------
 
     if progress >= 60 and stats["answers"] >= 3:
         session["conversation_stage"] = "SUMMARY"
         return "SUMMARIZE_DISCUSSION"
 
-    if stage == "DISCUSSION" and session["topic_progress"] >= 60:
-        session["stage"] = "SUMMARY"
-        return "SUMMARIZE_DISCUSSION"
-
-
-
-    if stage == "SUMMARY":
+    if conversation_stage == "SUMMARY":
         session["stage"] = "WARMUP"
         session["topic_progress"] = 0
+        session["conversation_stage"] = "DISCUSSION"
         return "ASK_NEW_TOPIC_QUESTION"
 
+    # --------------------------------
+    # نهاية الدرس
+    # --------------------------------
 
     if session_minutes > 70:
         return "OUTRO_LESSON"
 
-    # ----- منطق نهاية الدرس -----
-    if session_minutes > 50 or session["topic_progress"] >= 80:
-        # إذا هناك أسئلة معلقة → الرد عليها قبل الإغلاق
+    if session_minutes > 50 or progress >= 80:
+
         if stats["questions"] > 0:
             return "ANSWER_QUESTION"
-        else:
-            return "LESSON_WRAPPING_UP"
 
+        return "LESSON_WRAPPING_UP"
 
+    # --------------------------------
+    # تعليق عام
+    # --------------------------------
 
     return "GENERAL_COMMENT"
