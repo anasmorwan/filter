@@ -5,7 +5,7 @@ from collections import deque
 import time
 import logging
 logging.basicConfig(level=logging.INFO)
-
+import asyncio
 
 
 from dotenv import load_dotenv # اختياري إذا كنت تستخدم ملف .env
