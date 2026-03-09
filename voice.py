@@ -32,15 +32,20 @@ is_playing = False
 # ✅ توليد الصوت وتحويله لـ WAV النقي لضمان استقرار البث
 def generate_audio_sync(text, filename="ai_response.wav"):
     try:
-        # توليد الصوت بصيغة mp3 مؤقتة
-        tts = gTTS(text=text, lang='en')
+        tts = gTTS(text=text, lang="en")
         tts.save("temp.mp3")
-        
-        # التحويل الإجباري لـ wav لتجنب صمت الغرفة الصوتية
+
         audio = AudioSegment.from_mp3("temp.mp3")
+
+        audio = audio.set_frame_rate(48000)
+        audio = audio.set_channels(2)
+        audio = audio.set_sample_width(2)
+
         audio.export(filename, format="wav")
+
         duration = audio.duration_seconds
         return filename, duration
+
     except Exception as e:
         print(f"TTS Error: {e}")
         return None, 0
@@ -100,10 +105,10 @@ async def start_voice_engine():
 
     print("Joining voice chat...")
 
-    await pytgcalls.join_group_call(
+    await pytgcalls.play(
         VOICE_CHAT_ID,
-        MediaStream(None)   # دخول بدون صوت
-    )
+        MediaStream(audio_file)
+        )
 
     is_engine_ready = True
     print("✅ Voice Engine Started and Joined Voice Chat")
