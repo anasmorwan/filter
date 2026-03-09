@@ -14,7 +14,6 @@ session = os.environ.get("SESSION_STRING")
 
 userbot = Client(
     "my_account", # اسم الجلسة
-    session_string=session, # استخدام string بشكل صحيح لـ Pyrogram v2
     api_id=int(os.environ.get("TELEGRAM_API_ID")),
     api_hash=os.environ.get("TELEGRAM_API_HASH")
 )
