@@ -6,7 +6,7 @@ from pytgcalls.types import MediaStream
 from gtts import gTTS
 from pydub import AudioSegment
 from collections import deque
-
+from pytgcalls.types.input_stream import AudioPiped
 # -------------------------
 # إعداد Userbot (حساب المدرس)
 # -------------------------
@@ -67,10 +67,13 @@ async def play_next():
         # ✅ تم حذف سطر send_audio الذي كان يسبب خروج الحساب
 
         # بث الصوت مباشرة للمحادثة الصوتية
-        await pytgcalls.play(
+        
+
+        await pytgcalls.change_stream(
             VOICE_CHAT_ID,
-            MediaStream(audio_file)
+            AudioPiped(audio_file)
         )
+        
         
         # الانتظار حتى ينتهي المدرس من التحدث
         await asyncio.sleep(duration + 1.0)
@@ -89,11 +92,21 @@ async def broadcast_ai_response(response_text):
     if not is_playing:
         await play_next()
 
+
 async def start_voice_engine():
     global is_engine_ready
+
     await pytgcalls.start()
-    is_engine_ready = True  
-    print("✅ Voice Engine Started and Ready!")
+
+    print("Joining voice chat...")
+
+    await pytgcalls.join_group_call(
+        VOICE_CHAT_ID,
+        AudioPiped("silence.wav")  # ملف صامت صغير
+    )
+
+    is_engine_ready = True
+    print("✅ Voice Engine Ready and Joined Voice Chat")
 
 if __name__ == "__main__":
     async def main():
