@@ -1,7 +1,7 @@
-pyrogram==1.4.16
+pyrogram
 tgcrypto
 
-pyrofork
+py-tgcalls
 
 
 gTTS
