@@ -403,7 +403,7 @@ if __name__ == "__main__":
 
     # تشغيل Pyrogram
   #  bot_app.run()
-        async def start_all():
+    async def start_all():
         print("🚀 [STARTUP] Starting Bot and Voice Engine...")
         
         await bot_app.start()    # 1. تشغيل بوت الأوامر أولاً
