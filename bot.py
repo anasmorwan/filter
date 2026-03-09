@@ -6,7 +6,7 @@ import time
 import logging
 logging.basicConfig(level=logging.INFO)
 import asyncio
-
+from pyrogram import Client, idle
 
 from dotenv import load_dotenv # اختياري إذا كنت تستخدم ملف .env
 # from queue_manager import check_message_window,  process_message_window
