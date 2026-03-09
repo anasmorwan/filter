@@ -53,7 +53,7 @@ async def play_next():
     await pytgcalls.change_stream(
         VOICE_CHAT_ID,
         MediaStream(audio_file))
-    )
+    
     # طول الملف تقريبي، انتظر ثم شغل التالي
     duration = AudioSegment.from_wav(audio_file).duration_seconds
     await asyncio.sleep(duration + 0.5)
