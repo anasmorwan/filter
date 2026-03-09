@@ -76,6 +76,7 @@ async def play_next():
 
 
 async def broadcast_ai_response(response_text):
+    print(f"📢 Voice system received text: {response_text}...")
     voice_queue.append(response_text)
     if not is_playing:
         await play_next()
@@ -85,6 +86,9 @@ async def start_voice_engine():
     await pytgcalls.start()
     is_engine_ready = True  # نغير الحالة هنا فقط بعد الاكتمال
     print("✅ Voice Engine Started and Ready!")
+    
+
+    # ... بقية الكود
 
 if __name__ == "__main__":
     async def main():
