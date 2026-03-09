@@ -120,13 +120,6 @@ def handle_action(action, messages):
     if action == "WAIT":
         return
 
-    # حفظ السؤال الحالي
-    if action in [
-        "INTRO_LESSON",
-        "ASK_NEW_TOPIC_QUESTION",
-        "ASK_FOLLOWUP"
-    ]:
-        session["current_question"] = response
 
 
     print(f"\n--- ACTION DECIDED: {action} ---", flush=True)
@@ -135,6 +128,14 @@ def handle_action(action, messages):
     asyncio.create_task(broadcast_ai_response(response))
 
     print(f"\n--- AI RESPONSE ---\n{response}", flush=True)
+    # حفظ السؤال الحالي
+    if action in [
+        "INTRO_LESSON",
+        "ASK_NEW_TOPIC_QUESTION",
+        "ASK_FOLLOWUP"
+    ]:
+        session["current_question"] = response
+
 
 
     # إذا كان انتهاء الدرس
