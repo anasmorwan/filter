@@ -56,6 +56,8 @@ ADMIN_ID = int(os.getenv("ADMIN_ID"))
 #........جمع الرسائل .........
 async def process_message(user, user_id, text, timestamp):
     session = get_session_info()
+    messages = pop_window_messages()
+
 
     if not session_is_active():
         return
@@ -115,7 +117,7 @@ async def process_message(user, user_id, text, timestamp):
         if not messages:
             return
 
-        action = decide_next_action(messages)
+        action = decide_next_action([msg])
 
         await handle_action(action, [msg]) # أضفنا await
 
