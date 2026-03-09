@@ -60,8 +60,11 @@ async def process_message(user, user_id, text, timestamp):
     if not session_is_active():
         return
 
+    
     if not should_store_message(text, user_id):
         return
+
+    print("Filter check:", text, user_id, flush=True)
 
     # تصنيف الرسالة
     msg_type, confidence = classify_message(text)
@@ -93,7 +96,7 @@ async def process_message(user, user_id, text, timestamp):
 
         action = decide_next_action([msg])
 
-        await handle_action(action, messages) # أضفنا await
+        await handle_action(action, [msg]) # أضفنا await
 
         return
 
@@ -113,7 +116,7 @@ async def process_message(user, user_id, text, timestamp):
 
         action = decide_next_action(messages)
 
-        await handle_action(action, messages) # أضفنا await
+        await handle_action(action, [msg]) # أضفنا await
 
 
 
