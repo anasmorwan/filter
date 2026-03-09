@@ -1,7 +1,7 @@
 pyrogram
 tgcrypto
 
-py-tgcalls
+Pyrofork
 
 
 gTTS
