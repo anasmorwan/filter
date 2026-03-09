@@ -1,6 +1,7 @@
 import os
 import asyncio
-from pyrogram import Client
+# ملاحظة: pyrofork تعمل بنفس اسم استدعاء pyrogram تماماً
+from pyrogram import Client, idle 
 from pytgcalls import PyTgCalls
 from pytgcalls.types import MediaStream
 from gtts import gTTS
@@ -8,32 +9,27 @@ from pydub import AudioSegment
 from collections import deque
 
 # -------------------------
-# إعداد Userbot للحساب الشخصي
+# إعداد Userbot (حساب المدرس)
 # -------------------------
-SESSION = os.environ.get("SESSION_STRING")
+session_str = os.environ.get("SESSION_STRING")
 
 userbot = Client(
-    SESSION,
+    "teacher_account",
+    session_string=session_str,
     api_id=int(os.environ.get("TELEGRAM_API_ID")),
     api_hash=os.environ.get("TELEGRAM_API_HASH")
 )
 
+# إنشاء كائن الاتصال الصوتي
 pytgcalls = PyTgCalls(userbot)
 
 # -------------------------
-# إعداد القناة/المجموعة
+# إعدادات القناة والانتظار
 # -------------------------
 VOICE_CHAT_ID = int(os.environ.get("CHAT_ID"))
-
-# -------------------------
-# قائمة انتظار للردود الصوتية
-# -------------------------
 voice_queue = deque()
 is_playing = False
 
-# -------------------------
-# تحويل النص إلى ملف صوت
-# -------------------------
 def text_to_speech(text, filename="ai_response.wav"):
     tts = gTTS(text=text, lang='en')
     tts.save("temp.mp3")
@@ -41,68 +37,46 @@ def text_to_speech(text, filename="ai_response.wav"):
     audio.export(filename, format="wav")
     return filename
 
-# -------------------------
-# تشغيل الصوت في الغرفة الصوتية
-# -------------------------
 async def play_next():
     global is_playing
     if not voice_queue or is_playing:
         return
+    
     is_playing = True
     text = voice_queue.popleft()
     audio_file = text_to_speech(text)
     
-    # استخدام play إذا لم يكن هناك شيء يعمل، أو change_stream إذا كان يعمل
-    # للموثوقية، نستخدم play دائماً هنا لأننا ننتظر انتهاء الملف
-    await pytgcalls.play(
-        VOICE_CHAT_ID,
-        MediaStream(audio_file)
-    )
+    try:
+        # تشغيل الصوت باستخدام المكتبة الحديثة
+        await pytgcalls.play(
+            VOICE_CHAT_ID,
+            MediaStream(audio_file)
+        )
+        
+        # حساب مدة الملف للانتظار قبل الرسالة التالية
+        duration = AudioSegment.from_wav(audio_file).duration_seconds
+        await asyncio.sleep(duration + 0.5)
+    except Exception as e:
+        print(f"Error during playback: {e}")
     
-    # طول الملف تقريبي، انتظر ثم شغل التالي
-    duration = AudioSegment.from_wav(audio_file).duration_seconds
-    await asyncio.sleep(duration + 0.5)
     is_playing = False
-    
-    # تشغيل الرسالة التالية إن وجدت
     await play_next()
 
-# -------------------------
-# إضافة نص جديد للبث الصوتي
-# -------------------------
-async def enqueue_text(text):
-    voice_queue.append(text)
+async def broadcast_ai_response(response_text):
+    voice_queue.append(response_text)
     if not is_playing:
         await play_next()
 
-# -------------------------
-# الانضمام للغرفة الصوتية
-# -------------------------
-async def join_voice_chat():
+async def start_voice_engine():
+    # تشغيل محرك المكالمات الصوتي
     await pytgcalls.start()
-    print("PyTgCalls Started and ready to join voice chats!")
-    # لا داعي لتشغيل ملف وهمي هنا، دع play_next تتولى الأمر عند وصول أول رسالة
+    print("Voice Engine Started!")
 
-# -------------------------
-# مثال على استقبال الرد من AI
-# -------------------------
-async def broadcast_ai_response(response_text):
-    """
-    استدعاء هذا من bot.py بعد توليد رد AI
-    """
-    await enqueue_text(response_text)
-
-# -------------------------
-# تشغيل Userbot
-# -------------------------
 if __name__ == "__main__":
     async def main():
         await userbot.start()
-        print("Userbot started")
-        await join_voice_chat()
-        
-        # إبقاء السكريبت يعمل
-        from pyrogram import idle
-        await idle()
+        await start_voice_engine()
+        print("Teacher Bot is Online in Voice Chat...")
+        await idle() # إبقاء البوت يعمل
 
     asyncio.run(main())
