@@ -279,7 +279,7 @@ async def where(client, message):
 
 
 
-@bot_app.on_message(filters.command("get_vc_id") & filters.user(your_user_id))
+@bot_app.on_message(filters.command("get_vc_id") & filters.user(ADMIN_ID))
 async def get_vc_id_handler(client: Client, message: Message):
     """
     استخدام: /get_vc_id اسم_المجموعة
