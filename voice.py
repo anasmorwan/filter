@@ -2,8 +2,7 @@ import os
 import asyncio
 from pyrogram import Client
 from pytgcalls import PyTgCalls
-from pytgcalls.types.input_stream import InputAudioStream
-from pytgcalls.types.input_stream.audio import AudioPiped
+from pytgcalls.types import MediaStream
 from gtts import gTTS
 from pydub import AudioSegment
 from collections import deque
@@ -53,7 +52,7 @@ async def play_next():
     audio_file = text_to_speech(text)
     await pytgcalls.change_stream(
         VOICE_CHAT_ID,
-        InputAudioStream(AudioPiped(audio_file))
+        MediaStream(audio_file))
     )
     # طول الملف تقريبي، انتظر ثم شغل التالي
     duration = AudioSegment.from_wav(audio_file).duration_seconds
@@ -73,10 +72,7 @@ async def enqueue_text(text):
 # -------------------------
 async def join_voice_chat():
     await pytgcalls.start()
-    await pytgcalls.join_group_call(
-        VOICE_CHAT_ID,
-        InputAudioStream(AudioPiped("silence.wav"))  # صوت صامت للبدء
-    )
+    await call.play(chat_id, MediaStream("audio_file.mp3"))
     print("Joined voice chat!")
 
 # -------------------------
