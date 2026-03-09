@@ -13,7 +13,8 @@ from collections import deque
 session = os.environ.get("SESSION_STRING")
 
 userbot = Client(
-    session,
+    "my_account", # اسم الجلسة
+    session_string=session, # استخدام string بشكل صحيح لـ Pyrogram v2
     api_id=int(os.environ.get("TELEGRAM_API_ID")),
     api_hash=os.environ.get("TELEGRAM_API_HASH")
 )
@@ -51,14 +52,20 @@ async def play_next():
     is_playing = True
     text = voice_queue.popleft()
     audio_file = text_to_speech(text)
-    await pytgcalls.change_stream(
+    
+    # استخدام play إذا لم يكن هناك شيء يعمل، أو change_stream إذا كان يعمل
+    # للموثوقية، نستخدم play دائماً هنا لأننا ننتظر انتهاء الملف
+    await pytgcalls.play(
         VOICE_CHAT_ID,
-        MediaStream(audio_file))
+        MediaStream(audio_file)
+    )
     
     # طول الملف تقريبي، انتظر ثم شغل التالي
     duration = AudioSegment.from_wav(audio_file).duration_seconds
     await asyncio.sleep(duration + 0.5)
     is_playing = False
+    
+    # تشغيل الرسالة التالية إن وجدت
     await play_next()
 
 # -------------------------
@@ -66,15 +73,16 @@ async def play_next():
 # -------------------------
 async def enqueue_text(text):
     voice_queue.append(text)
-    await play_next()
+    if not is_playing:
+        await play_next()
 
 # -------------------------
 # الانضمام للغرفة الصوتية
 # -------------------------
 async def join_voice_chat():
     await pytgcalls.start()
-    await call.play(chat_id, MediaStream("audio_file.mp3"))
-    print("Joined voice chat!")
+    print("PyTgCalls Started and ready to join voice chats!")
+    # لا داعي لتشغيل ملف وهمي هنا، دع play_next تتولى الأمر عند وصول أول رسالة
 
 # -------------------------
 # مثال على استقبال الرد من AI
@@ -93,8 +101,9 @@ if __name__ == "__main__":
         await userbot.start()
         print("Userbot started")
         await join_voice_chat()
-        # هنا يمكن تجربة إرسال نص
-        # await broadcast_ai_response("Hello students! Let's start the lesson.")
-        await asyncio.get_event_loop().create_future()  # keep running
+        
+        # إبقاء السكريبت يعمل
+        from pyrogram import idle
+        await idle()
 
     asyncio.run(main())
