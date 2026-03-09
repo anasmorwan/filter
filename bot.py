@@ -116,6 +116,7 @@ def process_message(user, user_id, text, timestamp):
 
 
 def handle_action(action, messages):
+    session = get_session_info()
 
     if action == "WAIT":
         return
