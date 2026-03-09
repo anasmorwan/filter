@@ -18,7 +18,7 @@ from decision_engine import decide_next_action
 from ai import generate_ai_response
 from buffer import clear_buffer
 from voice import broadcast_ai_response
-
+from memory.py import update_student_memory
 # تحميل المتغيرات من ملف .env إذا كان موجوداً
 load_dotenv()
 
