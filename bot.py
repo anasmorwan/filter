@@ -89,6 +89,7 @@ async def process_message(user, user_id, text, timestamp):
 
     # --- معالجة فورية للأسئلة ---
     if msg_type == "question":
+        messages = pop_window_messages()
 
         action = decide_next_action([msg])
 
