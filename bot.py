@@ -62,10 +62,10 @@ async def process_message(user, user_id, text, timestamp):
 
     
     if not should_store_message(text, user_id):
+        print("Filter check:", text, user_id, flush=True)
         return
 
-    print("Filter check:", text, user_id, flush=True)
-
+    
     # تصنيف الرسالة
     msg_type, confidence = classify_message(text)
 
