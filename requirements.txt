@@ -1,16 +1,12 @@
-pyrogram==2.0.106
+pyrogram==1.4.16
 tgcrypto
 
-# AI
-openai
-groq
-python-dotenv
+pytgcalls==3.0.0.dev6
 
-# Web server
-flask
-
-# Text-to-Speech
 gTTS
 pydub
 
-py-tgcalls
+openai
+groq
+python-dotenv
+flask
