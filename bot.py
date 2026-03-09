@@ -107,7 +107,7 @@ async def process_message(user, user_id, text, timestamp):
 
 
     # --- معالجة window ---
-    print("WINDOW SIZE:", len(message_window))
+    print("WINDOW SIZE:", len(messages))
     if should_process_window():
 
         messages = pop_window_messages()
