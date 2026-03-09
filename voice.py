@@ -55,45 +55,34 @@ def generate_audio_sync(text, filename="ai_response.wav"):
         return None, 0
 
 async def play_next():
-    global is_playing, is_engine_ready
-    
-    if not voice_queue or is_playing or not is_engine_ready:
+    global is_playing
+
+    if not voice_queue or is_playing:
         return
 
     is_playing = True
+
     text = voice_queue.popleft()
-    
+    audio_file = text_to_speech(text)
+
     try:
-        print(f"⏳ Generating clean WAV audio for: {text[:30]}...")
-        # معالجة الصوت في الخلفية لكي لا ينقطع اتصال تيليجرام
-        audio_file, duration = await asyncio.to_thread(generate_audio_sync, text)
-        
-        if not audio_file:
-            raise Exception("Audio generation failed")
+        print(f"🎙️ Playing Audio: {audio_file}")
 
-        print(f"🎙️ Playing Audio: {audio_file} | Duration: {duration}s")
-        
-        # ✅ تم حذف سطر send_audio الذي كان يسبب خروج الحساب
-
-        # بث الصوت مباشرة للمحادثة الصوتية
-        
-
-        await pytgcalls.change_stream(
+        await pytgcalls.play(
             VOICE_CHAT_ID,
             MediaStream(audio_file)
         )
-        
-        
-        # الانتظار حتى ينتهي المدرس من التحدث
-        await asyncio.sleep(duration + 1.0)
-        
+
+        duration = AudioSegment.from_wav(audio_file).duration_seconds
+        await asyncio.sleep(duration + 1)
+
     except Exception as e:
         print(f"❌ Error during playback: {e}")
-    
+
     is_playing = False
-    
-    # محاولة تشغيل الرسالة التالية إذا كان هناك نقاش مستمر
-    asyncio.create_task(play_next()) 
+
+    await play_next()
+
 
 async def broadcast_ai_response(response_text):
     print(f"📢 Voice system queued text: {response_text[:40]}...")
