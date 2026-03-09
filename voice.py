@@ -29,6 +29,10 @@ VOICE_CHAT_ID = int(os.environ.get("CHAT_ID"))
 voice_queue = deque()
 is_playing = False
 
+def create_silence():
+    silence = AudioSegment.silent(duration=1000)  # 1 second
+    silence.export("silence.wav", format="wav")
+    
 # ✅ توليد الصوت وتحويله لـ WAV النقي لضمان استقرار البث
 def generate_audio_sync(text, filename="ai_response.wav"):
     try:
@@ -105,14 +109,17 @@ async def start_voice_engine():
 
     print("Joining voice chat...")
 
+    create_silence()
+
     await pytgcalls.play(
         VOICE_CHAT_ID,
-        MediaStream(audio_file)
-        )
+        MediaStream("silence.wav")
+    )
 
     is_engine_ready = True
     print("✅ Voice Engine Started and Joined Voice Chat")
     
+
 if __name__ == "__main__":
     async def main():
         await userbot.start()
