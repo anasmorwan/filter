@@ -123,8 +123,7 @@ async def process_message(user, user_id, text, timestamp):
 
         await handle_action(action, [msg]) # أضفنا await
 
-
-
+    
 async def handle_action(action, messages):
     session = get_session_info()
 
@@ -140,6 +139,7 @@ async def handle_action(action, messages):
     # ✅ تحديث وقت آخر نطق للبوت لكي يتم تصفير العداد
     from session import update_ai_timestamp
     update_ai_timestamp()
+    print("✅ AI responded and timer reset.", flush=True)
     
     print(f"\n--- AI RESPONSE ---\n{response}", flush=True)
     # حفظ السؤال الحالي
@@ -189,35 +189,40 @@ def handle_action(action, messages):
         """
 # --- القلب النابض للنظام (The Heartbeat) ---
 async def heartbeat_loop():
-    print("💓 Heartbeat started...", flush=True)
-    from session import get_silence_duration, get_session_info
-    
-    # حد أقصى للصمت (20 ثانية مثلاً، يمكنك تقليلها أو زيادتها)
-    MAX_SILENCE_SECONDS = 10 
+    # تأخير بسيط للتأكد من أن كل شيء اشتغل أولاً
+    await asyncio.sleep(10) 
+    print("💓 [HEARTBEAT] System is now ACTIVE and monitoring...")
+
+    from session import get_silence_duration, get_session_info, session_is_active
+    from buffer import pop_window_messages
+
+    MAX_SILENCE_SECONDS = 10 # زدنا الوقت قليلاً للتجربة
 
     while True:
-        await asyncio.sleep(5) # يفحص الوضع كل 5 ثواني
-        
-        session = get_session_info()
-        if not session_is_active():
-            continue # إذا الجلسة مغلقة، لا تفعل شيئاً
+        try:
+            await asyncio.sleep(5) # يفحص كل 5 ثواني
             
-        silence_time = get_silence_duration()
-        
-        # إذا تجاوز الصمت الحد المسموح
-        if silence_time > MAX_SILENCE_SECONDS:
-            print(f"\n⚠️ DEAD AIR DETECTED! AI hasn't spoken for {int(silence_time)}s.", flush=True)
-            print("🚀 Triggering proactive action...", flush=True)
-            
-            # جلب أي رسائل عالقة في المخزن (إن وجدت)
-            messages = pop_window_messages()
-            
-            if messages:
-                # إذا كان هناك طلاب يتحدثون لكن البوت كان صامتاً، اجعله يقيم حديثهم
-                await handle_action("EVALUATE_STUDENT_ANSWERS", messages)
-            else:
-                # إذا كانت الغرفة صامتة تماماً (لا أحد يكتب)، اجعله يبادر بكسر الجليد
-                await handle_action("WAKE_UP_SESSION", [])
+            if not session_is_active():
+                # print("💓 [HEARTBEAT] Session inactive, skipping...") # اختيارية لتجنب إزعاج اللوج
+                continue
+                
+            silence_time = get_silence_duration()
+            print(f"💓 [HEARTBEAT] Silence duration: {int(silence_time)}s")
+
+            if silence_time > MAX_SILENCE_SECONDS:
+                print(f"🚨 [HEARTBEAT] Threshold reached ({MAX_SILENCE_SECONDS}s)! Activating AI...")
+                
+                messages = pop_window_messages()
+                
+                if messages:
+                    print(f"💓 [HEARTBEAT] Found {len(messages)} pending messages. Evaluating...")
+                    await handle_action("EVALUATE_STUDENT_ANSWERS", messages)
+                else:
+                    print("💓 [HEARTBEAT] Dead air detected. Waking up session...")
+                    await handle_action("WAKE_UP_SESSION", [])
+                    
+        except Exception as e:
+            print(f"❌ [HEARTBEAT ERROR]: {e}")
 
 
 # ............. Handlers and commands........
@@ -398,14 +403,20 @@ if __name__ == "__main__":
 
     # تشغيل Pyrogram
   #  bot_app.run()
-    async def start_all():
-        print("🚀 Starting Bot and Voice Engine...")
-        await bot_app.start()    # تشغيل بوت الأوامر
-        await userbot.start()    # تشغيل حساب المدرس (Userbot)
-        await start_voice_engine() # تشغيل محرك الاتصال الصوتي
+        async def start_all():
+        print("🚀 [STARTUP] Starting Bot and Voice Engine...")
         
-        print("✅ Everything is Online!")
-        await idle() # إبقاء النظام يعمل
+        await bot_app.start()    # 1. تشغيل بوت الأوامر أولاً
+        await userbot.start()    # 2. تشغيل حساب المدرس
+        await start_voice_engine() # 3. تشغيل محرك الصوت
+        
+        print("✅ [STARTUP] Everything is Online!")
+
+        # الآن نشغل النبض بعد التأكد من أن كل المحركات تعمل
+        asyncio.create_task(heartbeat_loop())
+        print("💓 [STARTUP] Heartbeat Task Created.")
+
+        await idle() 
 
     # استخدام loop لتشغيل المهمة الشاملة
     asyncio.get_event_loop().run_until_complete(start_all())
