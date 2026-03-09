@@ -1,12 +1,8 @@
-pyrogram
+pyrofork
 tgcrypto
-
-Pyrofork
-
-
+py-tgcalls
 gTTS
 pydub
-
 openai
 groq
 python-dotenv
