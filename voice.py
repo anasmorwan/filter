@@ -29,15 +29,16 @@ VOICE_CHAT_ID = int(os.environ.get("CHAT_ID"))
 voice_queue = deque()
 is_playing = False
 
-# ✅ تعديل 1: دمج التوليد وحساب المدة في دالة واحدة، واستخدام mp3 لسرعة أكبر
-def generate_audio_sync(text, filename="ai_response.mp3"):
+# ✅ توليد الصوت وتحويله لـ WAV النقي لضمان استقرار البث
+def generate_audio_sync(text, filename="ai_response.wav"):
     try:
-        # توليد الصوت من جوجل
+        # توليد الصوت بصيغة mp3 مؤقتة
         tts = gTTS(text=text, lang='en')
-        tts.save(filename)
+        tts.save("temp.mp3")
         
-        # حساب مدة الملف (بدون تحويل إلى wav لتوفير المعالجة)
-        audio = AudioSegment.from_mp3(filename)
+        # التحويل الإجباري لـ wav لتجنب صمت الغرفة الصوتية
+        audio = AudioSegment.from_mp3("temp.mp3")
+        audio.export(filename, format="wav")
         duration = audio.duration_seconds
         return filename, duration
     except Exception as e:
@@ -54,33 +55,32 @@ async def play_next():
     text = voice_queue.popleft()
     
     try:
-        # ✅ تعديل 2: السر هنا! تشغيل التحويل في مسار خلفي لكي لا يتجمد البوت
-        print(f"⏳ Generating audio in background for: {text[:30]}...")
+        print(f"⏳ Generating clean WAV audio for: {text[:30]}...")
+        # معالجة الصوت في الخلفية لكي لا ينقطع اتصال تيليجرام
         audio_file, duration = await asyncio.to_thread(generate_audio_sync, text)
         
         if not audio_file:
             raise Exception("Audio generation failed")
 
-        print(f"🎙️ Generated Audio: {audio_file} | Duration: {duration}s")
+        print(f"🎙️ Playing Audio: {audio_file} | Duration: {duration}s")
         
-        # يمكنك ترك هذه الرسالة للتأكد، أو إزالتها لاحقاً
-        await userbot.send_audio(chat_id=VOICE_CHAT_ID, audio=audio_file, caption="DEBUG: AI Voice Ready")
+        # ✅ تم حذف سطر send_audio الذي كان يسبب خروج الحساب
 
-        # تشغيل الصوت في المحادثة
+        # بث الصوت مباشرة للمحادثة الصوتية
         await pytgcalls.play(
             VOICE_CHAT_ID,
             MediaStream(audio_file)
         )
         
-        # الانتظار حتى ينتهي الملف الصوتي
-        await asyncio.sleep(duration + 1.5)
+        # الانتظار حتى ينتهي المدرس من التحدث
+        await asyncio.sleep(duration + 1.0)
         
     except Exception as e:
         print(f"❌ Error during playback: {e}")
     
     is_playing = False
     
-    # تشغيل التالي إذا وجد
+    # محاولة تشغيل الرسالة التالية إذا كان هناك نقاش مستمر
     asyncio.create_task(play_next()) 
 
 async def broadcast_ai_response(response_text):
