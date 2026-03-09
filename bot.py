@@ -191,7 +191,7 @@ def handle_action(action, messages):
 async def heartbeat_loop():
     # تأخير بسيط للتأكد من أن كل شيء اشتغل أولاً
     await asyncio.sleep(10) 
-    print("💓 [HEARTBEAT] System is now ACTIVE and monitoring...")
+    print("💓 [HEARTBEAT] System is now ACTIVE and monitoring...", flush=True)
 
     from session import get_silence_duration, get_session_info, session_is_active
     from buffer import pop_window_messages
@@ -207,22 +207,22 @@ async def heartbeat_loop():
                 continue
                 
             silence_time = get_silence_duration()
-            print(f"💓 [HEARTBEAT] Silence duration: {int(silence_time)}s")
+            print(f"💓 [HEARTBEAT] Silence duration: {int(silence_time)}s", flush=True)
 
             if silence_time > MAX_SILENCE_SECONDS:
-                print(f"🚨 [HEARTBEAT] Threshold reached ({MAX_SILENCE_SECONDS}s)! Activating AI...")
+                print(f"🚨 [HEARTBEAT] Threshold reached ({MAX_SILENCE_SECONDS}s)! Activating AI...", flush=True)
                 
                 messages = pop_window_messages()
                 
                 if messages:
-                    print(f"💓 [HEARTBEAT] Found {len(messages)} pending messages. Evaluating...")
+                    print(f"💓 [HEARTBEAT] Found {len(messages)} pending messages. Evaluating...", flush=True)
                     await handle_action("EVALUATE_STUDENT_ANSWERS", messages)
                 else:
-                    print("💓 [HEARTBEAT] Dead air detected. Waking up session...")
+                    print("💓 [HEARTBEAT] Dead air detected. Waking up session...", flush=True)
                     await handle_action("WAKE_UP_SESSION", [])
                     
         except Exception as e:
-            print(f"❌ [HEARTBEAT ERROR]: {e}")
+            print(f"❌ [HEARTBEAT ERROR]: {e}", flush=True)
 
 
 # ............. Handlers and commands........
