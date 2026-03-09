@@ -1,4 +1,4 @@
-pyrogram==1.4.16
+pyrogram==2.0.106
 tgcrypto
 
 # AI
@@ -13,5 +13,4 @@ flask
 gTTS
 pydub
 
-# السر هنا: إضافة الشرطة في اسم المكتبة
 py-tgcalls
