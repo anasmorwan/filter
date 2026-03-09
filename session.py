@@ -53,6 +53,13 @@ def update_ai_timestamp():
     """هذه الدالة سنستدعيها كلما تحدث الذكاء الاصطناعي"""
     session["last_ai_message"] = time.time()
     session["stats"]["messages_since_last_ai"] = 0
+    
+def get_session_minutes():
+    """تحسب عدد الدقائق التي مرت منذ بداية الجلسة"""
+    if not session["active"] or session["start_time"] is None:
+        return 0
+    return (time.time() - session["start_time"]) / 60
+
 
 def get_silence_duration():
     """تحسب كم ثانية مرت منذ آخر مرة نطق فيها البوت"""
