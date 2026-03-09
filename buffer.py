@@ -27,10 +27,19 @@ def clear_buffer():
 
 def should_process_window():
     global last_processing_time, WINDOW_SECONDS
+
     session = get_session_info()
     WINDOW_SECONDS = session.get("window_seconds", WINDOW_SECONDS)
-    return time.time() - last_processing_time >= WINDOW_SECONDS
 
+    if not message_queue:
+        return False
+
+    # معالجة فورية إذا كان هناك سؤال
+    if any(m["type"] == "question" for m in message_queue):
+        return True
+
+    return time.time() - last_processing_time >= WINDOW_SECONDS
+    
 def pop_window_messages():
     global last_processing_time
     messages = list(message_queue)
