@@ -187,6 +187,37 @@ def handle_action(action, messages):
     if action == "NEW_QUESTION":
         send_question()
         """
+# --- القلب النابض للنظام (The Heartbeat) ---
+async def heartbeat_loop():
+    print("💓 Heartbeat started...", flush=True)
+    from session import get_silence_duration, get_session_info
+    
+    # حد أقصى للصمت (20 ثانية مثلاً، يمكنك تقليلها أو زيادتها)
+    MAX_SILENCE_SECONDS = 10 
+
+    while True:
+        await asyncio.sleep(5) # يفحص الوضع كل 5 ثواني
+        
+        session = get_session_info()
+        if not session_is_active():
+            continue # إذا الجلسة مغلقة، لا تفعل شيئاً
+            
+        silence_time = get_silence_duration()
+        
+        # إذا تجاوز الصمت الحد المسموح
+        if silence_time > MAX_SILENCE_SECONDS:
+            print(f"\n⚠️ DEAD AIR DETECTED! AI hasn't spoken for {int(silence_time)}s.", flush=True)
+            print("🚀 Triggering proactive action...", flush=True)
+            
+            # جلب أي رسائل عالقة في المخزن (إن وجدت)
+            messages = pop_window_messages()
+            
+            if messages:
+                # إذا كان هناك طلاب يتحدثون لكن البوت كان صامتاً، اجعله يقيم حديثهم
+                await handle_action("EVALUATE_STUDENT_ANSWERS", messages)
+            else:
+                # إذا كانت الغرفة صامتة تماماً (لا أحد يكتب)، اجعله يبادر بكسر الجليد
+                await handle_action("WAKE_UP_SESSION", [])
 
 
 # ............. Handlers and commands........
