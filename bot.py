@@ -319,8 +319,8 @@ if __name__ == "__main__":
     from threading import Thread
 
     # تشغيل Flask في Thread منفصل
-    Thread(target=lambda: flask_app.run(host="0.0.0.0", port=port, use_reloader=False)).start()
-    
+    Thread(target=lambda: flask_app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 10000)))).start()
+
     # تشغيل Pyrogram
   #  bot_app.run()
     async def start_all():
