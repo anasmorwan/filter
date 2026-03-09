@@ -63,7 +63,7 @@ async def play_next():
     is_playing = True
 
     text = voice_queue.popleft()
-    audio_file = generate_audio_sync(text)
+    audio_file, duration = generate_audio_sync(text)
 
     try:
         print(f"🎙️ Playing Audio: {audio_file}")
@@ -73,7 +73,6 @@ async def play_next():
             MediaStream(audio_file)
         )
 
-        duration = AudioSegment.from_wav(audio_file).duration_seconds
         await asyncio.sleep(duration + 1)
 
     except Exception as e:
