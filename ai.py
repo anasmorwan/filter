@@ -18,9 +18,10 @@ def generate_ai_response(action, messages):
     return response
 
 
-
 def build_prompt(action, context_messages):
     session = get_session_info()
+    topic = session.get("topic", "General English")
+    level = session.get("difficulty", "Intermediate")
     question = session.get("current_question", "None")
     
     # جلب المحادثة المتسلسلة (مدرس وطلاب)
@@ -33,6 +34,9 @@ def build_prompt(action, context_messages):
 
 Current Active Question you asked (if any):
 {question}
+[CURRENT SESSION CONTEXT]
+- Topic: {topic}
+- Student Level: {level}
 
 --- RECENT CONVERSATION HISTORY ---
 {full_conversation}
