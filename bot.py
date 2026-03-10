@@ -12,7 +12,7 @@ from dotenv import load_dotenv # اختياري إذا كنت تستخدم مل�
 
 
 # from queue_manager import check_message_window,  process_message_window
-from session import start_session, stop_session, session_is_active, get_session_info
+from session import start_session, stop_session, session_is_active, get_session_info, add_to_chat_history
 from filter import should_store_message
 from buffer import add_message, should_process_window, pop_window_messages, get_recent_messages
 from message_classifier import classify_message
@@ -72,6 +72,7 @@ async def process_message(user, user_id, text, timestamp):
     
     # تصنيف الرسالة
     msg_type, confidence = classify_message(text)
+    add_to_chat_history(user, text) # 👈 أضف هذه لتوثيق كلام الطالب
 
     # تحديث ذاكرة الطالب
     update_student_memory(
@@ -123,7 +124,7 @@ async def process_message(user, user_id, text, timestamp):
 
         await handle_action(action, [msg]) # أضفنا await
 
-    
+
 async def handle_action(action, messages):
     session = get_session_info()
 
@@ -135,6 +136,7 @@ async def handle_action(action, messages):
     print(f"\n--- ACTION DECIDED: {action} ---", flush=True)
 
     response = generate_ai_response(action, messages)
+    add_to_chat_history("Teacher (You)", response) # 👈 أضف هذه لتوثيق كلام المدرس
     await broadcast_ai_response(response)
     # ✅ تحديث وقت آخر نطق للبوت لكي يتم تصفير العداد
     from session import update_ai_timestamp
