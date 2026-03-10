@@ -189,7 +189,7 @@ def handle_action(action, messages):
     if action == "NEW_QUESTION":
         send_question()
         """
-# --- القلب النابض للنظام (The Heartbeat) ---
+
 async def heartbeat_loop():
     # تأخير بسيط للتأكد من أن كل شيء اشتغل أولاً
     await asyncio.sleep(10) 
@@ -210,8 +210,19 @@ async def heartbeat_loop():
                 
             silence_time = get_silence_duration()
             print(f"💓 [HEARTBEAT] Silence duration: {int(silence_time)}s", flush=True)
+            # --- حساب الحد الأقصى للديناميكية ---
+            # إذا كنت وحدك (Unique users = 1)، اجعل الصمت أقصر (مثلاً 15 ثانية)
+            if len(session["stats"]["unique_users"]) <= 1:
+                dynamic_limit = 3 
+            else:
+                dynamic_limit = 10 # للجروبات الكبيرة
 
-            if silence_time > MAX_SILENCE_SECONDS:
+            # إذا كان هناك سؤال حالي ينتظر إجابة، اجعل الانتظار أقل لكي يحفزهم المدرس
+            if session.get("current_question"):
+                dynamic_limit = 12
+            
+
+            if silence_time > dynamic_limit:
                 print(f"🚨 [HEARTBEAT] Threshold reached ({MAX_SILENCE_SECONDS}s)! Activating AI...", flush=True)
                 
                 messages = pop_window_messages()
