@@ -214,7 +214,7 @@ async def heartbeat_loop():
             if silence_time > MAX_SILENCE_SECONDS:
                 print(f"🚨 [HEARTBEAT] Threshold reached ({MAX_SILENCE_SECONDS}s)! Activating AI...", flush=True)
                 
-                messages = get_chat_history()
+                messages = pop_window_messages()
                 
                 if messages:
                     print(f"💓 [HEARTBEAT] Found {len(messages)} pending messages. Evaluating...", flush=True)
