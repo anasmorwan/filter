@@ -197,8 +197,9 @@ async def heartbeat_loop():
 
     from session import get_silence_duration, get_session_info, session_is_active
     from buffer import pop_window_messages
-
+    
     MAX_SILENCE_SECONDS = 10 # زدنا الوقت قليلاً للتجربة
+    session = get_session_info()
 
     while True:
         try:
