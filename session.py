@@ -22,7 +22,7 @@ session = {
     }
 }
 
-def start_session(topic="general", difficulty="normal"):
+def start_session(topic, difficulty):
     session["active"] = True
     session["topic"] = topic
     session["difficulty"] = difficulty
