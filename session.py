@@ -1,6 +1,7 @@
 import time
 
 session = {
+    "chat_history": [], # 👈 هذه هي ذاكرة السياق القصيرة
     "active": False,
     "start_time": None,
     "topic": None,
@@ -66,3 +67,16 @@ def get_silence_duration():
     if not session["active"]:
         return 0
     return time.time() - session["last_ai_message"]
+
+# وأضف هذه الدالة في الأسفل:
+def add_to_chat_history(speaker, text):
+    """تحفظ آخر 15 رسالة للحفاظ على سياق المحادثة"""
+    history = session["chat_history"]
+    history.append(f"{speaker}: {text}")
+    
+    # نكتفي بآخر 15 رسالة حتى لا يتجاوز الـ AI الحد الأقصى للتوكنز (Tokens)
+    if len(history) > 15:
+        history.pop(0)
+
+def get_chat_history():
+    return "\n".join(session["chat_history"])
