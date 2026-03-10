@@ -213,14 +213,14 @@ async def heartbeat_loop():
             print(f"💓 [HEARTBEAT] Silence duration: {int(silence_time)}s", flush=True)
             # --- حساب الحد الأقصى للديناميكية ---
             # إذا كنت وحدك (Unique users = 1)، اجعل الصمت أقصر (مثلاً 15 ثانية)
-            if len(session["stats"]["unique_users"]) <= 1:
+            if len(session["stats"]["unique_users"]) <= 5:
                 dynamic_limit = 3 
             else:
                 dynamic_limit = 10 # للجروبات الكبيرة
 
             # إذا كان هناك سؤال حالي ينتظر إجابة، اجعل الانتظار أقل لكي يحفزهم المدرس
             if session.get("current_question"):
-                dynamic_limit = 12
+                dynamic_limit = 5
             
 
             if silence_time > dynamic_limit:
