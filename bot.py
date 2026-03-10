@@ -12,7 +12,7 @@ from dotenv import load_dotenv # اختياري إذا كنت تستخدم مل�
 
 
 # from queue_manager import check_message_window,  process_message_window
-from session import start_session, stop_session, session_is_active, get_session_info, add_to_chat_history
+from session import start_session, stop_session, session_is_active, get_session_info, add_to_chat_history, get_chat_history
 from filter import should_store_message
 from buffer import add_message, should_process_window, pop_window_messages, get_recent_messages
 from message_classifier import classify_message
@@ -214,7 +214,7 @@ async def heartbeat_loop():
             if silence_time > MAX_SILENCE_SECONDS:
                 print(f"🚨 [HEARTBEAT] Threshold reached ({MAX_SILENCE_SECONDS}s)! Activating AI...", flush=True)
                 
-                messages = pop_window_messages()
+                messages = get_chat_history()
                 
                 if messages:
                     print(f"💓 [HEARTBEAT] Found {len(messages)} pending messages. Evaluating...", flush=True)
@@ -234,8 +234,6 @@ async def heartbeat_loop():
 async def ping(client, message):
     # أضفنا await وجعلنا الدالة async
     await message.reply_text("Bot is alive!")
-
-
 
 
 @bot_app.on_message(filters.command("status") & filters.user(ADMIN_ID))
