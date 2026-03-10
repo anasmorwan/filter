@@ -1,7 +1,7 @@
 from groq import Groq
 from prompts import TEACHER_SYSTEM_PROMPT, ACTION_PROMPTS
 import os
-from session import get_session_info
+from session import get_session_info, get_chat_history
 
 
 
@@ -17,31 +17,64 @@ def generate_ai_response(action, messages):
     response = call_ai(prompt)
     return response
 
-def build_prompt(action, context):
-    """
-    بناء prompt مع system + action prompt
-    """
-    session = get_session_info()
-    question = session.get("current_question")
 
+
+def build_prompt(action, context_messages):
+    session = get_session_info()
+    question = session.get("current_question", "None")
     
-    conversation = ""
-    for msg in context:
-        conversation += f"{msg['user']}: {msg['text']}\n"
+    # جلب المحادثة المتسلسلة (مدرس وطلاب)
+    full_conversation = get_chat_history()
 
     action_prompt = ACTION_PROMPTS.get(action, "")
 
     prompt = f"""
 {TEACHER_SYSTEM_PROMPT}
 
-Current Question:
+Current Active Question you asked (if any):
 {question}
 
-Conversation:
-{conversation}
+--- RECENT CONVERSATION HISTORY ---
+{full_conversation}
+-----------------------------------
 
-Teacher task:
+Teacher task right now:
 {action_prompt}
+
+Important: Read the conversation history above. Your response MUST naturally follow the context of what was just said. Do not repeat your previous questions.
+    """
+    return prompt
+
+def build_prompt(action, context):
+    """
+    بناء prompt مع system + action prompt
+    """
+    session = get_session_info()
+    question = session.get("current_question")
+    # جلب المحادثة المتسلسلة (مدرس وطلاب)
+    full_conversation = get_chat_history()
+
+    
+    # conversation = ""
+    # for msg in context:
+        # conversation += f"{msg['user']}: {msg['text']}\n"
+
+    action_prompt = ACTION_PROMPTS.get(action, "")
+
+    prompt = f"""
+{TEACHER_SYSTEM_PROMPT}
+
+Current Active Question you asked (if any):
+{question}
+
+--- RECENT CONVERSATION HISTORY ---
+{full_conversation}
+-----------------------------------
+
+Teacher task right now:
+{action_prompt}
+
+Important: Read the conversation history above. Your response MUST naturally follow the context of what was just said. Do not repeat your previous questions.
     """
     return prompt
 
