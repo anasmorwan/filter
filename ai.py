@@ -50,38 +50,6 @@ ONLY address users who have actually spoken in the [CONVERSATION HISTORY]. Do no
     """
     return prompt
 
-def build_prompt(action, context):
-    """
-    بناء prompt مع system + action prompt
-    """
-    session = get_session_info()
-    question = session.get("current_question")
-    # جلب المحادثة المتسلسلة (مدرس وطلاب)
-    full_conversation = get_chat_history()
-
-    
-    # conversation = ""
-    # for msg in context:
-        # conversation += f"{msg['user']}: {msg['text']}\n"
-
-    action_prompt = ACTION_PROMPTS.get(action, "")
-
-    prompt = f"""
-{TEACHER_SYSTEM_PROMPT}
-
-Current Active Question you asked (if any):
-{question}
-
---- RECENT CONVERSATION HISTORY ---
-{full_conversation}
------------------------------------
-
-Teacher task right now:
-{action_prompt}
-
-Important: Read the conversation history above. Your response MUST naturally follow the context of what was just said. Do not repeat your previous questions.
-    """
-    return prompt
 
 def call_ai(prompt):
     """
