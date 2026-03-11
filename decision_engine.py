@@ -110,10 +110,12 @@ def calculate_priority(stats, session, time_since_ai):
     return score
 
 
+
+
 def decide_next_action(messages):
 
     session = get_session_info()
-
+    mode = session.get("mode", "conversation")
     stage = session.get("stage", "INTRO")
     conversation_stage = session.get("conversation_stage", "DISCUSSION")
 
@@ -151,6 +153,48 @@ def decide_next_action(messages):
         return "WAIT"
 
     update_ai_timestamp()
+    # ---------------------------------------------------------
+    # النموذج الأول: المحادثة الحرة (الكود القديم الخاص بك)
+    # ---------------------------------------------------------
+    if mode == "conversation":
+        if not messages:
+            return "WAKE_UP_SESSION"
+        # ... باقي منطق المحادثة المعتاد ...
+    # ---------------------------------------------------------
+    # النموذج الثاني: المحاضرة الموجهة (Lecture Mode)
+    # ---------------------------------------------------------
+    elif mode == "lecture":
+        # 1. إذا قاطع الطلاب المحاضرة بسؤال:
+        if messages and any(m["type"] == "question" for m in messages):
+            return "ANSWER_LECTURE_QUESTION" # يرد على السؤال ثم يربطه بالمحاضرة
+        
+        # 2. إذا كان الطلاب يجيبون على تمرين أو سؤال طرحه البوت:
+        if messages and session["current_stage"] == "CHECK_UNDERSTANDING":
+            session["current_stage"] = "EXPLAIN" # نعود للشرح بعد التقييم
+            return "EVALUATE_AND_CONTINUE"
+
+        # 3. إذا كان الـ Heartbeat هو من استدعى الدالة (لا توجد رسائل = صمت / وقت الشرح):
+        if not messages:
+            stage = session["current_stage"]
+            
+            if stage == "INTRO":
+                session["current_stage"] = "EXPLAIN"
+                return "INTRODUCE_LECTURE"
+                
+            elif stage == "EXPLAIN":
+                # إذا انتهينا من كل الفقرات
+                if session["current_chunk_index"] >= len(session["lecture_chunks"]):
+                    session["current_stage"] = "OUTRO"
+                    return "SUMMARIZE_LECTURE"
+                
+                # إما أن يشرح الفقرة التالية، أو يسأل سؤالاً للتأكد من الفهم
+                # مثلاً: بعد كل فقرتين، نطرح سؤالاً (Quiz)
+                if session["current_chunk_index"] > 0 and session["current_chunk_index"] % 2 == 0:
+                    session["current_stage"] = "CHECK_UNDERSTANDING"
+                    return "ASK_CONCEPT_QUESTION"
+                else:
+                    return "TEACH_NEXT_CHUNK"
+
 
     # --------------------------------
     # مراحل الدرس
