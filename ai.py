@@ -62,7 +62,8 @@ Current Active Question you asked (if any):
 
 Teacher task right now:
 {action_prompt}
-
+Important: Read the conversation history above. Your response MUST naturally follow the context of what was just said. Do not repeat your previous questions.
+ONLY address users who have actually spoken in the [CONVERSATION HISTORY]. Do not invent names or talk to imaginary students.
     """
     return prompt
 
