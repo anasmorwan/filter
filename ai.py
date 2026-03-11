@@ -235,9 +235,10 @@ def call_ai(prompt):
 """
 def extract_json(text):
     """
+"""
     استخراج JSON من النص حتى لو احتوى على شرح أو markdown
     """
-
+"""
     # إزالة markdown
     text = re.sub(r"```json|```", "", text)
 
@@ -269,9 +270,10 @@ def extract_json(text):
 """
 def heal_json(text):
     """
+"""
     إصلاح الأخطاء الشائعة في JSON القادم من الذكاء الاصطناعي
     """
-
+"""
     # إزالة الفواصل الزائدة
     text = re.sub(r",\s*}", "}", text)
     text = re.sub(r",\s*]", "]", text)
