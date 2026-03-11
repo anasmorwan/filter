@@ -68,7 +68,7 @@ Teacher task: {action_prompt}
 
 
 
-""""
+'''
 def build_prompt(action, context_messages):
     session = get_session_info()
     topic = session.get("topic", "General English")
@@ -100,7 +100,7 @@ ONLY address users who have actually spoken in the [CONVERSATION HISTORY]. Do no
     """
     return prompt
 
-""""
+'''
 
 
 def call_ai(prompt):
