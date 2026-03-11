@@ -12,7 +12,7 @@ from dotenv import load_dotenv # اختياري إذا كنت تستخدم مل�
 
 
 # from queue_manager import check_message_window,  process_message_window
-from session import start_session, stop_session, session_is_active, get_session_info, add_to_chat_history, get_chat_history
+from session import start_session, stop_session, session_is_active, get_session_info, add_to_chat_history, get_chat_history, start_lecture_session
 from filter import should_store_message
 from buffer import add_message, should_process_window, pop_window_messages, get_recent_messages
 from message_classifier import classify_message
@@ -21,7 +21,6 @@ from ai import generate_ai_response
 from buffer import clear_buffer
 from voice import broadcast_ai_response
 from memory import update_student_memory
-
 # تأكد أن voice.py يحتوي على userbot و pytgcalls و start_voice_engine
 from voice import broadcast_ai_response, userbot, pytgcalls, start_voice_engine
 
@@ -51,7 +50,7 @@ bot_app = Client(
 # استبدل CHAT_ID بالمعرف الفعلي للمحادثة
 CHAT_ID = int(os.getenv("CHAT_ID"))
 ADMIN_ID = int(os.getenv("ADMIN_ID"))
-
+waiting_for_lecture = False
 
 #........  MVP steps ...........
 
@@ -283,7 +282,48 @@ async def stop_cmd(client, message):
     clear_buffer()
 
     await message.reply_text("Session stopped.")
+
+
+
+
+# 1. إضافة مستقبل الملفات (للمشرفين أو بحسب صلاحياتك)
+# متغير لمعرفة هل البوت ينتظر ملف محاضرة
+# الأمر الذي يطلب الملف
+@bot_app.on_message(filters.command("lecture") & filters.user(ADMIN_ID))
+async def request_lecture_file(client, message):
+    global waiting_for_lecture    
+    waiting_for_lecture = True
     
+    await message.reply_text("Please send the lecture file (PDF or TXT).")
+
+
+# استقبال الملف بعد الأمر
+@bot_app.on_message(filters.document & filters.user(ADMIN_ID))
+async def handle_lecture_file(client, message):
+    global waiting_for_lecture
+
+    if not waiting_for_lecture:
+        return
+
+    waiting_for_lecture = False
+    file_path = await message.download()
+
+    # استخراج النص
+    extracted_text = extract_text_from_file(file_path)
+
+    # بدء الجلسة
+    start_lecture_session("Document Lecture", extracted_text)
+    await message.reply_text("Lecture loaded successfully! Starting proactive delivery...")
+
+    # إجبار البوت على الكلام
+    await handle_action("INTRODUCE_LECTURE", [])
+
+# 2. تعديل بسيط في Heartbeat Loop
+# سنجعل وقت النبض في وضع المحاضرة أسرع (مثلاً 10 ثوانٍ) لأن المدرس هو من يتحدث باستمرار
+
+
+
+
 @bot_app.on_message(filters.command("test_ai") & filters.user(ADMIN_ID))
 async def test_ai(client, message):
     # خذ آخر N رسائل من buffer أو نافذة الـ AI
