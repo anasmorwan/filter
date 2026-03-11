@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ريان .. نجمة الطموح | بطاقة تحفيزية</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      min-height: 100vh;
+      /* خلفية بألوان زاهية ومتحركة */
+      background: linear-gradient(-45deg, #ff9a9e, #fecfef, #a1c4fd, #c2e9fb);
+      background-size: 400% 400%;
+      animation: gradientBG 15s ease infinite;
+      font-family: 'Tajawal', 'Cairo', sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem 1rem;
+      position: relative;
+      overflow-x: hidden;
+      color: #2d3436;
+    }
+
+    @keyframes gradientBG {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    /* أشكال هندسية عائمة في الخلفية للمسة إبداعية */
+    .shape {
+      position: absolute;
+      filter: blur(60px);
+      z-index: 0;
+      border-radius: 50%;
+      animation: float 8s ease-in-out infinite;
+    }
+    .shape.one {
+      width: 300px; height: 300px;
+      background: rgba(255, 118, 117, 0.6);
+      top: -5%; right: -5%;
+    }
+    .shape.two {
+      width: 400px; height: 400px;
+      background: rgba(108, 92, 231, 0.4);
+      bottom: -10%; left: -10%;
+      animation-delay: -3s;
+    }
+    .shape.three {
+      width: 200px; height: 200px;
+      background: rgba(0, 206, 201, 0.5);
+      top: 40%; left: 20%;
+      animation-delay: -5s;
+    }
+
+    @keyframes float {
+      0% { transform: translateY(0px) rotate(0deg); }
+      50% { transform: translateY(-30px) rotate(10deg); }
+      100% { transform: translateY(0px) rotate(0deg); }
+    }
+
+    /* بطاقة المحتوى الرئيسية - تصميم الزجاج الشفاف (Glassmorphism) */
+    .card {
+      position: relative;
+      z-index: 10;
+      max-width: 850px;
+      width: 100%;
+      background: rgba(255, 255, 255, 0.65);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-radius: 40px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.8);
+      padding: 3.5rem 3rem;
+      text-align: center;
+    }
+
+    /* العنوان الرئيسي */
+    .name-title h1 {
+      font-size: 5.5rem;
+      font-weight: 900;
+      font-family: 'Cairo', sans-serif;
+      background: linear-gradient(135deg, #6c5ce7, #fd79a8);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      line-height: 1.2;
+      margin-bottom: 0.5rem;
+      text-shadow: 2px 4px 15px rgba(253, 121, 168, 0.3);
+      animation: pulseText 3s infinite alternate;
+    }
+
+    @keyframes pulseText {
+      0% { text-shadow: 2px 4px 15px rgba(253, 121, 168, 0.3); }
+      100% { text-shadow: 2px 4px 25px rgba(108, 92, 231, 0.6); }
+    }
+
+    .subtitle {
+      font-size: 1.6rem;
+      font-weight: 500;
+      color: #636e72;
+      margin-bottom: 2.5rem;
+    }
+
+    /* رسالة تحفيزية */
+    .message-box {
+      font-size: 1.8rem;
+      line-height: 1.8;
+      color: #2d3436;
+      margin-bottom: 3rem;
+    }
+
+    .message-box .highlight {
+      font-weight: 700;
+      color: #e84393;
+      position: relative;
+      display: inline-block;
+    }
+    
+    .message-box .highlight::after {
+      content: '';
+      position: absolute;
+      width: 100%;
+      height: 30%;
+      bottom: 0;
+      left: 0;
+      background: rgba(253, 121, 168, 0.3);
+      z-index: -1;
+      border-radius: 5px;
+    }
+
+    /* شبكة النصائح */
+    .advice-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 3rem;
+    }
+
+    .advice-card {
+      background: rgba(255, 255, 255, 0.8);
+      padding: 1.5rem;
+      border-radius: 20px;
+      border-right: 5px solid #6c5ce7;
+      box-shadow: 0 10px 20px rgba(0,0,0,0.05);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      text-align: right;
+    }
+
+    .advice-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 15px 25px rgba(108, 92, 231, 0.2);
+    }
+
+    .advice-card.pink { border-right-color: #fd79a8; }
+    .advice-card.blue { border-right-color: #0984e3; }
+
+    .advice-card h4 {
+      font-size: 1.4rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+      color: #2d3436;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .advice-card p {
+      font-size: 1.2rem;
+      color: #636e72;
+      line-height: 1.6;
+    }
+
+    /* التوقيع */
+    .signature-section {
+      margin-top: 3rem;
+      padding-top: 2rem;
+      border-top: 2px dashed rgba(108, 92, 231, 0.3);
+    }
+
+    .signature {
+      font-size: 1.8rem;
+      font-weight: 700;
+      font-family: 'Cairo', sans-serif;
+      color: #6c5ce7;
+    }
+
+    .signature-note {
+      font-size: 1.2rem;
+      color: #e84393;
+      margin-top: 0.5rem;
+      font-weight: 500;
+    }
+
+    /* تصميم متجاوب للموبايل */
+    @media (max-width: 768px) {
+      .card { padding: 2.5rem 1.5rem; border-radius: 30px; }
+      .name-title h1 { font-size: 4.5rem; }
+      .message-box { font-size: 1.5rem; }
+      .advice-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="shape one"></div>
+  <div class="shape two"></div>
+  <div class="shape three"></div>
+
+  <div class="card">
+    
+    <div class="name-title">
+      <h1>ريان</h1>
+    </div>
+    <div class="subtitle">
+      نجمة تتلألأ في سماء الطموح ✨
+    </div>
+
+    <div class="message-box">
+      يا صديقتي الرائعة، أنتِ تمتلكين قوة وإرادة قادرة على صنع <span class="highlight">المستحيل</span>.<br>
+      طريق النجاح يُرسم بخطواتك الواثقة، وأنا متأكد أن القمة بانتظارك.
+    </div>
+
+    <div class="advice-grid">
+      <div class="advice-card blue">
+        <h4>🚀 لا تستسلمي</h4>
+        <p>التعب الذي تشعرين به اليوم، هو قصة نجاحك التي ستحكينها غداً. استمري والمحطة القادمة هي التفوق.</p>
+      </div>
+      <div class="advice-card pink">
+        <h4>🌸 ثقي بنفسك</h4>
+        <p>أنتِ ذكية ومميزة، وكل محاولة تقومين بها تقربك خطوة نحو هدفك. كوني فخورة بما أنجزتيه حتى الآن.</p>
+      </div>
+      <div class="advice-card">
+        <h4>🎯 خطوة بخطوة</h4>
+        <p>المهام الكبيرة تصبح سهلة عند تقسيمها. خذي وقتك، تنفسي بعمق، وتذكري أن الإصرار يصنع العجائب.</p>
+      </div>
+    </div>
+
+    <div class="signature-section">
+      <div class="signature">صديقك، أنس</div>
+      <div class="signature-note">من قلبٍ يفرح لنجاحك ويدعمك دائماً 🤍</div>
+    </div>
+
+  </div>
+
+</body>
+</html>
