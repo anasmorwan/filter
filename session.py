@@ -1,11 +1,72 @@
 import time
 
+
+# دالة جديدة لبدء المحاضرة
+def start_lecture_session(topic, text_content):
+    session["active"] = True
+    session["mode"] = "lecture"
+    session["topic"] = topic
+    session["current_stage"] = "INTRO"
+    session["current_chunk_index"] = 0
+    
+    # تقسيم النص إلى "لقيمات" (Micro-learning) كل فقرة لوحدها
+    # يمكنك تحسين دالة التقسيم لاحقاً لتعتمد على النقاط أو الفواصل
+    session["lecture_chunks"] = [chunk for chunk in text_content.split('\n\n') if len(chunk) > 20]
+    
+    session["start_time"] = time.time()
+    session["last_ai_message"] = time.time()
+
+
+
+
+def get_current_stage():
+    idx = session["current_stage_index"]
+    return session["stages"][idx]
+
+def move_to_next_stage():
+    if session["current_stage_index"] < len(session["stages"]) - 1:
+        session["current_stage_index"] += 1
+        session["stage_start_time"] = time.time()
+        return True
+    return False
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 session = {
     "chat_history": [], # 👈 هذه هي ذاكرة السياق القصيرة
+    "mode": "conversation",  # 👈 إما 'conversation' أو 'lecture'
     "active": False,
     "start_time": None,
     "topic": None,
     "difficulty": "normal",
+    "current_stage_index": 0, # مؤشر المرحلة الحالية
+    "stages": [
+        {"name": "INTRO", "type": "hook", "min_duration": 2},
+        {"name": "ICE_BREAKER", "type": "game", "game_type": "word_association", "min_duration": 3},
+        {"name": "CONTENT_FLOW", "type": "teaching", "min_duration": 5},
+        {"name": "ACTION_ZONE", "type": "game", "game_type": "guessing_game", "min_duration": 7},
+        {"name": "CONFIDENCE_BOOST", "type": "feedback", "min_duration": 3},
+        {"name": "COOL_DOWN", "type": "summary", "min_duration": 2}
+    ],
+    # --- إضافات نموذج المحاضرة (Lesson Plan) ---
+    "lecture_chunks": [],       # قائمة تحتوي على فقرات الملف (مقسمة)
+    "current_chunk_index": 0,   # أين نحن الآن في الملف؟
+    "current_stage": "INTRO",   # مراحل الدرس (INTRO, EXPLAIN, CHECK_UNDERSTANDING, Q&A, OUTRO)
+    "questions_asked": 0,       # عدد أسئلة الاختبار التي طرحها البوت
+    "stage_start_time": 0,
     "stage": "INTRO",
     "current_question": None,
     "last_ai_message": 0, # أهم متغير الآن
