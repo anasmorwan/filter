@@ -33,7 +33,6 @@ def generate_ai_response(action, messages):
             "response_text": "I lost my train of thought. Where were we?",
             "expects_answer": False
         }
-    return raw_response
 
 
 def build_prompt(action, context_messages):
@@ -137,5 +136,5 @@ def call_ai(prompt):
         temperature=0.7,
         max_tokens=1024
     )
-    return response.choices[0].message.content.strip()
+    return response.choices[0].message.content
     
