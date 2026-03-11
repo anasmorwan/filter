@@ -231,7 +231,7 @@ async def heartbeat_loop():
                 continue
 
             if session["is_speaking"]:
-                return # توقف عن حساب الصمت، المدرس يتحدث الآن!
+                continue # توقف عن حساب الصمت، المدرس يتحدث الآن!
 
             if session["waiting_for_answer"]:
                 # ننتظر إجابة الطالب، نوقف إرسال أي شرح جديد مؤقتاً
