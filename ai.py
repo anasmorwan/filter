@@ -1,5 +1,5 @@
 from groq import Groq
-from prompts import TEACHER_SYSTEM_PROMPT, ACTION_PROMPTS
+from prompts import TEACHER_SYSTEM_PROMPT, ACTION_PROMPTS, LECTURER_SYSTEM_PROMPT
 import os
 from session import get_session_info, get_chat_history
 
@@ -25,6 +25,7 @@ def build_prompt(action, context_messages):
     # --- جلب البيانات المشتركة ---
     full_conversation = get_chat_history()
     action_prompt = ACTION_PROMPTS.get(action, "")
+    
     
     # --- الحالة الأولى: نمط المحاضرة (Lecture Mode) ---
     if mode == "lecture":
