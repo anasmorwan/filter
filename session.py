@@ -43,8 +43,6 @@ def move_to_next_stage():
 
 
 
-
-
 session = {
     "chat_history": [], # 👈 هذه هي ذاكرة السياق القصيرة
     "is_speaking": True,
@@ -55,6 +53,9 @@ session = {
     "topic": None,
     "difficulty": "normal",
     "current_stage_index": 0, # مؤشر المرحلة الحالية
+    "response_text": "...",
+    "expects_answer": false,
+    "class_understanding": "good"
     "stages": [
         {"name": "INTRO", "type": "hook", "min_duration": 2},
         {"name": "ICE_BREAKER", "type": "game", "game_type": "word_association", "min_duration": 3},
