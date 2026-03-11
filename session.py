@@ -56,7 +56,7 @@ session = {
     "difficulty": "normal",
     "current_stage_index": 0, # مؤشر المرحلة الحالية
     "response_text": "...",
-    "expects_answer": false,
+    "expects_answer": False,
     "class_understanding": "good",
     "stages": [
         {"name": "INTRO", "type": "hook", "min_duration": 2},
