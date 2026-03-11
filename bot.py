@@ -159,19 +159,8 @@ async def handle_action(action, messages):
 
     # 3. منطق خاص بنمط المحاضرة (Lecture Mode)
     if mode == "lecture":
-        if action == "TEACH_NEXT_CHUNK":
-            # نزيد العداد فقط بعد نجاح الشرح
-            session["current_chunk_index"] += 1
-            
-        elif action == "EVALUATE_AND_CONTINUE":
-            if understanding == "poor":
-                # الطلاب لم يفهموا، لا نزيد العداد (سيعيد الشرح في النبضة القادمة)
-                print("⚠️ Students confused. Staying on current chunk for re-explanation.")
-            else:
-                # الفهم جيد، ننتقل للفقرة التالية
-                session["current_chunk_index"] += 1
-
-    
+        handle_lecture_action(action, session, understanding)
+        
     
     add_to_chat_history("Teacher (You)", response_text) # 👈 أضف هذه لتوثيق كلام المدرس
     
@@ -208,25 +197,22 @@ async def handle_action(action, messages):
             
 
 
-"""
-الدالة القديمة
-def handle_action(action, messages):
 
-    if action == "IGNORE":
-        return
+def handle_lecture_action(action, session, understanding):
+    if action == "TEACH_NEXT_CHUNK":
+        # نزيد العداد فقط بعد نجاح الشرح
+        session["current_chunk_index"] += 1
+            
+    elif action == "EVALUATE_AND_CONTINUE":
+        if understanding == "poor":
+            # الطلاب لم يفهموا، لا نزيد العداد (سيعيد الشرح في النبضة القادمة)
+            print("⚠️ Students confused. Staying on current chunk for re-explanation.")
+        else:
+            # الفهم جيد، ننتقل للفقرة التالية
+            session["current_chunk_index"] += 1
 
-    if action == "COMMENT":
-        send_comment(messages)
 
-    if action == "ANSWER":
-        send_answer(messages)
 
-    if action == "HINT":
-        send_hint(messages)
-
-    if action == "NEW_QUESTION":
-        send_question()
-        """
 
 async def heartbeat_loop():
     # تأخير بسيط للتأكد من أن كل شيء اشتغل أولاً
