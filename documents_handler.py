@@ -2,31 +2,40 @@ import os
 from docx import Document
 from pptx import Presentation
 from pypdf import PdfReader
-
+MIN_TEXT_LENGTH = 500
 
 
 def extract_text_from_file(file_path):
     """
     يحدد نوع الملف ويستخرج النص المناسب
+    ويتأكد أن النص طويل كفاية للاستخدام
     """
     ext = os.path.splitext(file_path)[1].lower()
 
-   
-
     if ext == ".txt":
-        return extract_text_from_txt(file_path)
-    if ext == ".pdf":
-        return extract_text_from_pdf(file_path)
+        text = extract_text_from_txt(file_path)
+
+    elif ext == ".pdf":
+        text = extract_text_from_pdf(file_path)
 
     elif ext == ".docx":
-        return extract_text_from_docx(file_path)
+        text = extract_text_from_docx(file_path)
 
     elif ext == ".pptx":
-        return extract_text_from_pptx(file_path)
+        text = extract_text_from_pptx(file_path)
 
     else:
         raise ValueError(f"Unsupported file type: {ext}")
 
+    # تنظيف النص
+    text = clean_text(text)
+
+    # التحقق من أن النص كافٍ
+    if not text or len(text) < MIN_TEXT_LENGTH:
+        raise ValueError("Extracted text is too short. The file may require OCR.")
+
+    return text
+    
 
 def extract_text_from_txt(file_path):
     """
@@ -80,3 +89,8 @@ def extract_text_from_pdf(file_path):
             full_text.append(text)
 
     return "\n".join(full_text)
+
+
+def clean_text(text):
+    lines = [line.strip() for line in text.splitlines() if line.strip()]
+    return "\n".join(lines)
