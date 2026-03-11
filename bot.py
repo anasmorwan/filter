@@ -105,12 +105,20 @@ async def process_message(user, user_id, text, timestamp):
 
         return
 
+
     if session["is_speaking"] and msg_type == "question":
-        # الطالب يقاطع المدرس بسؤال!
-        await stop_audio() # اقطع صوت المدرس فوراً
-        # (اختياري) بث ملف الحشو هنا إذا أردت: await broadcast_ai_response("Good question...")
-        session["is_speaking"] = False
-        await handle_action("ANSWER_INTERRUPTION", [msg]) # المدرس يرد: "سؤال جيد يا أحمد، تفضل..."
+        if should_interrupt(message, session):
+            # الطالب يقاطع المدرس بسؤال!
+            await stop_audio() # اقطع صوت المدرس فوراً
+            # (اختياري) بث ملف الحشو هنا إذا أردت: await broadcast_ai_response("Good question...")
+            session["is_speaking"] = False
+            await handle_action("ANSWER_INTERRUPTION", [msg]) # المدرس يرد: "سؤال جيد يا أحمد، تفضل..."
+
+        else:
+            # تخزين السؤال للرد عليه لاحقاً (بين الفقرات)
+            session["pending_questions"].append(message)
+            print("📥 Question queued to avoid distraction.")
+
 
 
     if session["current_question"]:
