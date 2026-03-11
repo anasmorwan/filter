@@ -112,12 +112,10 @@ def calculate_priority(stats, session, time_since_ai):
 
 
 def decide_next_action(messages):
-
-    session = get_session_info()
     mode = session.get("mode", "conversation")
+    session = get_session_info()
     stage = session.get("stage", "INTRO")
-    conversation_stage = session.get("conversation_stage", "DISCUSSION")
-
+    
     session_minutes = get_session_minutes()
 
     now = time.time()
@@ -158,7 +156,6 @@ def decide_next_action(messages):
     if mode == "conversation":
         return decide_conversation_logic(messages, session, stats) # منطقك القديم هنا
         
-        # ... باقي منطق المحادثة المعتاد ...
     # ---------------------------------------------------------
     # النموذج الثاني: المحاضرة الموجهة (Lecture Mode)
     # ---------------------------------------------------------
@@ -169,7 +166,7 @@ def decide_next_action(messages):
 
 
 # ---------------------------------------------------------
-# دوال النموذجين الاول و الثاني (Ai theacher & english streamer)
+# دوال النموذجين الاول و الثاني (lecturer & english Teacher)
 # ---------------------------------------------------------
 
 def decide_lecture_logic(messages, session, stats): # دالة فرعية للتنظيم
@@ -208,7 +205,7 @@ def decide_lecture_logic(messages, session, stats): # دالة فرعية للت
 
 
 def decide_conversation_logic(messages, session, stats): # منطقك القديم هنا
-    mode = session.get("mode", "conversation")
+    
     stage = session.get("stage", "INTRO")
     conversation_stage = session.get("conversation_stage", "DISCUSSION")
 
