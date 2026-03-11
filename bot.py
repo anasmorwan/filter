@@ -16,6 +16,7 @@ from session import start_session, stop_session, session_is_active, get_session_
 from filter import should_store_message
 from buffer import add_message, should_process_window, pop_window_messages, get_recent_messages
 from message_classifier import classify_message
+from documents_handler import extract_text_from_file
 from decision_engine import decide_next_action
 from ai import generate_ai_response
 from buffer import clear_buffer
