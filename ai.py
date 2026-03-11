@@ -1,8 +1,8 @@
 from groq import Groq
-from prompts import TEACHER_SYSTEM_PROMPT, ACTION_PROMPTS, LECTURER_SYSTEM_PROMPT
+from prompts import TEACHER_SYSTEM_PROMPT, ACTION_PROMPTS, LECTURER_SYSTEM_PROMPT, JSON_SYSTEM_PROMPT
 import os
 from session import get_session_info, get_chat_history
-
+import json
 
 
 # تهيئة العميل باستخدام مفتاح API الخاص بـ Groq
@@ -14,8 +14,26 @@ def generate_ai_response(action, messages):
     """
     context = list(messages)[-5:]  # آخر 5 رسائل فقط
     prompt = build_prompt(action, context)
-    response = call_ai(prompt)
-    return response
+    raw_response = call_ai(prompt)
+    
+    # إزالة أي علامات Markdown قد يضيفها النموذج بالخطأ
+    if raw_response.startswith("```json"):
+        raw_response = raw_response[7:-3]
+    elif raw_response.startswith("```"):
+        raw_response = raw_response[3:-3]
+        
+    try:
+        # تحويل النص إلى قاموس بايثون (Dictionary)
+        parsed_response = json.loads(raw_response.strip())
+        return parsed_response
+    except json.JSONDecodeError as e:
+        print(f"❌ JSON Parsing Error: {e}\nRaw Output: {raw_response}")
+        # خطة طوارئ في حال فشل النموذج في إرجاع JSON صالح
+        return {
+            "response_text": "I lost my train of thought. Where were we?",
+            "expects_answer": False
+        }
+    return raw_response
 
 
 def build_prompt(action, context_messages):
@@ -34,6 +52,7 @@ def build_prompt(action, context_messages):
         current_material = chunks[idx] if idx < len(chunks) else "End of material."
         
         prompt = f"""
+{JSON_SYSTEM_PROMPT}
 {LECTURER_SYSTEM_PROMPT}
 
 [LECTURE MATERIAL TO FOCUS ON NOW]:
@@ -118,4 +137,5 @@ def call_ai(prompt):
         temperature=0.7,
         max_tokens=1024
     )
-    return response.choices[0].message.content
+    return response.choices[0].message.content.strip()
+    
