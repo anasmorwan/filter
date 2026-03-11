@@ -3,7 +3,7 @@
 import time
 from collections import deque
 from session import get_session_info
-
+from difflib import SequenceMatcher
 
 
 MAX_BUFFER_SIZE = 100
@@ -56,19 +56,43 @@ def get_recent_messages(n=5):
 
 
 
-def should_interrupt(msg, session):
-    text = msg["text"].lower()
-    
-    # 1. كلمات الطوارئ (توقف الشرح فوراً)
-    emergency_keywords = ["لم افهم", "ما فهمت", "ممكن تعيد", "وضح اكثر", "عيد", "slow down"]
-    if any(word in text for word in emergency_keywords):
+# utils.py أو داخل bot.py
+def similar(a, b):
+    """حساب درجة التشابه بين كلمتين"""
+    return SequenceMatcher(None, a, b).ratio()
+
+
+def should_interrupt(student_msg, session):
+
+    text = student_msg.get("text", "").lower()
+    radar_keywords = session.get("priority_keywords", [])
+
+    words = text.split()
+
+    # 1. كلمات الطوارئ المطلقة
+    emergency = ["عيد", "لم افهم", "لحظة", "توقف", "wait", "repeat"]
+
+    for e in emergency:
+        if e in text:
+            return True
+
+    # 2. فحص الرادار مع fuzzy matching
+    found_keywords = []
+
+    for keyword in radar_keywords:
+        keyword = keyword.lower()
+
+        for w in words:
+            if similar(w, keyword) > 0.8:   # نسبة التشابه
+                found_keywords.append(keyword)
+                break
+
+    if found_keywords:
+        print(f"🎯 Radar hit! Student asked about: {found_keywords}")
         return True
 
-    # 2. طول السؤال (الأسئلة العميقة غالباً تكون أطول من 15 حرف)
-    if len(text) > 15:
+    # 3. فحص سؤال طويل
+    if len(text) > 30 and "?" in text:
         return True
 
-    # 3. تكرار السؤال (إذا سأل أكثر من طالب نفس الشيء - يعبر عن ارتباك جماعي)
-    # يمكن تطوير هذا لاحقاً باستخدام Counter
-    
     return False
