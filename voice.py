@@ -6,6 +6,8 @@ from pytgcalls.types import MediaStream
 from gtts import gTTS
 from pydub import AudioSegment
 from collections import deque
+# في أعلى الملف، قم باستيراد الجلسة
+from session import session 
 
 
 # -------------------------
@@ -67,6 +69,8 @@ async def play_next():
 
     is_playing = True
     stop_playback_event.clear() # إعادة ضبط القفل
+    # 🌟 1. المدرس بدأ يتحدث الآن (نقفل النبض)
+    session["is_speaking"] = True
 
     text = voice_queue.popleft()
     audio_file, duration = generate_audio_sync(text)
@@ -92,6 +96,8 @@ async def play_next():
     except Exception as e:
         print(f"❌ Error during playback: {e}")
 
+    # 🌟 2. المدرس انتهى من التحدث (نفتح النبض)
+    session["is_speaking"] = False 
     is_playing = False
 
     # إذا لم يتم تفريغ الطابور بسبب مقاطعة، شغل التالي
