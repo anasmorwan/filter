@@ -14,7 +14,7 @@ from dotenv import load_dotenv # اختياري إذا كنت تستخدم مل�
 # from queue_manager import check_message_window,  process_message_window
 from session import start_session, stop_session, session_is_active, get_session_info, add_to_chat_history, get_chat_history, start_lecture_session
 from filter import should_store_message
-from buffer import add_message, should_process_window, pop_window_messages, get_recent_messages
+from buffer import add_message, should_process_window, pop_window_messages, get_recent_messages, should_interrupt
 from message_classifier import classify_message
 from documents_handler import extract_text_from_file
 from decision_engine import decide_next_action
