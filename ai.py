@@ -8,6 +8,58 @@ import re
 # تهيئة العميل باستخدام مفتاح API الخاص بـ Groq
 client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
 
+ALLOWED_UNDERSTANDING = {"good", "poor", "none"}
+
+# النسخة الاخيرة
+def generate_ai_response(action, messages):
+
+    prompt = build_prompt(action, messages)
+    raw_response = call_ai(prompt).strip()
+
+    try:
+
+        json_text = extract_json(raw_response)
+
+        try:
+            parsed_data = json.loads(json_text)
+
+        except json.JSONDecodeError:
+            # محاولة إصلاح JSON
+            fixed_json = heal_json(json_text)
+            parsed_data = json.loads(fixed_json)
+
+        response_text = parsed_data.get("response_text", "")
+        expects_answer = parsed_data.get("expects_answer", False)
+        class_understanding = parsed_data.get("class_understanding", "none")
+
+        # تصحيح نوع expects_answer
+        if isinstance(expects_answer, str):
+            expects_answer = expects_answer.lower() == "true"
+
+        # التأكد من القيم المسموحة
+        # if class_understanding not in ALLOWED_UNDERSTANDING:
+            # class_understanding = "none"
+
+        return {
+            "response_text": response_text,
+            "expects_answer": expects_answer,
+            "class_understanding": class_understanding
+        }
+
+    except Exception as e:
+
+        print(f"❌ AI JSON Error: {e}")
+        print(f"Raw AI output: {raw_response}")
+
+        return {
+            "response_text": "I had a small glitch, let's continue.",
+            "expects_answer": False,
+            "class_understanding": "none"
+        }
+
+
+"""
+# النسخة الثانية
 def generate_ai_response(action, messages):
     """
     توليد الرد المناسب حسب action و context الرسائل
@@ -37,6 +89,7 @@ def generate_ai_response(action, messages):
             }
 
 """
+"""
 def generate_ai_response(action, messages):
     """
     توليد الرد المناسب حسب action و context الرسائل
@@ -63,6 +116,10 @@ def generate_ai_response(action, messages):
         }
 
 """
+
+
+
+
 def build_prompt(action, context_messages):
     session = get_session_info()
     mode = session.get("mode", "conversation")
@@ -166,7 +223,27 @@ def call_ai(prompt):
         max_tokens=1024
     )
     return response.choices[0].message.content
-    
+
+
+
+"""
+def extract_json(text):
+    """
+    استخراج JSON من النص حتى لو احتوى على شرح أو markdown
+    """
+
+    # إزالة markdown
+    text = re.sub(r"```json|```", "", text)
+
+    match = re.search(r"\{.*\}", text, re.DOTALL)
+
+    if not match:
+        raise ValueError("No JSON found")
+
+    return match.group()
+
+"""
+
 def extract_json(text):
     """
     استخراج JSON من النص حتى لو كان داخله شرح أو markdown
@@ -183,7 +260,25 @@ def extract_json(text):
 
     return match.group()
 
+"""
+def heal_json(text):
+    """
+    إصلاح الأخطاء الشائعة في JSON القادم من الذكاء الاصطناعي
+    """
 
+    # إزالة الفواصل الزائدة
+    text = re.sub(r",\s*}", "}", text)
+    text = re.sub(r",\s*]", "]", text)
+
+    # تحويل single quotes
+    text = text.replace("'", '"')
+
+    # إزالة newline داخل النص
+    text = text.replace("\n", " ")
+
+    return text
+
+"""
 def heal_json(text):
     """
     إصلاح الأخطاء الشائعة في JSON
