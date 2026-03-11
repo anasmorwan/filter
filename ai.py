@@ -18,24 +18,57 @@ def generate_ai_response(action, messages):
     return response
 
 
-
-
-# في ai.py، عندما نقوم ببناء البرومبت:
 def build_prompt(action, context_messages):
     session = get_session_info()
+    mode = session.get("mode", "conversation")
     
-    prompt = f"{TEACHER_SYSTEM_PROMPT}\n"
+    # --- جلب البيانات المشتركة ---
+    full_conversation = get_chat_history()
+    action_prompt = ACTION_PROMPTS.get(action, "")
     
-    # إذا كنا في وضع المحاضرة، نمرر له الفقرة الحالية فقط!
-    if session["mode"] == "lecture":
+    # --- الحالة الأولى: نمط المحاضرة (Lecture Mode) ---
+    if mode == "lecture":
         chunks = session.get("lecture_chunks", [])
         idx = session.get("current_chunk_index", 0)
+        current_material = chunks[idx] if idx < len(chunks) else "End of material."
         
-        current_chunk = chunks[idx] if idx < len(chunks) else "No more content."
-        
-        prompt += f"\n[CURRENT LECTURE MATERIAL TO EXPLAIN]:\n{current_chunk}\n"
+        prompt = f"""
+{LECTURER_SYSTEM_PROMPT}
+
+[LECTURE MATERIAL TO FOCUS ON NOW]:
+{current_material}
+
+[CONVERSATION CONTEXT]:
+{full_conversation}
+
+[YOUR SPECIFIC TASK]:
+{action_prompt}
+
+Instruction: Focus on the 'LECTURE MATERIAL'. If students ask unrelated questions, gently bring them back to the topic after answering briefly.
+"""
+
+    # --- الحالة الثانية: نمط المحادثة الحرة (القديم) ---
+    else:
+        topic = session.get("topic", "General English")
+        level = session.get("difficulty", "Intermediate")
+        prompt = f"""
+{TEACHER_SYSTEM_PROMPT}
+[SESSION CONTEXT]
+- Topic: {topic} | Level: {level}
+
+[HISTORY]
+{full_conversation}
+
+Teacher task: {action_prompt}
+(Follow the context, don't invent names, be natural).
+"""
+
+    return prompt
 
 
+
+
+""""
 def build_prompt(action, context_messages):
     session = get_session_info()
     topic = session.get("topic", "General English")
@@ -66,6 +99,8 @@ Important: Read the conversation history above. Your response MUST naturally fol
 ONLY address users who have actually spoken in the [CONVERSATION HISTORY]. Do not invent names or talk to imaginary students.
     """
     return prompt
+
+""""
 
 
 def call_ai(prompt):
