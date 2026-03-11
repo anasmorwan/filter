@@ -173,6 +173,8 @@ def decide_next_action(messages):
 # ---------------------------------------------------------
 
 def decide_lecture_logic(messages, session, stats): # دالة فرعية للتنظيم
+    stage = session.get("stage", "INTRO")
+    
     # 1. إذا قاطع الطلاب المحاضرة بسؤال:
     if messages and any(m["type"] == "question" for m in messages):
         return "ANSWER_LECTURE_QUESTION" # يرد على السؤال ثم يربطه بالمحاضرة
@@ -206,6 +208,20 @@ def decide_lecture_logic(messages, session, stats): # دالة فرعية للت
 
 
 def decide_conversation_logic(messages, session, stats): # منطقك القديم هنا
+    mode = session.get("mode", "conversation")
+    stage = session.get("stage", "INTRO")
+    conversation_stage = session.get("conversation_stage", "DISCUSSION")
+
+    session_minutes = get_session_minutes()
+
+    now = time.time()
+
+    # حماية من last_ai_message غير المهيأ
+    last_ai = session.get("last_ai_message", now)
+
+    time_since_ai = now - last_ai
+    time_since_ai = max(0, min(time_since_ai, 120))
+
     if not messages:
         return "WAKE_UP_SESSION"
 
@@ -288,7 +304,7 @@ def decide_conversation_logic(messages, session, stats): # منطقك القدي
     # نهاية الدرس
     # --------------------------------
 
-    if session_minutes > 70:
+    if session_minutes > 10:
         return "OUTRO_LESSON"
 
     if session_minutes > 50 or progress >= 80:
