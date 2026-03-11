@@ -170,14 +170,14 @@ async def handle_action(action, messages):
     update_ai_timestamp()
     print("✅ AI responded and timer reset.", flush=True)
     
-    print(f"\n--- AI RESPONSE ---\n{response}", flush=True)
+    print(f"\n--- AI RESPONSE ---\n{response_text}", flush=True)
     # حفظ السؤال الحالي
     if action in [
         "INTRO_LESSON",
         "ASK_NEW_TOPIC_QUESTION",
         "ASK_FOLLOWUP"
     ]:
-        session["current_question"] = response
+        session["current_question"] = response_text
 
 
 
@@ -198,7 +198,7 @@ async def handle_action(action, messages):
 
 
 
-def handle_lecture_action(action, session, understanding):
+async def handle_lecture_action(action, session, understanding):
     if action == "TEACH_NEXT_CHUNK":
         # نزيد العداد فقط بعد نجاح الشرح
         session["current_chunk_index"] += 1
