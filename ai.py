@@ -18,6 +18,24 @@ def generate_ai_response(action, messages):
     return response
 
 
+
+
+# في ai.py، عندما نقوم ببناء البرومبت:
+def build_prompt(action, context_messages):
+    session = get_session_info()
+    
+    prompt = f"{TEACHER_SYSTEM_PROMPT}\n"
+    
+    # إذا كنا في وضع المحاضرة، نمرر له الفقرة الحالية فقط!
+    if session["mode"] == "lecture":
+        chunks = session.get("lecture_chunks", [])
+        idx = session.get("current_chunk_index", 0)
+        
+        current_chunk = chunks[idx] if idx < len(chunks) else "No more content."
+        
+        prompt += f"\n[CURRENT LECTURE MATERIAL TO EXPLAIN]:\n{current_chunk}\n"
+
+
 def build_prompt(action, context_messages):
     session = get_session_info()
     topic = session.get("topic", "General English")
@@ -45,8 +63,6 @@ Current Active Question you asked (if any):
 Teacher task right now:
 {action_prompt}
 
-Important: Read the conversation history above. Your response MUST naturally follow the context of what was just said. Do not repeat your previous questions.
-ONLY address users who have actually spoken in the [CONVERSATION HISTORY]. Do not invent names or talk to imaginary students.
     """
     return prompt
 
