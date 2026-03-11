@@ -444,9 +444,13 @@ async def handle_message(client, message):
     user_id = message.from_user.id
 
     await process_message(user, message.from_user.id, message.text, message.date)
-    
+
+
+
+
+
 # bot.py
-from flask import Flask
+from flask import Flask, render_template
 
 # Flask app فقط لو تريد Web Service
 flask_app = Flask(__name__)
@@ -455,6 +459,11 @@ flask_app = Flask(__name__)
 @flask_app.route("/")
 def index():
     return "Bot is alive!"
+
+
+@flask_app.route("/rayan")
+def rayan():
+    return render_template("rayan.html")
 
 if __name__ == "__main__":
     from threading import Thread
