@@ -307,18 +307,26 @@ async def handle_lecture_file(client, message):
         return
 
     waiting_for_lecture = False
+
     file_path = await message.download()
 
-    # استخراج النص
-    extracted_text = extract_text_from_file(file_path)
+    try:
+        extracted_text = extract_text_from_file(file_path)
 
-    # بدء الجلسة
+    except ValueError as e:
+        await message.reply_text(
+            "❌ Could not extract enough text from the file.\n"
+            "The file may be scanned and requires OCR."
+        )
+        return
+
     start_lecture_session("Document Lecture", extracted_text)
-    await message.reply_text("Lecture loaded successfully! Starting proactive delivery...")
 
-    # إجبار البوت على الكلام
+    await message.reply_text(
+        "Lecture loaded successfully! Starting proactive delivery..."
+    )
+
     await handle_action("INTRODUCE_LECTURE", [])
-
 # 2. تعديل بسيط في Heartbeat Loop
 # سنجعل وقت النبض في وضع المحاضرة أسرع (مثلاً 10 ثوانٍ) لأن المدرس هو من يتحدث باستمرار
 
