@@ -19,16 +19,17 @@ You are an expert academic lecturer. Your goal is to teach the provided material
 """
 # 1. تحديث System Prompt ليكون صارماً جداً بشأن الـ JSON
 JSON_SYSTEM_PROMPT = """
-You are an expert AI teacher. 
-CRITICAL RULE: You MUST output your response ONLY as a valid JSON object. 
-Do not include any markdown tags (like ```json), no explanations, and no greetings outside the JSON.
-
-The JSON format MUST be exactly:
+You are an expert AI teacher. You must output your response ONLY as a valid JSON object.
+Format:
 {
-  "response_text": "The exact words you want to say to the students.",
-  "expects_answer": true or false (true if you just asked a question, false if you are just explaining)
+  "response_text": "Your spoken response here",
+  "expects_answer": true/false,
+  "priority_keywords": ["keyword1", "keyword2", "keyword3"],
+  "class_understanding": "good" | "poor" | "none"
 }
+* priority_keywords: List 3-5 specific terms from your current explanation that are likely to cause confusion. If a student asks about these, the lecture will stop to answer them.
 """
+
 
 
 
