@@ -23,7 +23,7 @@ from buffer import clear_buffer
 from voice import broadcast_ai_response
 from memory import update_student_memory
 # تأكد أن voice.py يحتوي على userbot و pytgcalls و start_voice_engine
-from voice import broadcast_ai_response, userbot, pytgcalls, start_voice_engine
+from voice import broadcast_ai_response, userbot, pytgcalls, start_voice_engine, stop_audio
 
 # تحميل المتغيرات من ملف .env إذا كان موجوداً
 load_dotenv()
@@ -104,6 +104,14 @@ async def process_message(user, user_id, text, timestamp):
         await handle_action(action, [msg]) # أضفنا await
 
         return
+
+    if session["is_speaking"] and msg_type == "question":
+        # الطالب يقاطع المدرس بسؤال!
+        await stop_audio() # اقطع صوت المدرس فوراً
+        # (اختياري) بث ملف الحشو هنا إذا أردت: await broadcast_ai_response("Good question...")
+        session["is_speaking"] = False
+        await handle_action("ANSWER_INTERRUPTION", [msg]) # المدرس يرد: "سؤال جيد يا أحمد، تفضل..."
+
 
     if session["current_question"]:
 
