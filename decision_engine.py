@@ -110,24 +110,6 @@ def calculate_priority(stats, session, time_since_ai):
     return score
 
 
-def decide_next_action(messages):
-    session = get_session_info()
-    mode = session.get("mode", "conversation")
-    
-    # 1. شروط الحماية العامة (Cooldown) - تبقى في البداية
-    if time_since_ai < COOLDOWN: return "WAIT"
-    
-    # 2. تحليل الرسائل (Stats) - يبقى مشتركاً
-    stats = analyze_messages(messages)
-    
-    # 3. فصل المسارات (The Great Split)
-    if mode == "lecture":
-        return decide_lecture_logic(messages, session, stats) # دالة فرعية للتنظيم
-    else:
-        return decide_conversation_logic(messages, session, stats) # منطقك القديم هنا
-
-
-
 
 def decide_next_action(messages):
 
