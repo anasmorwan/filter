@@ -168,9 +168,27 @@ def decide_next_action(messages):
 # ---------------------------------------------------------
 # دوال النموذجين الاول و الثاني (lecturer & english Teacher)
 # ---------------------------------------------------------
-
 def decide_lecture_logic(messages, session, stats): # دالة فرعية للتنظيم
     stage = session.get("stage", "INTRO")
+    waiting = session.get("waiting_for_answer", False)
+
+# ---------------------------------------------------------
+# أولوية 1: نحن ننتظر إجابة (المدرس طرح سؤالاً للتو)
+# ---------------------------------------------------------
+    if waiting:
+        if not messages:
+            # الطلاب صامتون ولم يجيبوا بعد.
+            # يمكنك إرجاع "WAIT" أو أكشن جديد مثل "GIVE_HINT" إذا طال الصمت
+            return "WAIT" 
+        else:
+            # الطلاب أرسلوا رسائل! (غالباً هي إجابات)
+            session["waiting_for_answer"] = False # نفتح القفل
+            session["current_stage"] = "EXPLAIN"  # نعود لوضع الشرح بعد التقييم
+            return "EVALUATE_AND_CONTINUE"
+
+# ---------------------------------------------------------
+# أولوية 2: مقاطعة من الطلاب (أسئلة خارج السياق أثناء الشرح)
+# ---------------------------------------------------------
     
     # 1. إذا قاطع الطلاب المحاضرة بسؤال:
     if messages and any(m["type"] == "question" for m in messages):
@@ -180,6 +198,10 @@ def decide_lecture_logic(messages, session, stats): # دالة فرعية للت
     if messages and session["current_stage"] == "CHECK_UNDERSTANDING":
         session["current_stage"] = "EXPLAIN" # نعود للشرح بعد التقييم
         return "EVALUATE_AND_CONTINUE"
+        
+# ---------------------------------------------------------
+# أولوية 3: تدفق المحاضرة الطبيعي (لا توجد رسائل، المدرس يشرح)
+# ---------------------------------------------------------
 
     # 3. إذا كان الـ Heartbeat هو من استدعى الدالة (لا توجد رسائل = صمت / وقت الشرح):
     if not messages:
@@ -202,6 +224,8 @@ def decide_lecture_logic(messages, session, stats): # دالة فرعية للت
                 return "ASK_CONCEPT_QUESTION"
             else:
                 return "TEACH_NEXT_CHUNK"
+                
+    return "WAIT" # حماية أخيرة
 
 
 def decide_conversation_logic(messages, session, stats): # منطقك القديم هنا
