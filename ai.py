@@ -1,7 +1,7 @@
 from groq import Groq
 from prompts import TEACHER_SYSTEM_PROMPT, ACTION_PROMPTS, LECTURER_SYSTEM_PROMPT, JSON_SYSTEM_PROMPT
 import os
-from session import, session, get_session_info, get_chat_history
+from session import session, get_session_info, get_chat_history
 import json
 import re
 
