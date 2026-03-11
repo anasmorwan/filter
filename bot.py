@@ -143,9 +143,22 @@ async def handle_action(action, messages):
 
     print(f"\n--- ACTION DECIDED: {action} ---", flush=True)
 
-    response = generate_ai_response(action, messages)
-    add_to_chat_history("Teacher (You)", response) # 👈 أضف هذه لتوثيق كلام المدرس
-    await broadcast_ai_response(response)
+    ai_data = generate_ai_response(action, messages)
+    response_text = ai_data.get("response_text", "Error generating response.")
+    expects_answer = ai_data.get("expects_answer", False)
+
+    # 2. تحديث حالة الجلسة بناءً على ما يقرره الـ AI
+    session["waiting_for_answer"] = expects_answer
+
+    if expects_answer:
+        print("👀 The AI asked a question. Waiting for student answers...", flush=True)
+    else:
+        print("🗣️ The AI is just explaining. Will continue smoothly.", flush=True)
+    
+    
+    add_to_chat_history("Teacher (You)", response_text) # 👈 أضف هذه لتوثيق كلام المدرس
+    
+    await broadcast_ai_response(response_text)
     # ✅ تحديث وقت آخر نطق للبوت لكي يتم تصفير العداد
     from session import update_ai_timestamp
     update_ai_timestamp()
