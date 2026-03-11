@@ -135,6 +135,7 @@ async def process_message(user, user_id, text, timestamp):
 
 async def handle_action(action, messages):
     session = get_session_info()
+    mode = session.get("mode", "conversation")
 
     if action == "WAIT":
         return
@@ -146,6 +147,7 @@ async def handle_action(action, messages):
     ai_data = generate_ai_response(action, messages)
     response_text = ai_data.get("response_text", "Error generating response.")
     expects_answer = ai_data.get("expects_answer", False)
+    understanding = ai_data["class_understanding"]
 
     # 2. تحديث حالة الجلسة بناءً على ما يقرره الـ AI
     session["waiting_for_answer"] = expects_answer
@@ -154,6 +156,21 @@ async def handle_action(action, messages):
         print("👀 The AI asked a question. Waiting for student answers...", flush=True)
     else:
         print("🗣️ The AI is just explaining. Will continue smoothly.", flush=True)
+
+    # 3. منطق خاص بنمط المحاضرة (Lecture Mode)
+    if mode == "lecture":
+        if action == "TEACH_NEXT_CHUNK":
+            # نزيد العداد فقط بعد نجاح الشرح
+            session["current_chunk_index"] += 1
+            
+        elif action == "EVALUATE_AND_CONTINUE":
+            if understanding == "poor":
+                # الطلاب لم يفهموا، لا نزيد العداد (سيعيد الشرح في النبضة القادمة)
+                print("⚠️ Students confused. Staying on current chunk for re-explanation.")
+            else:
+                # الفهم جيد، ننتقل للفقرة التالية
+                session["current_chunk_index"] += 1
+
     
     
     add_to_chat_history("Teacher (You)", response_text) # 👈 أضف هذه لتوثيق كلام المدرس
