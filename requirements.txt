@@ -8,3 +8,5 @@ groq
 python-dotenv
 flask
 pypdf
+python-docx
+python-pptx
