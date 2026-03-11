@@ -208,6 +208,15 @@ async def heartbeat_loop():
             if not session_is_active():
                 # print("💓 [HEARTBEAT] Session inactive, skipping...") # اختيارية لتجنب إزعاج اللوج
                 continue
+
+            if session["is_speaking"]:
+                return # توقف عن حساب الصمت، المدرس يتحدث الآن!
+
+            if session["waiting_for_answer"]:
+                # ننتظر إجابة الطالب، نوقف إرسال أي شرح جديد مؤقتاً
+                dynamic_limit = 25 # نعطي الطالب وقتاً أطول للتفكير
+
+
                 
             silence_time = get_silence_duration()
             print(f"💓 [HEARTBEAT] Silence duration: {int(silence_time)}s", flush=True)
