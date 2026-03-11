@@ -215,6 +215,9 @@ async def heartbeat_loop():
             # إذا كنت وحدك (Unique users = 1)، اجعل الصمت أقصر (مثلاً 15 ثانية)
             if len(session["stats"]["unique_users"]) <= 5:
                 dynamic_limit = 3 
+
+            elif session["mode"] == "lecture":
+                dynamic_limit = 1
             else:
                 dynamic_limit = 10 # للجروبات الكبيرة
 
