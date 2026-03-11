@@ -47,6 +47,7 @@ session = {
     "chat_history": [], # 👈 هذه هي ذاكرة السياق القصيرة
     "is_speaking": True,
     "waiting_for_answer": False,
+    "pending_questions": ".."
     "mode": "conversation",  # 👈 إما 'conversation' أو 'lecture'
     "active": False,
     "start_time": None,
