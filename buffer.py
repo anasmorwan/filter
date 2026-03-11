@@ -53,3 +53,22 @@ def add_message(msg):
 
 def get_recent_messages(n=5):
     return list(message_queue)[-n:]
+
+
+
+def should_interrupt(msg, session):
+    text = msg["text"].lower()
+    
+    # 1. كلمات الطوارئ (توقف الشرح فوراً)
+    emergency_keywords = ["لم افهم", "ما فهمت", "ممكن تعيد", "وضح اكثر", "عيد", "slow down"]
+    if any(word in text for word in emergency_keywords):
+        return True
+
+    # 2. طول السؤال (الأسئلة العميقة غالباً تكون أطول من 15 حرف)
+    if len(text) > 15:
+        return True
+
+    # 3. تكرار السؤال (إذا سأل أكثر من طالب نفس الشيء - يعبر عن ارتباك جماعي)
+    # يمكن تطوير هذا لاحقاً باستخدام Counter
+    
+    return False
