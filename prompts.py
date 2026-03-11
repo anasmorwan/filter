@@ -44,7 +44,7 @@ Sound like a teacher ending a class.
 
 "TEACH_NEXT_CHUNK": """Explain the [CURRENT LECTURE MATERIAL] in a simple, conversational tone. Do NOT read it word-for-word. Act like a streamer explaining a concept. End by asking if they are ready for the next part.""",
   
-"​ASK_CONCEPT_QUESTION": """Based on the material you just explained, generate ONE interactive quiz question (like a flashcard or a fill-in-the-blank) to test the students' memory. Be encouraging!"""
+"​ASK_CONCEPT_QUESTION": """Based on the material you just explained, generate ONE interactive quiz question (like a flashcard or a fill-in-the-blank) to test the students' memory. Be encouraging!""",
 
 "GIVE_FEEDBACK_ON_ANSWERS": """
 Students answered your question.
