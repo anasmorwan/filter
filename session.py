@@ -57,7 +57,7 @@ session = {
     "current_stage_index": 0, # مؤشر المرحلة الحالية
     "response_text": "...",
     "expects_answer": false,
-    "class_understanding": "good"
+    "class_understanding": "good",
     "stages": [
         {"name": "INTRO", "type": "hook", "min_duration": 2},
         {"name": "ICE_BREAKER", "type": "game", "game_type": "word_association", "min_duration": 3},
