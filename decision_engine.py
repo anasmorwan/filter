@@ -257,12 +257,12 @@ def decide_conversation_logic(messages, session, stats): # منطقك القدي
     # مراحل الدرس
     # --------------------------------
 
-    if stage == "INTRO":
-        session["stage"] = "WARMUP"
+    if conversation_stage == "INTRO":
+        session["conversation_stage"] = "WARMUP"
         return "INTRO_LESSON"
 
-    if stage == "WARMUP" and stats["answers"] >= 2:
-        session["stage"] = "DISCUSSION"
+    if conversation_stage == "WARMUP" and stats["answers"] >= 2:
+        session["conversation_stage"] = "DISCUSSION"
 
     # --------------------------------
     # صمت في الصف
