@@ -68,9 +68,9 @@ def generate_ai_response(action, messages):
 """
 # النسخة الثانية
 def generate_ai_response(action, messages):
-    """
+    
     توليد الرد المناسب حسب action و context الرسائل
-    """
+    
 
     context = list(messages)[-5:]
     prompt = build_prompt(action, context)
@@ -95,12 +95,11 @@ def generate_ai_response(action, messages):
                 "expects_answer": False
             }
 
-"""
-"""
+
 def generate_ai_response(action, messages):
-    """
+    
     توليد الرد المناسب حسب action و context الرسائل
-    """
+
     context = list(messages)[-5:]  # آخر 5 رسائل فقط
     prompt = build_prompt(action, context)
     raw_response = call_ai(prompt).strip()
