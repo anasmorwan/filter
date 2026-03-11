@@ -7,6 +7,7 @@ from gtts import gTTS
 from pydub import AudioSegment
 from collections import deque
 
+
 # -------------------------
 # إعداد Userbot (حساب المدرس)
 # -------------------------
@@ -28,6 +29,8 @@ is_engine_ready = False
 VOICE_CHAT_ID = int(os.environ.get("CHAT_ID"))
 voice_queue = deque()
 is_playing = False
+# 🌟 إضافة Event للتحكم في قطع الصوت
+stop_playback_event = asyncio.Event()
 
 def create_silence():
     silence = AudioSegment.silent(duration=1000)  # 1 second
@@ -54,6 +57,8 @@ def generate_audio_sync(text, filename="ai_response.wav"):
         print(f"TTS Error: {e}")
         return None, 0
 
+
+
 async def play_next():
     global is_playing
 
@@ -61,28 +66,54 @@ async def play_next():
         return
 
     is_playing = True
+    stop_playback_event.clear() # إعادة ضبط القفل
 
     text = voice_queue.popleft()
     audio_file, duration = generate_audio_sync(text)
 
     try:
-        print(f"🎙️ Playing Audio: {audio_file}")
+        if audio_file:
+            print(f"🎙️ Playing Audio: {audio_file}")
+            await pytgcalls.play(
+                VOICE_CHAT_ID,
+                MediaStream(audio_file)
+            )
 
-        await pytgcalls.play(
-            VOICE_CHAT_ID,
-            MediaStream(audio_file)
-        )
-
-        await asyncio.sleep(duration + 1)
+        # await asyncio.sleep(duration + 1)
+        # 🌟 السحر هنا: ننتظر انتهاء الوقت، أو إشارة "القطع"
+            try:
+                await asyncio.wait_for(stop_playback_event.wait(), timeout=duration + 0.5)
+                # إذا وصلنا هنا، يعني أنه تم استدعاء stop_audio وتم كسر الانتظار
+                print("⚠️ Playback sleep interrupted by stop_event!")
+            except asyncio.TimeoutError:
+                # إذا انتهى الوقت الطبيعي دون مقاطعة
+                pass
 
     except Exception as e:
         print(f"❌ Error during playback: {e}")
 
     is_playing = False
 
-    await play_next()
+    # إذا لم يتم تفريغ الطابور بسبب مقاطعة، شغل التالي
+    if voice_queue:
+        await play_next()
 
-
+# 🌟 دالة القطع الجديدة التي ستستدعيها من bot.py
+async def stop_audio():
+    global is_playing
+    
+    # 1. تفريغ أي رسائل صوتية سابقة كانت تنتظر
+    voice_queue.clear() 
+    
+    if is_playing:
+        print("🛑 STOP AUDIO COMMAND RECEIVED! Cutting stream...")
+        # 2. تشغيل ملف صامت لقطع الصوت الحالي فوراً من الغرفة
+        await pytgcalls.play(VOICE_CHAT_ID, MediaStream("silence.wav"))
+        
+        # 3. إرسال إشارة لكسر الـ sleep في دالة play_next
+        stop_playback_event.set() 
+        is_playing = False
+        
 async def broadcast_ai_response(response_text):
     print(f"📢 Voice system queued text: {response_text[:40]}...")
     voice_queue.append(response_text)
