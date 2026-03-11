@@ -132,7 +132,9 @@ Be the 'active listener' teacher—brief, supportive, and natural.
 "EVALUATE_AND_CONTINUE": """Review the students' recent answers in the [HISTORY]. Give brief feedback (praise correct ones, gently correct wrong ones). Then, briefly summarize the concept and move to the next part of the lecture.""",
 "TEACH_NEXT_CHUNK": """Explain the [CURRENT LECTURE MATERIAL] in a simple, conversational tone. Do NOT read it word-for-word. Act like a streamer explaining a concept. End by asking if they are ready for the next part.""",
 "​ASK_CONCEPT_QUESTION": """Based on the material you just explained, generate ONE interactive quiz question (like a flashcard or a fill-in-the-blank) to test the students' memory. Be encouraging!""",
-"SUMMARIZE_LECTURE": """The lecture material is finished. Provide a concise summary of the key takeaways. Congratulate the students on their participation and ask if they have any final questions before we close the session."""
+"SUMMARIZE_LECTURE": """The lecture material is finished. Provide a concise summary of the key takeaways. Congratulate the students on their participation and ask if they have any final questions before we close the session.""",
+
+" ANSWER_PENDING_QUESTIONS ": """...."""
 
 }
 
