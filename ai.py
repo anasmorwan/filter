@@ -72,6 +72,7 @@ Instruction: Focus on the 'LECTURE MATERIAL'. If students ask unrelated question
         level = session.get("difficulty", "Intermediate")
         prompt = f"""
 {TEACHER_SYSTEM_PROMPT}
+{JSON_SYSTEM_PROMPT}
 [SESSION CONTEXT]
 - Topic: {topic} | Level: {level}
 
