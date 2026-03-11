@@ -112,8 +112,8 @@ def calculate_priority(stats, session, time_since_ai):
 
 
 def decide_next_action(messages):
-    mode = session.get("mode", "conversation")
     session = get_session_info()
+    mode = session.get("mode", "conversation")
     stage = session.get("stage", "INTRO")
     
     session_minutes = get_session_minutes()
