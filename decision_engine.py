@@ -110,6 +110,23 @@ def calculate_priority(stats, session, time_since_ai):
     return score
 
 
+def decide_next_action(messages):
+    session = get_session_info()
+    mode = session.get("mode", "conversation")
+    
+    # 1. شروط الحماية العامة (Cooldown) - تبقى في البداية
+    if time_since_ai < COOLDOWN: return "WAIT"
+    
+    # 2. تحليل الرسائل (Stats) - يبقى مشتركاً
+    stats = analyze_messages(messages)
+    
+    # 3. فصل المسارات (The Great Split)
+    if mode == "lecture":
+        return decide_lecture_logic(messages, session, stats) # دالة فرعية للتنظيم
+    else:
+        return decide_conversation_logic(messages, session, stats) # منطقك القديم هنا
+
+
 
 
 def decide_next_action(messages):
@@ -157,44 +174,58 @@ def decide_next_action(messages):
     # النموذج الأول: المحادثة الحرة (الكود القديم الخاص بك)
     # ---------------------------------------------------------
     if mode == "conversation":
-        if not messages:
-            return "WAKE_UP_SESSION"
+        return decide_conversation_logic(messages, session, stats) # منطقك القديم هنا
+        
         # ... باقي منطق المحادثة المعتاد ...
     # ---------------------------------------------------------
     # النموذج الثاني: المحاضرة الموجهة (Lecture Mode)
     # ---------------------------------------------------------
+
     elif mode == "lecture":
-        # 1. إذا قاطع الطلاب المحاضرة بسؤال:
-        if messages and any(m["type"] == "question" for m in messages):
-            return "ANSWER_LECTURE_QUESTION" # يرد على السؤال ثم يربطه بالمحاضرة
+        return decide_lecture_logic(messages, session, stats) # دالة فرعية للتنظيم
+
+
+
+# ---------------------------------------------------------
+# دوال النموذجين الاول و الثاني (Ai theacher & english streamer)
+# ---------------------------------------------------------
+
+def decide_lecture_logic(messages, session, stats): # دالة فرعية للتنظيم
+    # 1. إذا قاطع الطلاب المحاضرة بسؤال:
+    if messages and any(m["type"] == "question" for m in messages):
+        return "ANSWER_LECTURE_QUESTION" # يرد على السؤال ثم يربطه بالمحاضرة
         
-        # 2. إذا كان الطلاب يجيبون على تمرين أو سؤال طرحه البوت:
-        if messages and session["current_stage"] == "CHECK_UNDERSTANDING":
-            session["current_stage"] = "EXPLAIN" # نعود للشرح بعد التقييم
-            return "EVALUATE_AND_CONTINUE"
+    # 2. إذا كان الطلاب يجيبون على تمرين أو سؤال طرحه البوت:
+    if messages and session["current_stage"] == "CHECK_UNDERSTANDING":
+        session["current_stage"] = "EXPLAIN" # نعود للشرح بعد التقييم
+        return "EVALUATE_AND_CONTINUE"
 
-        # 3. إذا كان الـ Heartbeat هو من استدعى الدالة (لا توجد رسائل = صمت / وقت الشرح):
-        if not messages:
-            stage = session["current_stage"]
+    # 3. إذا كان الـ Heartbeat هو من استدعى الدالة (لا توجد رسائل = صمت / وقت الشرح):
+    if not messages:
+        stage = session["current_stage"]
             
-            if stage == "INTRO":
-                session["current_stage"] = "EXPLAIN"
-                return "INTRODUCE_LECTURE"
+        if stage == "INTRO":
+            session["current_stage"] = "EXPLAIN"
+            return "INTRODUCE_LECTURE"
                 
-            elif stage == "EXPLAIN":
-                # إذا انتهينا من كل الفقرات
-                if session["current_chunk_index"] >= len(session["lecture_chunks"]):
-                    session["current_stage"] = "OUTRO"
-                    return "SUMMARIZE_LECTURE"
+        elif stage == "EXPLAIN":
+            # إذا انتهينا من كل الفقرات
+            if session["current_chunk_index"] >= len(session["lecture_chunks"]):
+                session["current_stage"] = "OUTRO"
+                return "SUMMARIZE_LECTURE"
                 
-                # إما أن يشرح الفقرة التالية، أو يسأل سؤالاً للتأكد من الفهم
-                # مثلاً: بعد كل فقرتين، نطرح سؤالاً (Quiz)
-                if session["current_chunk_index"] > 0 and session["current_chunk_index"] % 2 == 0:
-                    session["current_stage"] = "CHECK_UNDERSTANDING"
-                    return "ASK_CONCEPT_QUESTION"
-                else:
-                    return "TEACH_NEXT_CHUNK"
+            # إما أن يشرح الفقرة التالية، أو يسأل سؤالاً للتأكد من الفهم
+            # مثلاً: بعد كل فقرتين، نطرح سؤالاً (Quiz)
+            if session["current_chunk_index"] > 0 and session["current_chunk_index"] % 2 == 0:
+                session["current_stage"] = "CHECK_UNDERSTANDING"
+                return "ASK_CONCEPT_QUESTION"
+            else:
+                return "TEACH_NEXT_CHUNK"
 
+
+def decide_conversation_logic(messages, session, stats): # منطقك القديم هنا
+    if not messages:
+        return "WAKE_UP_SESSION"
 
     # --------------------------------
     # مراحل الدرس
@@ -290,3 +321,6 @@ def decide_next_action(messages):
     # --------------------------------
 
     return "GENERAL_COMMENT"
+
+
+
