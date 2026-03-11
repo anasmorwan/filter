@@ -224,6 +224,13 @@ def decide_lecture_logic(messages, session, stats): # دالة فرعية للت
                 return "ASK_CONCEPT_QUESTION"
             else:
                 return "TEACH_NEXT_CHUNK"
+
+    # إذا انتهى المدرس من الشرح، وقبل أن ننتقل للـ Chunk التالي:
+    if not messages and session["pending_questions"]:
+        # بدلاً من شرح فقرة جديدة، نأخذ الأسئلة التي جمعناها أثناء الشرح
+        queued_msgs = session["pending_questions"].copy()
+        session["pending_questions"].clear()
+        return "ANSWER_PENDING_QUESTIONS" 
                 
     return "WAIT" # حماية أخيرة
 
