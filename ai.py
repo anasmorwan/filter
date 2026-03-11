@@ -1,7 +1,7 @@
 from groq import Groq
 from prompts import TEACHER_SYSTEM_PROMPT, ACTION_PROMPTS, LECTURER_SYSTEM_PROMPT, JSON_SYSTEM_PROMPT
 import os
-from session import get_session_info, get_chat_history
+from session import, session, get_session_info, get_chat_history
 import json
 import re
 
@@ -9,6 +9,7 @@ import re
 client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
 
 ALLOWED_UNDERSTANDING = {"good", "poor", "none"}
+
 
 # النسخة الاخيرة
 def generate_ai_response(action, messages):
@@ -22,11 +23,17 @@ def generate_ai_response(action, messages):
 
         try:
             parsed_data = json.loads(json_text)
+            # تحديث الجلسة بالكلمات المفتاحية الجديدة فور توليدها
+            session["priority_keywords"] = [k.lower() for k in parsed_data.get("priority_keywords", [])]
+    
 
         except json.JSONDecodeError:
             # محاولة إصلاح JSON
             fixed_json = heal_json(json_text)
             parsed_data = json.loads(fixed_json)
+            # تحديث الجلسة بالكلمات المفتاحية الجديدة فور توليدها
+            session["priority_keywords"] = [k.lower() for k in parsed_data.get("priority_keywords", [])]
+    
 
         response_text = parsed_data.get("response_text", "")
         expects_answer = parsed_data.get("expects_answer", False)
