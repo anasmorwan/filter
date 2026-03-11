@@ -46,6 +46,7 @@ def move_to_next_stage():
 session = {
     "chat_history": [], # 👈 هذه هي ذاكرة السياق القصيرة
     "is_speaking": True,
+    "priority_keywords": [],
     "waiting_for_answer": False,
     "pending_questions": [],
     "mode": "conversation",  # 👈 إما 'conversation' أو 'lecture'
