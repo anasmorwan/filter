@@ -134,7 +134,14 @@ Be the 'active listener' teacher—brief, supportive, and natural.
 "​ASK_CONCEPT_QUESTION": """Based on the material you just explained, generate ONE interactive quiz question (like a flashcard or a fill-in-the-blank) to test the students' memory. Be encouraging!""",
 "SUMMARIZE_LECTURE": """The lecture material is finished. Provide a concise summary of the key takeaways. Congratulate the students on their participation and ask if they have any final questions before we close the session.""",
 
-" ANSWER_PENDING_QUESTIONS ": """...."""
+"ANSWER_PENDING_QUESTIONS": ""​"
+You have just finished a teaching segment and noticed some questions in the queue.
+​Start with a transition like: 'I've seen some great questions while I was explaining, let me address them before we move on.'
+​Review the [PENDING QUESTIONS] from the history.
+​Provide a clear, consolidated answer to these questions. If multiple students asked similar things, group them together.
+​After answering, ask if that clears things up or if you should elaborate more.
+​CRITICAL: Use the JSON format. Set expects_answer to true because you are now waiting for their reaction to your explanations.
+"""
 
 }
 
