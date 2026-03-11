@@ -235,7 +235,7 @@ async def heartbeat_loop():
 
             if session["waiting_for_answer"]:
                 # ننتظر إجابة الطالب، نوقف إرسال أي شرح جديد مؤقتاً
-                dynamic_limit = 25 # نعطي الطالب وقتاً أطول للتفكير
+                dynamic_limit = 10 # نعطي الطالب وقتاً أطول للتفكير
 
 
                 
