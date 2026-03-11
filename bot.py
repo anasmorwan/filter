@@ -263,7 +263,8 @@ async def heartbeat_loop():
                 
                 if messages:
                     print(f"💓 [HEARTBEAT] Found {len(messages)} pending messages. Evaluating...", flush=True)
-                    await handle_action("EVALUATE_STUDENT_ANSWERS", messages)
+                    # await handle_action("EVALUATE_STUDENT_ANSWERS", messages)
+                    decide_next_action(messages)
                 else:
                     print("💓 [HEARTBEAT] Dead air detected. Waking up session...", flush=True)
                     await handle_action("WAKE_UP_SESSION", [])
