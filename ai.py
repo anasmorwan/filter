@@ -3,7 +3,7 @@ from prompts import TEACHER_SYSTEM_PROMPT, ACTION_PROMPTS, LECTURER_SYSTEM_PROMP
 import os
 from session import get_session_info, get_chat_history
 import json
-
+import re
 
 # تهيئة العميل باستخدام مفتاح API الخاص بـ Groq
 client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
@@ -12,29 +12,57 @@ def generate_ai_response(action, messages):
     """
     توليد الرد المناسب حسب action و context الرسائل
     """
+
+    context = list(messages)[-5:]
+    prompt = build_prompt(action, context)
+
+    raw_response = call_ai(prompt).strip()
+
+    try:
+        json_text = extract_json(raw_response)
+        return json.loads(json_text)
+
+    except json.JSONDecodeError:
+        # محاولة إصلاح JSON
+        try:
+            fixed_json = heal_json(json_text)
+            return json.loads(fixed_json)
+
+        except Exception as e:
+            print(f"❌ JSON Parsing Error: {e}\nRaw: {raw_response}")
+
+            return {
+                "response_text": "I had a bit of a glitch, let's continue our topic.",
+                "expects_answer": False
+            }
+
+"""
+def generate_ai_response(action, messages):
+    """
+    توليد الرد المناسب حسب action و context الرسائل
+    """
     context = list(messages)[-5:]  # آخر 5 رسائل فقط
     prompt = build_prompt(action, context)
-    raw_response = call_ai(prompt)
+    raw_response = call_ai(prompt).strip()
     
-    # إزالة أي علامات Markdown قد يضيفها النموذج بالخطأ
-    if raw_response.startswith("```json"):
-        raw_response = raw_response[7:-3]
-    elif raw_response.startswith("```"):
-        raw_response = raw_response[3:-3]
-        
+    # استخراج محتوى الـ JSON بدقة بين الأقواس
     try:
-        # تحويل النص إلى قاموس بايثون (Dictionary)
-        parsed_response = json.loads(raw_response.strip())
+        start_idx = raw_response.find('{')
+        end_idx = raw_response.rfind('}') + 1
+        if start_idx == -1 or end_idx == 0:
+            raise ValueError("No JSON brackets found")
+            
+        json_content = raw_response[start_idx:end_idx]
+        parsed_response = json.loads(json_content)
         return parsed_response
-    except json.JSONDecodeError as e:
-        print(f"❌ JSON Parsing Error: {e}\nRaw Output: {raw_response}")
-        # خطة طوارئ في حال فشل النموذج في إرجاع JSON صالح
+    except (json.JSONDecodeError, ValueError) as e:
+        print(f"❌ JSON Parsing Error: {e}")
         return {
-            "response_text": "I lost my train of thought. Where were we?",
+            "response_text": "I had a bit of a glitch, let's continue our topic.",
             "expects_answer": False
         }
 
-
+"""
 def build_prompt(action, context_messages):
     session = get_session_info()
     mode = session.get("mode", "conversation")
@@ -139,3 +167,36 @@ def call_ai(prompt):
     )
     return response.choices[0].message.content
     
+def extract_json(text):
+    """
+    استخراج JSON من النص حتى لو كان داخله شرح أو markdown
+    """
+
+    # إزالة markdown
+    text = re.sub(r"```json|```", "", text)
+
+    # البحث عن أول JSON
+    match = re.search(r"\{.*\}", text, re.DOTALL)
+
+    if not match:
+        raise ValueError("No JSON found")
+
+    return match.group()
+
+
+def heal_json(text):
+    """
+    إصلاح الأخطاء الشائعة في JSON
+    """
+
+    # إزالة الفواصل الزائدة
+    text = re.sub(r",\s*}", "}", text)
+    text = re.sub(r",\s*]", "]", text)
+
+    # تحويل ' إلى "
+    text = text.replace("'", '"')
+
+    # إزالة newline داخل النصوص
+    text = text.replace("\n", " ")
+
+    return text
