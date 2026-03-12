@@ -176,17 +176,9 @@ async def handle_action(action, messages):
     
     
     
-    # ✅ تحديث وقت آخر نطق للبوت لكي يتم تصفير العداد
     
-    update_ai_timestamp()
-    print("✅ AI responded and timer reset.", flush=True)
-    
-    print(f"\n--- AI RESPONSE ---\n{response_text}", flush=True)
-    
-
-
-
 async def handle_lecture_action(action, session, understanding, ai_data):
+    
     response_text = ai_data.get("response_text", "Error generating response.")
     expects_answer = ai_data.get("expects_answer", False)
     
@@ -205,13 +197,15 @@ async def handle_lecture_action(action, session, understanding, ai_data):
     
     add_to_chat_history("Teacher (You)", response_text) # 👈 أضف هذه لتوثيق كلام المدرس
     await broadcast_ai_response(response_text)
+    # ✅ تحديث وقت آخر نطق للبوت لكي يتم تصفير العداد
     update_ai_timestamp()
-    print("✅ AI responded and timer reset.", flush=True)
-    
+    print("✅ AI responded and timer reset.", flush=True) 
     print(f"\n--- AI RESPONSE ---\n{response_text}", flush=True)
 
 
+
 async def handle_conversation_action(action, session, understanding, ai_data):
+    
     response_text = ai_data.get("response_text", "Error generating response.")
     expects_answer = ai_data.get("expects_answer", False)
     
@@ -239,11 +233,12 @@ async def handle_conversation_action(action, session, understanding, ai_data):
             session["active"] = False
             print("\n=== SESSION CLOSED ===", flush=True)
 
+    
     add_to_chat_history("Teacher (You)", response_text) # 👈 أضف هذه لتوثيق كلام المدرس
     await broadcast_ai_response(response_text)
+    # ✅ تحديث وقت آخر نطق للبوت لكي يتم تصفير العداد
     update_ai_timestamp()
-    print("✅ AI responded and timer reset.", flush=True)
-    
+    print("✅ AI responded and timer reset.", flush=True)   
     print(f"\n--- AI RESPONSE ---\n{response_text}", flush=True)
             
 
