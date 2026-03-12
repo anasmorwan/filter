@@ -505,11 +505,6 @@ flask_app = Flask(__name__)
 def index():
     return "Bot is alive!"
 
-
-@flask_app.route("/rayan")
-def rayan():
-    return render_template("rayan.html")
-
 if __name__ == "__main__":
     from threading import Thread
 
