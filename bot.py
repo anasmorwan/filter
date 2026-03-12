@@ -12,7 +12,7 @@ from dotenv import load_dotenv # اختياري إذا كنت تستخدم مل�
 
 
 # from queue_manager import check_message_window,  process_message_window
-from session import start_session, stop_session, session_is_active, get_session_info, add_to_chat_history, get_chat_history, start_lecture_session
+from session import start_session, stop_session, session_is_active, get_session_info, add_to_chat_history, get_chat_history, start_lecture_session, update_ai_timestamp
 from filter import should_store_message
 from buffer import add_message, should_process_window, pop_window_messages, get_recent_messages, should_interrupt
 from message_classifier import classify_message
@@ -167,18 +167,54 @@ async def handle_action(action, messages):
 
     # 3. منطق خاص بنمط المحاضرة (Lecture Mode)
     if mode == "lecture":
-        handle_lecture_action(action, session, understanding)
+        handle_lecture_action(action, session, understanding, ai_data)
+
+    if mode == "conversation":
+        handle_conversation_action(action, session, understanding, ai_data)
         
     
-    add_to_chat_history("Teacher (You)", response_text) # 👈 أضف هذه لتوثيق كلام المدرس
     
-    await broadcast_ai_response(response_text)
+    
+    
     # ✅ تحديث وقت آخر نطق للبوت لكي يتم تصفير العداد
-    from session import update_ai_timestamp
+    
     update_ai_timestamp()
     print("✅ AI responded and timer reset.", flush=True)
     
     print(f"\n--- AI RESPONSE ---\n{response_text}", flush=True)
+    
+
+
+
+async def handle_lecture_action(action, session, understanding, ai_data):
+    response_text = ai_data.get("response_text", "Error generating response.")
+    expects_answer = ai_data.get("expects_answer", False)
+    
+    if action == "TEACH_NEXT_CHUNK":
+        # نزيد العداد فقط بعد نجاح الشرح
+        session["current_chunk_index"] += 1
+            
+    elif action == "EVALUATE_AND_CONTINUE":
+        if understanding == "poor":
+            # الطلاب لم يفهموا، لا نزيد العداد (سيعيد الشرح في النبضة القادمة)
+            print("⚠️ Students confused. Staying on current chunk for re-explanation.")
+        else:
+            # الفهم جيد، ننتقل للفقرة التالية
+            session["current_chunk_index"] += 1
+
+    
+    add_to_chat_history("Teacher (You)", response_text) # 👈 أضف هذه لتوثيق كلام المدرس
+    await broadcast_ai_response(response_text)
+    update_ai_timestamp()
+    print("✅ AI responded and timer reset.", flush=True)
+    
+    print(f"\n--- AI RESPONSE ---\n{response_text}", flush=True)
+
+
+async def handle_conversation_action(action, session, understanding, ai_data):
+    response_text = ai_data.get("response_text", "Error generating response.")
+    expects_answer = ai_data.get("expects_answer", False)
+    
     # حفظ السؤال الحالي
     if action in [
         "INTRO_LESSON",
@@ -202,24 +238,14 @@ async def handle_action(action, messages):
             # لا توجد أسئلة معلقة → أغلق الجلسة
             session["active"] = False
             print("\n=== SESSION CLOSED ===", flush=True)
+
+    add_to_chat_history("Teacher (You)", response_text) # 👈 أضف هذه لتوثيق كلام المدرس
+    await broadcast_ai_response(response_text)
+    update_ai_timestamp()
+    print("✅ AI responded and timer reset.", flush=True)
+    
+    print(f"\n--- AI RESPONSE ---\n{response_text}", flush=True)
             
-
-
-
-async def handle_lecture_action(action, session, understanding):
-    if action == "TEACH_NEXT_CHUNK":
-        # نزيد العداد فقط بعد نجاح الشرح
-        session["current_chunk_index"] += 1
-            
-    elif action == "EVALUATE_AND_CONTINUE":
-        if understanding == "poor":
-            # الطلاب لم يفهموا، لا نزيد العداد (سيعيد الشرح في النبضة القادمة)
-            print("⚠️ Students confused. Staying on current chunk for re-explanation.")
-        else:
-            # الفهم جيد، ننتقل للفقرة التالية
-            session["current_chunk_index"] += 1
-
-
 
 
 async def heartbeat_loop():
