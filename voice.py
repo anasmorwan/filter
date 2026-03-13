@@ -1,4 +1,5 @@
 import os
+import io
 import asyncio
 from pyrogram import Client, idle 
 from pytgcalls import PyTgCalls
