@@ -177,6 +177,7 @@ def decide_lecture_logic(messages, session, stats): # دالة فرعية للت
 # ---------------------------------------------------------
     if waiting:
         if not messages:
+            print("Lecture mode: no answers to the lecturer,waiting for asnwers...", flush=True)
             # الطلاب صامتون ولم يجيبوا بعد.
             # يمكنك إرجاع "WAIT" أو أكشن جديد مثل "GIVE_HINT" إذا طال الصمت
             return "WAIT" 
@@ -184,6 +185,7 @@ def decide_lecture_logic(messages, session, stats): # دالة فرعية للت
             # الطلاب أرسلوا رسائل! (غالباً هي إجابات)
             session["waiting_for_answer"] = False # نفتح القفل
             session["current_stage"] = "EXPLAIN"  # نعود لوضع الشرح بعد التقييم
+            print("action: EVALUATE_AND_CONTINUE, the lecturer evaluating expected answers", flush=True)
             return "EVALUATE_AND_CONTINUE"
 
 # ---------------------------------------------------------
@@ -192,6 +194,7 @@ def decide_lecture_logic(messages, session, stats): # دالة فرعية للت
     
     # 1. إذا قاطع الطلاب المحاضرة بسؤال:
     if messages and any(m["type"] == "question" for m in messages):
+        print("Lecture mode: Question detected, actios: ANSWER_LECTURE_QUESTION", flush=True)
         return "ANSWER_LECTURE_QUESTION" # يرد على السؤال ثم يربطه بالمحاضرة
         
     # 2. إذا كان الطلاب يجيبون على تمرين أو سؤال طرحه البوت:
