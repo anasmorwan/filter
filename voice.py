@@ -96,9 +96,7 @@ async def generate_audio_sync(text, voice_name="en-US-AndrewMultilingualNeural",
         return None, 0
     
 """
-import io
-from pydub import AudioSegment
-import edge_tts
+
 
 async def generate_audio_fast(text, voice_name):
     try:
