@@ -64,7 +64,7 @@ def generate_audio_sync(text, filename="ai_response.wav"):
 
 """
 
-
+"""
 async def generate_audio_sync(text, voice_name="en-US-AndrewMultilingualNeural", filename="ai_response.wav"):
     try:
         # 1. توليد الصوت وحفظه كملف مؤقت mp3
@@ -94,7 +94,40 @@ async def generate_audio_sync(text, voice_name="en-US-AndrewMultilingualNeural",
     except Exception as e:
         print(f"Edge-TTS Error: {e}")
         return None, 0
+    
+"""
+import io
+from pydub import AudioSegment
+import edge_tts
 
+async def generate_audio_fast(text, voice_name):
+    try:
+        # 1. التوليد من Edge-TTS مباشرة كمجرى بيانات (Stream)
+        communicate = edge_tts.Communicate(text, voice_name)
+        audio_data = b""
+        async for chunk in communicate.stream():
+            if chunk["type"] == "audio":
+                audio_data += chunk["data"]
+
+        # 2. تحويل البيانات في الذاكرة
+        mp3_fp = io.BytesIO(audio_data)
+        audio = AudioSegment.from_file(mp3_fp, format="mp3")
+
+        # 3. الإعدادات القياسية لـ Telegram (High Quality)
+        audio = audio.set_frame_rate(48000).set_channels(2).set_sample_width(2)
+
+        # 4. التصدير إلى Byte Stream بدلاً من ملف
+        wav_fp = io.BytesIO()
+        audio.export(wav_fp, format="wav")
+        wav_fp.seek(0) # العودة لبداية الملف للقراءة
+
+        return wav_fp, audio.duration_seconds
+    except Exception as e:
+        print(f"Fast TTS Error: {e}")
+        return None, 0
+
+
+"""
 async def play_next():
     global is_playing
 
@@ -138,6 +171,49 @@ async def play_next():
     # إذا لم يتم تفريغ الطابور بسبب مقاطعة، شغل التالي
     if voice_queue:
         await play_next()
+"""
+async def play_next():
+    global is_playing
+
+    if not voice_queue or is_playing:
+        return
+
+    is_playing = True
+    stop_playback_event.clear()
+    session["is_speaking"] = True
+    
+    # جلب اسم الصوت
+    voice_name = get_session_voice_name()
+    text = voice_queue.popleft()
+
+    # استدعاء الدالة الجديدة (تأكد من وجود await)
+    audio_stream, duration = await generate_audio_fast(text, voice_name)
+
+    try:
+        if audio_stream:
+            print(f"🎙️ Streaming Audio to Telegram...")
+            
+            # py-tgcalls تدعم تمرير BytesIO مباشرة كملف
+            await pytgcalls.play(
+                VOICE_CHAT_ID,
+                MediaStream(audio_stream) # سيعتبره ملف WAV جاهز من الرام
+            )
+
+            try:
+                # الانتظار حتى انتهاء الصوت أو حدوث مقاطعة
+                await asyncio.wait_for(stop_playback_event.wait(), timeout=duration + 0.2)
+            except asyncio.TimeoutError:
+                pass
+
+    except Exception as e:
+        print(f"❌ Error during playback: {e}")
+
+    session["is_speaking"] = False 
+    is_playing = False
+
+    if voice_queue:
+        await play_next()
+
 
 # 🌟 دالة القطع الجديدة التي ستستدعيها من bot.py
 async def stop_audio():
