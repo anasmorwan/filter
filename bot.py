@@ -167,10 +167,10 @@ async def handle_action(action, messages):
 
     # 3. منطق خاص بنمط المحاضرة (Lecture Mode)
     if mode == "lecture":
-        handle_lecture_action(action, session, understanding, ai_data)
+        await handle_lecture_action(action, session, understanding, ai_data)
 
     if mode == "conversation":
-        handle_conversation_action(action, session, understanding, ai_data)
+        await handle_conversation_action(action, session, understanding, ai_data)
         
     
     
