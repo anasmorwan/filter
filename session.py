@@ -44,6 +44,7 @@ def move_to_next_stage():
 
 
 session = {
+    "voice_name": "en-US-AndrewMultilingualNeural",
     "chat_history": [], # 👈 هذه هي ذاكرة السياق القصيرة
     "is_speaking": True,
     "priority_keywords": [],
@@ -146,3 +147,7 @@ def add_to_chat_history(speaker, text):
 
 def get_chat_history():
     return "\n".join(session["chat_history"])
+
+def get_session_voice_name ():
+    return session["voice_name"]
+    
