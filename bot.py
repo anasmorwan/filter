@@ -279,9 +279,9 @@ async def heartbeat_loop():
                 dynamic_limit = 3 
 
             elif session["mode"] == "lecture":
-                dynamic_limit = 1
+                dynamic_limit = 10
             else:
-                dynamic_limit = 10 # للجروبات الكبيرة
+                dynamic_limit = 20 # للجروبات الكبيرة
 
             # إذا كان هناك سؤال حالي ينتظر إجابة، اجعل الانتظار أقل لكي يحفزهم المدرس
             if session.get("current_question"):
