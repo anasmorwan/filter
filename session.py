@@ -148,6 +148,9 @@ def add_to_chat_history(speaker, text):
 def get_chat_history():
     return "\n".join(session["chat_history"])
 
-def get_session_voice_name ():
+def get_session_voice_name():
     return session["voice_name"]
+
+def set_session_voice_name(voice_name):
+    session["voice_name"] = voice_name
     
