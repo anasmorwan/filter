@@ -2,7 +2,7 @@ import os
 import asyncio
 import uuid
 from collections import deque
-from aiohttp import web # 🌟 المكتبة الجديدة لعمل البث الحي
+from aiohttp import web
 
 from pyrogram import Client, idle
 from pytgcalls import PyTgCalls
@@ -24,60 +24,78 @@ is_playing = False
 stop_playback_event = asyncio.Event()
 
 # -------------------------
-# 🌟 خادم البث الحي (Local HTTP Streaming Server)
+# 🧠 ذاكرة التخزين المؤقت (Memory Buffer)
 # -------------------------
-# قاموس لتخزين النصوص مؤقتاً لكي يقرأها الخادم
-stream_store = {}
+# نستخدم هذا القاموس لتخزين أجزاء الصوت ليتسنى لـ FFmpeg قراءتها عدة مرات
+audio_buffers = {}
 
-async def audio_stream_handler(request):
-    """هذا هو الراديو الخاص بك: يستقبل طلب FFmpeg ويبدأ بضخ الصوت له مباشرة"""
-    stream_id = request.match_info.get('stream_id')
-    text = stream_store.get(stream_id)
+# -------------------------
+# 🌟 خادم البث الذكي (Smart HTTP Streamer)
+# -------------------------
 
-    if not text:
+async def handle_stream(request):
+    """يغذي تليجرام بالصوت من الذاكرة مباشرة"""
+    stream_id = request.match_info.get('id')
+    if stream_id not in audio_buffers:
         return web.Response(status=404)
 
-    # تجهيز الاستجابة كبث صوتي مستمر (Chunked)
-    response = web.StreamResponse(status=200, reason='OK', headers={'Content-Type': 'audio/mpeg'})
+    # تجهيز استجابة البث
+    response = web.StreamResponse(status=200, headers={
+        'Content-Type': 'audio/mpeg',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive'
+    })
     await response.prepare(request)
 
-    voice_name = get_session_voice_name() or "en-US-JennyNeural"
-
+    buffer_data = audio_buffers[stream_id]
+    pos = 0
+    
     try:
-        # التوليد والبث في نفس اللحظة (Real-Time Yielding)
-        communicate = edge_tts.Communicate(text, voice_name)
-        async for chunk in communicate.stream():
-            if chunk["type"] == "audio":
-                await response.write(chunk["data"]) # إرسال البيانات لتيليجرام فور توليدها
-    except Exception as e:
-        # إذا قام Telegram بقطع الاتصال، نتوقف بهدوء
-        pass
-    finally:
-        await response.write_eof()
-        
+        while True:
+            # إذا كان هناك بيانات جديدة في الذاكرة لم نرسلها بعد
+            if pos < len(buffer_data['bytes']):
+                chunk = buffer_data['bytes'][pos:]
+                await response.write(chunk)
+                pos += len(chunk)
+            
+            # إذا انتهى توليد الصوت وأرسلنا كل شيء، نغلق الاتصال
+            if buffer_data['done'] and pos >= len(buffer_data['bytes']):
+                break
+            
+            # انتظار بسيط جداً بانتظار بايتات جديدة من محرك الصوت
+            await asyncio.sleep(0.05)
+    except Exception:
+        pass # تليجرام أغلق الاتصال أو ffprobe انتهى
+
+    await response.write_eof()
     return response
 
-# إعداد خادم aiohttp
-app = web.Application()
-app.router.add_get('/stream/{stream_id}', audio_stream_handler)
-
-# إعداد السيرفر وتشغيله (يجب تشغيله مرة واحدة عند بدء البوت)
 async def start_server():
+    """تشغيل خادم محلي لسماع FFmpeg"""
     app = web.Application()
     app.router.add_get('/stream/{id}', handle_stream)
     runner = web.AppRunner(app)
     await runner.setup()
+    # نستخدم المنفذ 8080 داخلياً
     site = web.TCPSite(runner, '127.0.0.1', 8080)
     await site.start()
+    print("🚀 Internal Stream Server started on port 8080")
 
 # -------------------------
-# محرك التشغيل (Playback Engine)
+# 🎙️ محرك التوليد والتشغيل
 # -------------------------
 
-def create_silence(filepath="silence.wav"):
-    if not os.path.exists(filepath):
-        os.system(f'ffmpeg -f lavfi -i anullsrc=r=48000:cl=stereo -t 1 -q:a 9 -acodec libmp3lame {filepath} -y -loglevel quiet')
-    return filepath
+async def generate_voice_to_buffer(text, stream_id, voice_name):
+    """يقوم بتحويل النص لصوت وضخه في الذاكرة لحظياً"""
+    communicate = edge_tts.Communicate(text, voice_name)
+    try:
+        async for chunk in communicate.stream():
+            if chunk["type"] == "audio":
+                audio_buffers[stream_id]['bytes'].extend(chunk["data"])
+    except Exception as e:
+        print(f"❌ Generation Error: {e}")
+    finally:
+        audio_buffers[stream_id]['done'] = True
 
 async def play_next():
     global is_playing
@@ -90,35 +108,42 @@ async def play_next():
     session["is_speaking"] = True
 
     text = voice_queue.popleft()
+    stream_id = str(uuid.uuid4())
+    audio_buffers[stream_id] = {'bytes': bytearray(), 'done': False}
     
-    # 🌟 إنشاء ID فريد لهذا النص ووضعه في الذاكرة
-    stream_id = uuid.uuid4().hex
-    stream_store[stream_id] = text
-    
-    # رابط البث الحي الخاص بهذه الجملة
+    voice_name = get_session_voice_name() or "en-US-JennyNeural"
+
+    # 1. ابدأ التوليد في الخلفية فوراً (بدون await)
+    asyncio.create_task(generate_voice_to_buffer(text, stream_id, voice_name))
+
+    # 2. انتظر ثواني بسيطة جداً لضمان وجود بيانات أولية (Header) لـ FFmpeg
+    while len(audio_buffers[stream_id]['bytes']) < 2048:
+        await asyncio.sleep(0.1)
+
+    # 3. رابط البث الداخلي
     stream_url = f"http://127.0.0.1:8080/stream/{stream_id}"
 
     try:
-        print(f"🎙️ [REAL-TIME STREAM] Broadcasting: {text[:30]}...")
-        
-        # نعطي pytgcalls الرابط بدلاً من الملف. FFmpeg سيتصل بالرابط ويقرأ التدفق بسلاسة.
+        print(f"🎙️ [BUFFERED STREAM] Broadcasting: {text[:40]}...")
         await pytgcalls.play(VOICE_CHAT_ID, MediaStream(stream_url))
         
-        # تقدير وقت الانتظار (تقريبي، لأن التدفق لا يعطي مدة دقيقة)
+        # مدة تقريبية للانتظار قبل الانتقال للجملة التالية
         estimated_duration = max(2.0, len(text) / 14.0)
-        
         try:
-            await asyncio.wait_for(stop_playback_event.wait(), timeout=estimated_duration + 1.0)
+            await asyncio.wait_for(stop_playback_event.wait(), timeout=estimated_duration + 2.0)
         except asyncio.TimeoutError:
             pass 
 
     except Exception as e:
-        print(f"❌ Error during playback: {e}")
+        print(f"❌ Playback Error: {e}")
 
     finally:
-        # تنظيف الذاكرة
-        if stream_id in stream_store:
-            del stream_store[stream_id]
+        # تنظيف الذاكرة بعد البث بـ 10 ثواني (لضمان أن FFmpeg انتهى تماماً)
+        async def delayed_cleanup(sid):
+            await asyncio.sleep(10)
+            audio_buffers.pop(sid, None)
+        
+        asyncio.create_task(delayed_cleanup(stream_id))
 
         session["is_speaking"] = False 
         is_playing = False
@@ -126,48 +151,45 @@ async def play_next():
         if voice_queue:
             asyncio.create_task(play_next())
 
+# -------------------------
+# الدوال المساعدة (Silence, Stop, Broadcast)
+# -------------------------
+
+def create_silence(filepath="silence.wav"):
+    if not os.path.exists(filepath):
+        os.system(f'ffmpeg -f lavfi -i anullsrc=r=48000:cl=stereo -t 1 -q:a 9 -acodec libmp3lame {filepath} -y -loglevel quiet')
+    return filepath
+
 async def stop_audio():
     global is_playing
     voice_queue.clear() 
-    
     if is_playing:
-        print("🛑 Cutting stream...")
         try:
-            silence_path = create_silence()
-            await pytgcalls.play(VOICE_CHAT_ID, MediaStream(silence_path))
+            await pytgcalls.play(VOICE_CHAT_ID, MediaStream(create_silence()))
             stop_playback_event.set() 
-        except Exception:
-             pass
+        except: pass
         is_playing = False
         session["is_speaking"] = False
 
 async def broadcast_ai_response(response_text):
-    print(f"📢 Queuing: {response_text[:40]}...")
     voice_queue.append(response_text)
     if not is_playing:
         await play_next()
 
 async def start_voice_engine():
-    global is_engine_ready
     await pytgcalls.start()
-    
-    silence_path = create_silence()
-    await pytgcalls.play(VOICE_CHAT_ID, MediaStream(silence_path))
-    
-    is_engine_ready = True
+    await pytgcalls.play(VOICE_CHAT_ID, MediaStream(create_silence()))
     print("✅ Voice Engine Joined Voice Chat")
 
+# -------------------------
+# التشغيل الرئيسي
+# -------------------------
 if __name__ == "__main__":
     async def main():
-        # تشغيل الخادم المحلي أولاً
-        await start_server()
+        await start_server() # تشغيل سيرفر الذاكرة أولاً
         await userbot.start()
         await start_voice_engine()
-        print("Teacher Bot is fully Online (Real-Time Mode)...")
+        print("Teacher Bot is Online with REAL-TIME BUFFER Mode...")
         await idle()
 
     asyncio.run(main())
-
-
-
-
