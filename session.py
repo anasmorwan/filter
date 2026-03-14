@@ -2,6 +2,20 @@ import time
 
 
 # دالة جديدة لبدء المحاضرة
+def start_lecture_session(topic, extracted_chunks):
+    session["active"] = True
+    session["mode"] = "lecture"
+    session["topic"] = topic
+    session["current_stage"] = "INTRO"
+    session["current_chunk_index"] = 0
+    
+    # حفظ الـ Chunks المجهزة (التي تحتوي على text و image_path)
+    session["lecture_chunks"] = extracted_chunks
+    
+    session["start_time"] = time.time()
+    session["last_ai_message"] = time.time()
+    
+"""
 def start_lecture_session(topic, text_content):
     session["active"] = True
     session["mode"] = "lecture"
@@ -15,7 +29,7 @@ def start_lecture_session(topic, text_content):
     
     session["start_time"] = time.time()
     session["last_ai_message"] = time.time()
-
+"""
 
 
 
