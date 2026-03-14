@@ -56,27 +56,6 @@ waiting_for_lecture = False
 #........  MVP steps ...........
 
 #........جمع الرسائل .........
-    # داخل process_message في bot.py
-    
-    if msg_type == "question" and session.get("is_speaking"):
-        # إذا كان المدرس يتحدث حالياً وتم طرح سؤال، نفحص الرادار
-        if should_interrupt(message, session):
-            await stop_audio()
-            session["is_speaking"] = False
-            await handle_action("ANSWER_INTERRUPTION", [msg])
-        else:
-            session.setdefault("pending_questions", []).append(msg)
-            print("📥 Question queued.")
-        return # نخرج لأننا عالجنا المقاطعة
-
-    # إذا لم تكن مقاطعة أثناء الحديث، نمررها لمحرك القرار
-    messages = pop_window_messages()
-    action = decide_next_action(messages if messages else [msg])
-    
-    if action != "WAIT":
-        await handle_action(action, messages if messages else [msg])
-
-
 async def process_message(user, user_id, text, timestamp):
     session = get_session_info()
     messages = pop_window_messages()
@@ -144,32 +123,11 @@ async def process_message(user, user_id, text, timestamp):
         return # نخرج لأننا عالجنا المقاطعة
 
 
-        messages = pop_window_messages()
-        action = decide_next_action(messages if messages else [msg])
+    messages = pop_window_messages()
+    action = decide_next_action(messages if messages else [msg])
     
-        if action != "WAIT":
-            await handle_action(action, messages if messages else [msg])
-
-
-    # ---------------------------------------------------------
-    # 3. صائد الإجابات الذكي (Bingo Check) - لتسريع الـ Heartbeat
-    # ---------------------------------------------------------
-    if session.get("waiting_for_answer"):
-        accurate_keywords = session.get("most_accurate_answers", [])
-        clean_text = text.lower()
-        
-        # إذا وجدنا كلمة من "الإجابات النموذجية" التي توقعها الـ AI
-        if any(word in clean_text for word in accurate_keywords):
-            print(f"🎯 [BINGO] Accurate answer detected from {user}!")
-            session["bingo_answer_received"] = True 
-            # ملاحظة: الـ Heartbeat سيلتقط هذه الإشارة في أقل من ثانية ويقوم بالرد فوراً
-
-
-
-    if session["current_question"]:
-
-        if msg_type in ["answer", "short_answer"]:
-            session["stats"]["answers_count"] += 1
+    if action != "WAIT":
+        await handle_action(action, messages if messages else [msg])
 
 
     # --- معالجة window ---
