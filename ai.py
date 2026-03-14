@@ -45,8 +45,9 @@ def generate_ai_response(action, messages):
 
         response_text = parsed_data.get("response_text", "")
         expects_answer = parsed_data.get("expects_answer", False)
-        class_understanding = parsed_data.get("class_understanding", "none")
-
+        class_understanding = parsed_data.get("class_understanding", "none").
+        most_accurate_answers = parsed_data.get("most_accurate_answers", "none").
+        
         # تصحيح نوع expects_answer
         if isinstance(expects_answer, str):
             expects_answer = expects_answer.lower() == "true"
@@ -58,7 +59,8 @@ def generate_ai_response(action, messages):
         return {
             "response_text": response_text,
             "expects_answer": expects_answer,
-            "class_understanding": class_understanding
+            "class_understanding": class_understanding,
+            "most_accurate_answers": most_accurate_answers
         }
 
     except Exception as e:
@@ -69,7 +71,8 @@ def generate_ai_response(action, messages):
         return {
             "response_text": "I had a small glitch, let's continue.",
             "expects_answer": False,
-            "class_understanding": "none"
+            "class_understanding": "none",
+            "most_accurate_answers": "none"
         }
 
 
