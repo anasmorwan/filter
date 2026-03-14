@@ -379,6 +379,11 @@ async def heartbeat_loop():
                         # وضع المحادثة العادي
                         await handle_action("WAKE_UP_SESSION", [])
 
+                    session["waiting_for_answer"] = False # نلغي الانتظار
+
+        except Exception as e:
+            print(f"❌ [HEARTBEAT ERROR]: {e}", flush=True)
+
 
 
             """
@@ -401,10 +406,9 @@ async def heartbeat_loop():
                             await handle_action("GIVE_HINT", [])
                          """
             
-                    session["waiting_for_answer"] = False # نلغي الانتظار
+                    
 
-        except Exception as e:
-            print(f"❌ [HEARTBEAT ERROR]: {e}", flush=True)
+        
 """
 async def heartbeat_loop():
     # تأخير بسيط للتأكد من أن كل شيء اشتغل أولاً
