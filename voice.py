@@ -40,28 +40,25 @@ def create_silence():
     silence = AudioSegment.silent(duration=1000)  # 1 second
     silence.export("silence.wav", format="wav")
 
-import io
-import os
-from pydub import AudioSegment
-import edge_tts
 
 async def generate_audio_sync(text, voice_name, filename="ai_response.wav"):
     try:
-        # 1. التوليد من Edge-TTS في الذاكرة أولاً
+        # 1. جلب الصوت من السحابة إلى الذاكرة (RAM) أولاً
         communicate = edge_tts.Communicate(text, voice_name)
         audio_data = b""
         async for chunk in communicate.stream():
             if chunk["type"] == "audio":
                 audio_data += chunk["data"]
 
-        # 2. التحويل المعالجة باستخدام pydub
+        # 2. تحويل البيانات في الذاكرة دون كتابة ملف MP3 مؤقت
         mp3_fp = io.BytesIO(audio_data)
         audio = AudioSegment.from_file(mp3_fp, format="mp3")
 
-        # 3. إعدادات الجودة لمكالمات تلجرام
+        # 3. ضبط الجودة المطلوبة لمكالمات تلجرام (48kHz, Stereo)
         audio = audio.set_frame_rate(48000).set_channels(2).set_sample_width(2)
 
-        # 4. التصدير كملف WAV فعلي (ليقبلها py-tgcalls)
+        # 4. التصدير كملف WAV حقيقي ليتمكن py-tgcalls من قراءته
+        # ملاحظة: الكتابة بصيغة WAV سريعة جداً لأنها لا تحتاج لضغط (Compression)
         audio.export(filename, format="wav")
 
         duration = audio.duration_seconds
@@ -70,6 +67,7 @@ async def generate_audio_sync(text, voice_name, filename="ai_response.wav"):
     except Exception as e:
         print(f"Edge-TTS Error: {e}")
         return None, 0
+
 
 
 """
