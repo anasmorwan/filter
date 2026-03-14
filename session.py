@@ -44,6 +44,7 @@ def move_to_next_stage():
 
 
 session = {
+    "interrupting_answers": [],
     "voice_name": "en-US-AndrewMultilingualNeural",
     "chat_history": [], # 👈 هذه هي ذاكرة السياق القصيرة
     "is_speaking": True,
