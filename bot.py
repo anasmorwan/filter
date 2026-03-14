@@ -193,7 +193,7 @@ async def handle_action(action, messages):
 
 
 
-async def handle_lecture_action(action, session, understanding, ai_data):
+async def handle_lecture_action(action, session, understanding, ai_data=None):
     
     response_text = ai_data.get("response_text", "Error generating response.")
     expects_answer = ai_data.get("expects_answer", False)
@@ -203,6 +203,10 @@ async def handle_lecture_action(action, session, understanding, ai_data):
         
         current_index = session.get("current_chunk_index", 0)
         chunks = session.get("lecture_chunks", [])
+
+    # 1. إذا كان تقييم واستمرار، نزيد العداد فوراً لكي لا نكرر الشرح
+    if action == "EVALUATE_AND_CONTINUE":
+        session["current_chunk_index"] += 1
         
         if current_index < len(chunks):
             current_chunk = chunks[current_index]
@@ -233,6 +237,13 @@ async def handle_lecture_action(action, session, understanding, ai_data):
         else:
             # الفهم جيد، ننتقل للفقرة التالية
             session["current_chunk_index"] += 1
+
+    # 3. الآن نولد الرد النصي والصوتي (يحدث في الخلفية بينما يشاهد الطالب الصورة)
+    if not ai_data:
+        ai_data = generate_ai_response(action, [])
+
+    response_text = ai_data.get("response_text", "سأكمل الشرح...")
+    
 
     if action == "TEACH_NEXT_CHUNK":
         # نزيد العداد فقط بعد نجاح الشرح
@@ -287,6 +298,8 @@ async def handle_conversation_action(action, session, understanding, ai_data):
     
 
 
+
+
 async def heartbeat_loop():
     await asyncio.sleep(10) 
     print("💓 [HEARTBEAT] System is now ACTIVE and monitoring...", flush=True)
@@ -300,6 +313,9 @@ async def heartbeat_loop():
     while True:
         try:
             await asyncio.sleep(2) # 💡 تقليل وقت الفحص لـ 2 ثانية ليكون أسرع في الاستجابة للـ Bingo
+            session = get_session_info() 
+            mode = session.get("mode", "conversation")
+            
             
             if not session_is_active():
                 continue
@@ -358,7 +374,10 @@ async def heartbeat_loop():
                         # وضع المحادثة العادي
                         await handle_action("WAKE_UP_SESSION", [])
 
-                    session["waiting_for_answer"] = False # نلغي الانتظار
+                    # 🚨 تصفير الأعلام فوراً بعد اتخاذ الإجراء
+                    session["waiting_for_answer"] = False
+                    session["bingo_answer_received"] = False
+
 
         except Exception as e:
             print(f"❌ [HEARTBEAT ERROR]: {e}", flush=True)
