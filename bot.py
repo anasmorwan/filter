@@ -12,7 +12,7 @@ from dotenv import load_dotenv # اختياري إذا كنت تستخدم مل�
 
 
 # from queue_manager import check_message_window,  process_message_window
-from session import start_session, stop_session, session_is_active, get_session_info, add_to_chat_history, get_chat_history, start_lecture_session, update_ai_timestamp
+from session import start_session, stop_session, session_is_active, get_session_info, add_to_chat_history, get_chat_history, start_lecture_session, update_ai_timestamp, change_ai_voice
 from filter import should_store_message
 from buffer import add_message, should_process_window, pop_window_messages, get_recent_messages, should_interrupt
 from message_classifier import classify_message
@@ -430,7 +430,18 @@ async def stop_cmd(client, message):
     await message.reply_text("Session stopped.")
 
 
+@bot_app.on_message(filters.command("change_voice") & (filters.chat(CHAT_ID) | filters.user(ADMIN_ID)))
+async def start_cmd(client, message):
+    parts = message.text.split()
+    
 
+    if len(parts) >= 2:
+        voice = parts[1]
+    
+
+    change_ai_voice(topic)
+    await message.reply_text(f"Ai voice channged! current voice: {voice}")
+    
 
 # 1. إضافة مستقبل الملفات (للمشرفين أو بحسب صلاحياتك)
 # متغير لمعرفة هل البوت ينتظر ملف محاضرة
