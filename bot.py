@@ -189,10 +189,10 @@ async def handle_action(action, messages):
 
     if mode == "conversation":
         await handle_conversation_action(action, session, understanding, ai_data)
-        
 
 
-    
+
+
 async def handle_lecture_action(action, session, understanding, ai_data):
     
     response_text = ai_data.get("response_text", "Error generating response.")
@@ -219,6 +219,11 @@ async def handle_lecture_action(action, session, understanding, ai_data):
                     photo=current_chunk["image_path"],
                     caption=f"📄 شريحة رقم {current_index + 1}"
                    )
+            # تصفير الأعلام لضمان عدم المماطلة في الشريحة الجديدة
+            session["waiting_for_answer"] = False
+            session["current_question"] = None
+            session["bingo_answer_received"] = False
+
        
             
     elif action == "EVALUATE_AND_CONTINUE":
@@ -280,6 +285,28 @@ async def handle_conversation_action(action, session, understanding, ai_data):
     print("✅ AI responded and timer reset.", flush=True)   
     print(f"\n--- AI RESPONSE ---\n{response_text}", flush=True)
     
+# داخل دالة heartbeat_loop
+if silence_time >= dynamic_limit:
+    messages = pop_window_messages()
+    
+    if messages:
+        action = decide_next_action(messages)
+        await handle_action(action, messages)
+    else:
+        if mode == "lecture":
+            # 🚨 الحل السحري هنا: إذا كان ينتظر إجابة وطال الصمت، لا تعطِ Hint
+            # بل اجعله يجيب وينتقل للشريحة التالية
+            if session.get("waiting_for_answer"):
+                print("💓 [HEARTBEAT] Students silent. AI will provide answer and MOVE ON.")
+                await handle_action("EVALUATE_AND_CONTINUE", [])
+            else:
+                print("💓 [HEARTBEAT] Continuing lecture flow...")
+                await handle_action("TEACH_NEXT_CHUNK", [])
+        else:
+            # وضع المحادثة العادي
+            await handle_action("WAKE_UP_SESSION", [])
+
+
 
 async def heartbeat_loop():
     await asyncio.sleep(10) 
@@ -339,6 +366,22 @@ async def heartbeat_loop():
                     action = decide_next_action(messages)
                     await handle_action(action, messages)
                 else:
+                    if mode == "lecture":
+                        # 🚨 الحل السحري هنا: إذا كان ينتظر إجابة وطال الصمت، لا تعطِ Hint
+                        # بل اجعله يجيب وينتقل للشريحة التالية
+                        if session.get("waiting_for_answer"):
+                            print("💓 [HEARTBEAT] Students silent. AI will provide answer and MOVE ON.")
+                            await handle_action("EVALUATE_AND_CONTINUE", [])
+                        else:
+                            print("💓 [HEARTBEAT] Continuing lecture flow...")
+                            await handle_action("TEACH_NEXT_CHUNK", [])
+                    else:
+                        # وضع المحادثة العادي
+                        await handle_action("WAKE_UP_SESSION", [])
+
+
+
+            """
                     # 🔴 هنا التعديل الجوهري للـ Lecture
                     if not session.get("waiting_for_answer"):
                         if mode == "lecture":
@@ -356,8 +399,9 @@ async def heartbeat_loop():
                         else:
                             print("💓 [HEARTBEAT] No answers received. Giving a hint...", flush=True)
                             await handle_action("GIVE_HINT", [])
-                            
-                        session["waiting_for_answer"] = False # نلغي الانتظار
+                         """
+            
+                    session["waiting_for_answer"] = False # نلغي الانتظار
 
         except Exception as e:
             print(f"❌ [HEARTBEAT ERROR]: {e}", flush=True)
