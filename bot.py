@@ -279,7 +279,7 @@ async def handle_conversation_action(action, session, understanding, ai_data):
     update_ai_timestamp()
     print("✅ AI responded and timer reset.", flush=True)   
     print(f"\n--- AI RESPONSE ---\n{response_text}", flush=True)
-            
+    
 
 async def heartbeat_loop():
     await asyncio.sleep(10) 
@@ -305,14 +305,19 @@ async def heartbeat_loop():
             # --- تحديد Limit الافتراضي بناءً على حالة الجلسة ---
             dynamic_limit = 20 # القيمة الأساسية للجروبات الكبيرة
             
-            if len(session.get("stats", {}).get("unique_users", [])) <= 5:
-                dynamic_limit = 12
             
-            if session.get("mode") == "lecture":
-                dynamic_limit = 10
-                
-            if session.get("waiting_for_answer") or session.get("current_question"):
-                dynamic_limit = 15 # نعطيهم وقتاً للتفكير
+            if mode == "lecture":
+                if session.get("waiting_for_answer") or session.get("current_question"):
+                    dynamic_limit = 12 # نعطيهم 12 ثانية فقط للتفكير في وضع المحاضرة لكي لا يطول الانتظار
+                else:
+                    dynamic_limit = 4 # 🚀 توقف قصير جداً (4 ثوانٍ) بين الشريحة والأخرى لالتقاط الأنفاس
+
+            else:
+                # وضع المحادثة (Conversation)
+                if len(session.get("stats", {}).get("unique_users", [])) <= 5:
+                    dynamic_limit = 12
+                if session.get("waiting_for_answer") or session.get("current_question"):
+                    dynamic_limit = 15
             
             # 🚀 التدخل الديناميكي الفوري (Bingo Override)
             if session.get("bingo_answer_received"):
@@ -333,15 +338,26 @@ async def heartbeat_loop():
                     action = decide_next_action(messages)
                     await handle_action(action, messages)
                 else:
+                    # 🔴 هنا التعديل الجوهري للـ Lecture
                     if not session.get("waiting_for_answer"):
-                        print("💓 [HEARTBEAT] Dead air detected. Waking up session...", flush=True)
-                        await handle_action("WAKE_UP_SESSION", [])
+                        if mode == "lecture":
+                            print("💓 [HEARTBEAT] Lecture Mode: Moving to next slide smoothly...", flush=True)
+                            await handle_action("TEACH_NEXT_CHUNK", []) # الانتقال للشريحة التالية بدلاً من إيقاظ الجلسة
+                        else:
+                            print("💓 [HEARTBEAT] Dead air detected. Waking up session...", flush=True)
+                            await handle_action("WAKE_UP_SESSION", [])
                     else:
                         # انتهى وقت التفكير ولم يجب أحد
-                        print("💓 [HEARTBEAT] No answers received. Giving a hint...", flush=True)
-                        await handle_action("GIVE_HINT", [])
+                        if mode == "lecture":
+                            print("💓 [HEARTBEAT] Lecture Mode: No answers. Giving correct answer and continuing...", flush=True)
+                            # في المحاضرة، لا نضيع وقتاً في التلميحات، نقيّم ونكمل الشرح فوراً
+                            await handle_action("EVALUATE_AND_CONTINUE", []) 
+                        else:
+                            print("💓 [HEARTBEAT] No answers received. Giving a hint...", flush=True)
+                            await handle_action("GIVE_HINT", [])
+                            
                         session["waiting_for_answer"] = False # نلغي الانتظار
-                    
+
         except Exception as e:
             print(f"❌ [HEARTBEAT ERROR]: {e}", flush=True)
 """
