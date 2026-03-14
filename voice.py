@@ -120,6 +120,8 @@ async def start_ffmpeg_feed_to_fifo(text: str, voice_name: str, fifo_path: str):
                     raise RuntimeError("All retries exhausted") from e
                 # انتظار قبل إعادة المحاولة (backoff)
                 await asyncio.sleep(2 ** retries)
+
+    return process, feed_task
    
          
 
