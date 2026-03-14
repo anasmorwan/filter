@@ -42,44 +42,53 @@ async def play_next():
     session["is_speaking"] = True
 
     text = voice_queue.popleft()
-    # إنشاء مسار ملف فريد في ذاكرة النظام المؤقتة
-    temp_audio_path = f"/tmp/{uuid.uuid4().hex}.mp3"
+    # إنشاء "أنبوب مسمى" في الذاكرة المؤقتة
+    fifo_path = f"/tmp/{uuid.uuid4().hex}.fifo"
+    os.mkfifo(fifo_path)
     
     voice_name = get_session_voice_name() or "en-US-JennyNeural"
 
     try:
-        # 1. توليد الصوت وحفظه في الذاكرة (سريع جداً في /tmp)
-        print(f"🎙️ [TTS] Generating: {text[:30]}...")
-        communicate = edge_tts.Communicate(text, voice_name)
-        await communicate.save(temp_audio_path)
+        # 1. دالة لتوليد الصوت وضخه في الأنبوب (تنفذ في الخلفية)
+        async def stream_to_fifo():
+            communicate = edge_tts.Communicate(text, voice_name)
+            # نفتح الأنبوب للكتابة (هذا سيحجز العملية حتى يبدأ طرف آخر بالقراءة)
+            with open(fifo_path, 'wb') as fifo:
+                async for chunk in communicate.stream():
+                    if chunk["type"] == "audio":
+                        fifo.write(chunk["data"])
+                        fifo.flush() # دفع البيانات فوراً
 
-        # 2. تشغيل الملف مباشرة
-        print(f"🔊 [PLAYING] Text: {text[:30]}...")
-        await pytgcalls.play(VOICE_CHAT_ID, MediaStream(temp_audio_path))
+        # 2. تشغيل التوليد كـ Task خلفي
+        gen_task = asyncio.create_task(stream_to_fifo())
+
+        # 3. انتظر جزءاً من الثانية فقط لضمان وجود بيانات في الأنبوب
+        await asyncio.sleep(0.3) 
+
+        print(f"🎙️ [FAST-START] Streaming to Telegram: {text[:30]}...")
         
-        # مدة تقريبية للانتظار بناءً على طول النص (حوالي 14 حرف في الثانية)
+        # 4. اطلب من تيليجرام القراءة من الأنبوب فوراً
+        # FFmpeg سيعتقد أنه ملف ويبدأ البث بينما نحن لا نزال نكتب في الطرف الآخر
+        await pytgcalls.play(VOICE_CHAT_ID, MediaStream(fifo_path))
+        
+        # وقت الانتظار بناءً على طول النص
         duration = max(1.5, len(text) / 12.0)
-        
         try:
-            # ننتظر انتهاء الجملة أو إشارة الإيقاف
             await asyncio.wait_for(stop_playback_event.wait(), timeout=duration + 1.0)
         except asyncio.TimeoutError:
-            pass 
+            pass
 
     except Exception as e:
-        print(f"❌ Playback Error: {e}")
+        print(f"❌ Streaming Error: {e}")
 
     finally:
-        # 3. تنظيف الملف فوراً من الذاكرة بعد الاستخدام
-        if os.path.exists(temp_audio_path):
-            try:
-                os.remove(temp_audio_path)
-            except: pass
+        # تنظيف الأنبوب
+        if os.path.exists(fifo_path):
+            os.remove(fifo_path)
 
         session["is_speaking"] = False 
         is_playing = False
 
-        # تشغيل الجملة التالية إذا وجدت في الطابور
         if voice_queue:
             asyncio.create_task(play_next())
 
