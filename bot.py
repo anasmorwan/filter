@@ -141,6 +141,25 @@ async def process_message(user, user_id, text, timestamp):
         await handle_action(action, [msg]) # أضفنا await
 
 
+async def on_student_message(client, message):
+    text = message.text.lower()
+    
+    # ... (كود معالجة المقاطعات priorities_keywords الذي كتبناه سابقاً) ...
+
+    # 🟢 فحص "الضربة الصائبة" (Bingo Check)
+    if session.get("waiting_for_answer") and not session.get("bingo_answer_received"):
+        accurate_keywords = session.get("most_accurate_answers", [])
+        
+        # إذا كانت أي من الكلمات الدقيقة موجودة في إجابة الطالب
+        if any(word in text for word in accurate_keywords):
+            print(f"🎯 BINGO! Student {message.from_user.first_name} gave the right answer.")
+            # نرفع الراية لكي يقوم الـ Heartbeat بقطع الانتظار فوراً
+            session["bingo_answer_received"] = True
+
+
+
+
+
 async def handle_action(action, messages):
     session = get_session_info()
     mode = session.get("mode", "conversation")
@@ -242,7 +261,70 @@ async def handle_conversation_action(action, session, understanding, ai_data):
     print(f"\n--- AI RESPONSE ---\n{response_text}", flush=True)
             
 
+async def heartbeat_loop():
+    await asyncio.sleep(10) 
+    print("💓 [HEARTBEAT] System is now ACTIVE and monitoring...", flush=True)
 
+    from session import get_silence_duration, get_session_info, session_is_active
+    from buffer import pop_window_messages
+    
+    session = get_session_info()
+
+    while True:
+        try:
+            await asyncio.sleep(2) # 💡 تقليل وقت الفحص لـ 2 ثانية ليكون أسرع في الاستجابة للـ Bingo
+            
+            if not session_is_active():
+                continue
+
+            if session.get("is_speaking"):
+                continue
+
+            silence_time = get_silence_duration()
+            
+            # --- تحديد Limit الافتراضي بناءً على حالة الجلسة ---
+            dynamic_limit = 20 # القيمة الأساسية للجروبات الكبيرة
+            
+            if len(session.get("stats", {}).get("unique_users", [])) <= 5:
+                dynamic_limit = 12
+            
+            if session.get("mode") == "lecture":
+                dynamic_limit = 10
+                
+            if session.get("waiting_for_answer") or session.get("current_question"):
+                dynamic_limit = 15 # نعطيهم وقتاً للتفكير
+            
+            # 🚀 التدخل الديناميكي الفوري (Bingo Override)
+            if session.get("bingo_answer_received"):
+                print("⚡ [HEARTBEAT] Perfect answer detected! Cutting silence short.", flush=True)
+                dynamic_limit = 0 # تصفير إجباري ليتدخل الـ AI فوراً ويقيم الإجابة
+
+            # طباعة للمراقبة (فقط إذا تجاوز 3 ثواني لتقليل الإزعاج)
+            if silence_time > 3:
+                print(f"💓 Silence: {int(silence_time)}s / Limit: {dynamic_limit}s", flush=True)
+
+            # --- فحص تجاوز الحد ---
+            if silence_time >= dynamic_limit:
+                messages = pop_window_messages()
+                
+                if messages:
+                    print(f"💓 [HEARTBEAT] Found {len(messages)} pending messages. Evaluating...", flush=True)
+                    # إرسال الرسائل لمحرك القرار
+                    action = decide_next_action(messages)
+                    await handle_action(action, messages)
+                else:
+                    if not session.get("waiting_for_answer"):
+                        print("💓 [HEARTBEAT] Dead air detected. Waking up session...", flush=True)
+                        await handle_action("WAKE_UP_SESSION", [])
+                    else:
+                        # انتهى وقت التفكير ولم يجب أحد
+                        print("💓 [HEARTBEAT] No answers received. Giving a hint...", flush=True)
+                        await handle_action("GIVE_HINT", [])
+                        session["waiting_for_answer"] = False # نلغي الانتظار
+                    
+        except Exception as e:
+            print(f"❌ [HEARTBEAT ERROR]: {e}", flush=True)
+"""
 async def heartbeat_loop():
     # تأخير بسيط للتأكد من أن كل شيء اشتغل أولاً
     await asyncio.sleep(10) 
@@ -304,7 +386,7 @@ async def heartbeat_loop():
         except Exception as e:
             print(f"❌ [HEARTBEAT ERROR]: {e}", flush=True)
 
-
+"""
 # ............. Handlers and commands........
 # لاحظ: نقلنا الأوامر لتكون في الأعلى، وأضفنا async/await
 
