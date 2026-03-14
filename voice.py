@@ -61,12 +61,14 @@ async def audio_stream_handler(request):
 app = web.Application()
 app.router.add_get('/stream/{stream_id}', audio_stream_handler)
 
-async def start_local_server():
+# إعداد السيرفر وتشغيله (يجب تشغيله مرة واحدة عند بدء البوت)
+async def start_server():
+    app = web.Application()
+    app.router.add_get('/stream/{id}', handle_stream)
     runner = web.AppRunner(app)
     await runner.setup()
     site = web.TCPSite(runner, '127.0.0.1', 8080)
     await site.start()
-    print("✅ Local HTTP Stream Server started on port 8080")
 
 # -------------------------
 # محرك التشغيل (Playback Engine)
@@ -158,10 +160,14 @@ async def start_voice_engine():
 if __name__ == "__main__":
     async def main():
         # تشغيل الخادم المحلي أولاً
-        await start_local_server()
+        await start_server()
         await userbot.start()
         await start_voice_engine()
         print("Teacher Bot is fully Online (Real-Time Mode)...")
         await idle()
 
     asyncio.run(main())
+
+
+
+
