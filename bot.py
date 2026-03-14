@@ -306,26 +306,6 @@ async def handle_conversation_action(action, session, understanding, ai_data):
     print(f"\n--- AI RESPONSE ---\n{response_text}", flush=True)
     
 
-
-
-# داخل heartbeat_loop
-if silence_time >= dynamic_limit:
-    messages = pop_window_messages()
-    
-    if messages:
-        # 🚨 إذا وجدت رسائل، الأولوية للتقييم وليس للشرح الجديد
-        print(f"💓 [HEARTBEAT] Evaluating {len(messages)} messages...")
-        action = decide_next_action(messages)
-        # إذا محرك القرار أخطأ وأعطى TEACH، نصلحه يدوياً هنا
-        if action == "TEACH_NEXT_CHUNK": 
-             action = "EVALUATE_STUDENT_ANSWERS"
-        await handle_action(action, messages)
-    else:
-        # صمت تام -> استمر في الشرح
-        if mode == "lecture":
-            # ... كود الانتقال للشريحة التالية كما هو ...
-
-
 async def heartbeat_loop():
     await asyncio.sleep(10) 
     print("💓 [HEARTBEAT] System is now ACTIVE and monitoring...", flush=True)
@@ -388,7 +368,7 @@ async def heartbeat_loop():
                     # إذا محرك القرار أخطأ وأعطى TEACH، نصلحه يدوياً هنا
                     if action == "TEACH_NEXT_CHUNK": 
                         action = "EVALUATE_STUDENT_ANSWERS"
-                        await handle_action(action, messages)
+                    await handle_action(action, messages)
                     
                 else:
                     if mode == "lecture":
