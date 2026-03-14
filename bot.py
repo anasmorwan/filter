@@ -193,20 +193,25 @@ async def handle_action(action, messages):
 
 
 
+
 async def handle_lecture_action(action, session, understanding, ai_data=None):
     
     response_text = ai_data.get("response_text", "Error generating response.")
     expects_answer = ai_data.get("expects_answer", False)
+    current_index = session.get("current_chunk_index", 0)
+    chunks = session.get("lecture_chunks", [])
+
+    # 2. منطق إرسال الصور (يحدث عند البداية، أو الانتقال، أو الاستمرار بعد التقييم)
+    transition_actions = ["INTRODUCE_LECTURE", "TEACH_NEXT_CHUNK", "EVALUATE_AND_CONTINUE"]
     
     # --- التعامل مع الانتقال لفقرة جديدة ---
-    if action == "TEACH_NEXT_CHUNK" or (action == "INTRODUCE_LECTURE"):
+    if action in transition_actions:
+        # إذا كان الأكشن "استمرار"، نزيد العداد أولاً لنرسل الصورة التالية
+        if action == "EVALUATE_AND_CONTINUE" and understanding != "poor":
+            session["current_chunk_index"] += 1
+            current_index = session["current_chunk_index"]
         
-        current_index = session.get("current_chunk_index", 0)
-        chunks = session.get("lecture_chunks", [])
-
-    # 1. إذا كان تقييم واستمرار، نزيد العداد فوراً لكي لا نكرر الشرح
-    if action == "EVALUATE_AND_CONTINUE":
-        session["current_chunk_index"] += 1
+        
         
         if current_index < len(chunks):
             current_chunk = chunks[current_index]
@@ -218,11 +223,15 @@ async def handle_lecture_action(action, session, understanding, ai_data=None):
                 if not bot_app.is_connected:
                     await bot_app.start()
 
-                await bot_app.send_photo(
-                    chat_id=CHAT_ID, 
-                    photo=current_chunk["image_path"],
-                    caption=f"📄 شريحة رقم {current_index + 1}"
+                try:
+                    await bot_app.send_photo(
+                        chat_id=CHAT_ID, 
+                        photo=current_chunk["image_path"],
+                        caption=f"📄 شريحة رقم {current_index + 1}"
                    )
+                except Exception as e:
+                    print(f"❌ Error sending photo: {e}")
+
             # تصفير الأعلام لضمان عدم المماطلة في الشريحة الجديدة
             session["waiting_for_answer"] = False
             session["current_question"] = None
@@ -299,6 +308,23 @@ async def handle_conversation_action(action, session, understanding, ai_data):
 
 
 
+# داخل heartbeat_loop
+if silence_time >= dynamic_limit:
+    messages = pop_window_messages()
+    
+    if messages:
+        # 🚨 إذا وجدت رسائل، الأولوية للتقييم وليس للشرح الجديد
+        print(f"💓 [HEARTBEAT] Evaluating {len(messages)} messages...")
+        action = decide_next_action(messages)
+        # إذا محرك القرار أخطأ وأعطى TEACH، نصلحه يدوياً هنا
+        if action == "TEACH_NEXT_CHUNK": 
+             action = "EVALUATE_STUDENT_ANSWERS"
+        await handle_action(action, messages)
+    else:
+        # صمت تام -> استمر في الشرح
+        if mode == "lecture":
+            # ... كود الانتقال للشريحة التالية كما هو ...
+
 
 async def heartbeat_loop():
     await asyncio.sleep(10) 
@@ -356,10 +382,14 @@ async def heartbeat_loop():
                 messages = pop_window_messages()
                 
                 if messages:
-                    print(f"💓 [HEARTBEAT] Found {len(messages)} pending messages. Evaluating...", flush=True)
-                    # إرسال الرسائل لمحرك القرار
+                    # 🚨 إذا وجدت رسائل، الأولوية للتقييم وليس للشرح الجديد
+                    print(f"💓 [HEARTBEAT] Evaluating {len(messages)} messages...")
                     action = decide_next_action(messages)
-                    await handle_action(action, messages)
+                    # إذا محرك القرار أخطأ وأعطى TEACH، نصلحه يدوياً هنا
+                    if action == "TEACH_NEXT_CHUNK": 
+                        action = "EVALUATE_STUDENT_ANSWERS"
+                        await handle_action(action, messages)
+                    
                 else:
                     if mode == "lecture":
                         # 🚨 الحل السحري هنا: إذا كان ينتظر إجابة وطال الصمت، لا تعطِ Hint
