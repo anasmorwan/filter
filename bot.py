@@ -289,6 +289,7 @@ async def heartbeat_loop():
     from buffer import pop_window_messages
     
     session = get_session_info()
+    mode = session.get("mode", "lecture")
 
     while True:
         try:
