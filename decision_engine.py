@@ -12,8 +12,8 @@ SILENCE_LIMIT = 20
 THRESHOLD = 90
 
 
-def analyze_messages(messages):
 
+def analyze_messages(messages):
     stats = {
         "total": 0,
         "questions": 0,
@@ -22,11 +22,10 @@ def analyze_messages(messages):
         "reactions": 0,
         "confidence_sum": 0,
         "unique_users": set(),
-        "answers_count": 0  # تمت إضافته بدون حذف أي متغير
+        "answers_count": 0  
     }
 
     for m in messages:
-
         msg_type = m.get("type")
         conf = m.get("confidence", 0.7)
 
@@ -36,206 +35,149 @@ def analyze_messages(messages):
 
         if msg_type == "question":
             stats["questions"] += conf
-
         elif msg_type == "answer":
             stats["answers"] += conf
             stats["answers_count"] += 1
-
         elif msg_type == "short_answer":
             stats["short_answers"] += conf
             stats["answers_count"] += 1
-
         elif msg_type == "reaction":
             stats["reactions"] += conf
 
     stats["unique_users"] = len(stats["unique_users"])
-
     return stats
 
 
 def estimate_confusion(stats):
-
     confusion = 0
-
-    if stats["questions"] > 1:
-        confusion += 3
-
-    if stats["short_answers"] > stats["answers"]:
-        confusion += 2
-
-    if stats["reactions"] > stats["answers"]:
-        confusion += 1
-
-    if stats["answers"] == 0 and stats["questions"] > 0:
-        confusion += 2
-
+    if stats["questions"] > 1: confusion += 3
+    if stats["short_answers"] > stats["answers"]: confusion += 2
+    if stats["reactions"] > stats["answers"]: confusion += 1
+    if stats["answers"] == 0 and stats["questions"] > 0: confusion += 2
     return min(confusion, 10)
 
 
 def calculate_priority(stats, session, time_since_ai):
-
     score = 0
-
-    # الصمت
-    if stats["total"] == 0:
-        score += (time_since_ai / SILENCE_LIMIT) * 120
-
-    # الأسئلة أهم شيء في الحصة
+    if stats["total"] == 0: score += (time_since_ai / SILENCE_LIMIT) * 120
     score += stats["questions"] * 50
-
-    # الإجابات
     score += stats["answers"] * 25
-
-    # الردود القصيرة
     score += stats["short_answers"] * 15
-
-    # التفاعل السطحي يقلل تدخل AI
     score -= stats["reactions"] * 5
-
-    # نشاط الطلاب
-    if stats["unique_users"] >= 3:
-        score -= 25
-
-    # تقدم الموضوع
+    if stats["unique_users"] >= 3: score -= 25
+    
     progress = session.get("topic_progress", 0)
     score += progress * 0.4
-
-    # ارتباك الطلاب
     confusion = session.get("student_confusion", 0)
     score += confusion * 12
-
-    # مرور الوقت
     score += min(time_since_ai * 1.3, 60)
-
     return score
-
 
 
 def decide_next_action(messages):
     session = get_session_info()
     mode = session.get("mode", "conversation")
-    stage = session.get("stage", "INTRO")
-    
-    session_minutes = get_session_minutes()
-
     now = time.time()
 
-    # حماية من last_ai_message غير المهيأ
     last_ai = session.get("last_ai_message", now)
+    time_since_ai = max(0, min(now - last_ai, 120))
 
-    time_since_ai = now - last_ai
-    time_since_ai = max(0, min(time_since_ai, 120))
-
-    if time_since_ai < COOLDOWN:
+    # لا نتدخل إذا كان الـ AI قد تحدث للتو (إلا لو كان سؤالاً طارئاً)
+    has_questions = any(m.get("type") == "question" for m in messages)
+    if time_since_ai < COOLDOWN and not has_questions:
         return "WAIT"
 
     stats = analyze_messages(messages)
+    session["student_confusion"] = estimate_confusion(stats)
 
-    confusion = estimate_confusion(stats)
-    session["student_confusion"] = confusion
-
-    priority = calculate_priority(stats, session, time_since_ai)
-
-    progress = session.get("topic_progress", 0)
-
-    print(
-        f"[AI Brain] score={priority:.1f} "
-        f"questions={stats['questions']:.1f} "
-        f"answers={stats['answers']:.1f} "
-        f"users={stats['unique_users']} "
-        f"confusion={confusion}"
-    )
-
-    if priority < THRESHOLD:
-        return "WAIT"
-
-    update_ai_timestamp()
     # ---------------------------------------------------------
-    # النموذج الأول: المحادثة الحرة (الكود القديم الخاص بك)
+    # النموذج الأول: المحاضرة الموجهة (Lecture Mode)
     # ---------------------------------------------------------
-    if mode == "conversation":
-        return decide_conversation_logic(messages, session, stats) # منطقك القديم هنا
+    if mode == "lecture":
+        # في وضع المحاضرة، نتجاوز الـ THRESHOLD لأننا نعتمد على هيكل المحاضرة والوقت
+        action = decide_lecture_logic(messages, session, stats)
         
-    # ---------------------------------------------------------
-    # النموذج الثاني: المحاضرة الموجهة (Lecture Mode)
-    # ---------------------------------------------------------
+        # طباعة شفافة لمعرفة تفكير المحرك
+        print(f"🧠 [Engine - Lecture] Decided Action: {action}")
+        
+        if action != "WAIT":
+            update_ai_timestamp()
+        return action
 
-    elif mode == "lecture":
-        return decide_lecture_logic(messages, session, stats) # دالة فرعية للتنظيم
-
+    # ---------------------------------------------------------
+    # النموذج الثاني: المحادثة الحرة (Conversation Mode)
+    # ---------------------------------------------------------
+    elif mode == "conversation":
+        priority = calculate_priority(stats, session, time_since_ai)
+        print(f"[AI Brain] score={priority:.1f} questions={stats['questions']:.1f}")
+        
+        if priority < THRESHOLD:
+            return "WAIT"
+            
+        action = decide_conversation_logic(messages, session, stats)
+        if action != "WAIT":
+            update_ai_timestamp()
+        return action
 
 
 # ---------------------------------------------------------
-# دوال النموذجين الاول و الثاني (lecturer & english Teacher)
+# منطق اتخاذ القرار لوضع المحاضرة (The Brain)
 # ---------------------------------------------------------
-def decide_lecture_logic(messages, session, stats): # دالة فرعية للتنظيم
-    stage = session.get("stage", "INTRO")
+def decide_lecture_logic(messages, session, stats):
     waiting = session.get("waiting_for_answer", False)
+    bingo = session.get("bingo_answer_received", False)
+    has_questions = stats["questions"] > 0
 
-# ---------------------------------------------------------
-# أولوية 1: نحن ننتظر إجابة (المدرس طرح سؤالاً للتو)
-# ---------------------------------------------------------
+    # 1. أولوية قصوى: سؤال من الطالب (سواء قاطعنا أو في النافذة)
+    if has_questions:
+        print("🧠 -> Question detected. Redirecting to ANSWER_QUESTION.")
+        return "ANSWER_QUESTION"
+
+    # 2. أولوية عالية: الضربة الصائبة (طالب جاوب إجابة نموذجية بسرعة)
+    if bingo:
+        print("🧠 -> Bingo triggered! Evaluating excellent answer.")
+        return "EVALUATE_AND_CONTINUE"
+
+    # 3. نحن ننتظر إجابة (المدرس سأل سؤالاً للتو)
     if waiting:
-        if not messages:
-            print("Lecture mode: no answers to the lecturer,waiting for asnwers...", flush=True)
-            # الطلاب صامتون ولم يجيبوا بعد.
-            # يمكنك إرجاع "WAIT" أو أكشن جديد مثل "GIVE_HINT" إذا طال الصمت
-            return "WAIT" 
+        if messages:
+            # هناك رسائل (وليست أسئلة، إذن هي محاولات إجابة)
+            print("🧠 -> Students attempted to answer. Evaluating...")
+            return "EVALUATE_AND_CONTINUE"
         else:
-            # الطلاب أرسلوا رسائل! (غالباً هي إجابات)
-            session["waiting_for_answer"] = False # نفتح القفل
-            session["current_stage"] = "EXPLAIN"  # نعود لوضع الشرح بعد التقييم
-            print("action: EVALUATE_AND_CONTINUE, the lecturer evaluating expected answers", flush=True)
+            # صمت تام وانتهى وقت الـ Heartbeat (لم يجب أحد)
+            print("🧠 -> Timeout. No one answered. Teacher will explain and move on.")
             return "EVALUATE_AND_CONTINUE"
 
-# ---------------------------------------------------------
-# أولوية 2: مقاطعة من الطلاب (أسئلة خارج السياق أثناء الشرح)
-# ---------------------------------------------------------
-    
-    # 1. إذا قاطع الطلاب المحاضرة بسؤال:
-    if messages and any(m["type"] == "question" for m in messages):
-        print("Lecture mode: Question detected, actios: ANSWER_LECTURE_QUESTION", flush=True)
-        return "ANSWER_LECTURE_QUESTION" # يرد على السؤال ثم يربطه بالمحاضرة
-        
-    # 2. إذا كان الطلاب يجيبون على تمرين أو سؤال طرحه البوت:
-    if messages and session["current_stage"] == "CHECK_UNDERSTANDING":
-        session["current_stage"] = "EXPLAIN" # نعود للشرح بعد التقييم
-        return "EVALUATE_AND_CONTINUE"
-        
-# ---------------------------------------------------------
-# أولوية 3: تدفق المحاضرة الطبيعي (لا توجد رسائل، المدرس يشرح)
-# ---------------------------------------------------------
-
-    # 3. إذا كان الـ Heartbeat هو من استدعى الدالة (لا توجد رسائل = صمت / وقت الشرح):
+    # 4. تدفق المحاضرة الطبيعي (المدرس يشرح وانتهى وقت توقفه لالتقاط الأنفاس)
     if not messages:
-        stage = session["current_stage"]
-            
-        if stage == "INTRO":
-            session["current_stage"] = "EXPLAIN"
-            return "INTRODUCE_LECTURE"
-                
-        elif stage == "EXPLAIN":
-            # إذا انتهينا من كل الفقرات
-            if session["current_chunk_index"] >= len(session["lecture_chunks"]):
-                session["current_stage"] = "OUTRO"
-                return "SUMMARIZE_LECTURE"
-                
-            # إما أن يشرح الفقرة التالية، أو يسأل سؤالاً للتأكد من الفهم
-            # مثلاً: بعد كل فقرتين، نطرح سؤالاً (Quiz)
-            if session["current_chunk_index"] > 0 and session["current_chunk_index"] % 2 == 0:
-                session["current_stage"] = "CHECK_UNDERSTANDING"
-                return "ASK_CONCEPT_QUESTION"
-            else:
-                return "TEACH_NEXT_CHUNK"
+        # أ. هل لدينا أسئلة معلقة من مقاطعات سابقة؟ نجاوب عليها قبل الشريحة الجديدة
+        if session.get("pending_questions"):
+            print("🧠 -> Clearing pending questions before moving to next chunk.")
+            # يمكنك تفريغها في دالة handle_action
+            return "ANSWER_PENDING_QUESTIONS"
 
-    # إذا انتهى المدرس من الشرح، وقبل أن ننتقل للـ Chunk التالي:
-    if not messages and session["pending_questions"]:
-        # بدلاً من شرح فقرة جديدة، نأخذ الأسئلة التي جمعناها أثناء الشرح
-        queued_msgs = session["pending_questions"].copy()
-        session["pending_questions"].clear()
-        return "ANSWER_PENDING_QUESTIONS" 
-                
-    return "WAIT" # حماية أخيرة
+        current_index = session.get("current_chunk_index", 0)
+        chunks = session.get("lecture_chunks", [])
+
+        # ب. هل نحن في البداية تماماً؟
+        if current_index == 0 and not session.get("lecture_started"):
+            session["lecture_started"] = True
+            print("🧠 -> Starting the lecture for the first time.")
+            return "INTRODUCE_LECTURE"
+
+        # ج. هل انتهت الشرائح كلها؟
+        if current_index >= len(chunks):
+            print("🧠 -> Reached the end of chunks. Summarizing.")
+            return "SUMMARIZE_LECTURE"
+
+        # د. الانتقال الطبيعي للشريحة التالية
+        print(f"🧠 -> Advancing to chunk {current_index + 1}.")
+        return "TEACH_NEXT_CHUNK"
+
+    # 5. إذا كان هناك رسائل تفاعل عادية (مثل "نعم"، "أكمل") ولا ننتظر إجابة
+    return "WAIT"
+
 
 
 def decide_conversation_logic(messages, session, stats): # منطقك القديم هنا
