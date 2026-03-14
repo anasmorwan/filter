@@ -151,6 +151,7 @@ Focus only on the current chunk.
 
 At the end, ask a rhetorical question or a small check-in like:
 "Does that make sense so far?"
+if there are any question or comments from students remind them you can answer after you end explaining, only answer most important questions
 """,
 
 "QUIZ_ON_RECENT_CHUNK": """
