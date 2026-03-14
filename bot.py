@@ -208,13 +208,16 @@ async def handle_lecture_action(action, session, understanding, ai_data):
             # 🖼️ إرسال الصورة للطلاب إذا كانت موجودة
             if current_chunk.get("image_path") and os.path.exists(current_chunk["image_path"]):
                 print(f"🖼️ Sending image for chunk {current_index}...")
-                from bot import bot_app, CHAT_ID # تأكد من استدعائها بشكل صحيح
+                # بدلاً من الاستدعاء المباشر إذا كان يسبب مشكلة، تأكد أن البوت "جاهز"
+                if not bot_app.is_connected:
+                    await bot_app.start()
+
                 await bot_app.send_photo(
                     chat_id=CHAT_ID, 
                     photo=current_chunk["image_path"],
                     caption=f"📄 شريحة رقم {current_index + 1}"
-                )
-        
+                   )
+       
             
     elif action == "EVALUATE_AND_CONTINUE":
         if understanding == "poor":
