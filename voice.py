@@ -92,30 +92,36 @@ async def start_ffmpeg_feed_to_fifo(text: str, voice_name: str, fifo_path: str):
         stderr=asyncio.subprocess.DEVNULL
     )
 
-    async def feed():
-        """قراءة البيانات من edge-tts وكتابتها إلى stdin العملية"""
-        try:
-            communicate = edge_tts.Communicate(text, voice_name)
-            async for chunk in communicate.stream():
-                if chunk["type"] == "audio":
-                    chunk_data = chunk["data"]
-                    # بعض إصدارات edge-tts تعيد base64
-                    if isinstance(chunk_data, str):
-                        chunk_data = base64.b64decode(chunk_data)
-                    process.stdin.write(chunk_data)
-                    await process.stdin.drain()
-            # إنهاء الإدخال بعد انتهاء التوليد
-            process.stdin.close()
-        except Exception as e:
-            # في حال حدوث خطأ، نغلق stdin ليخرج ffmpeg
+    async def feed_with_retry(text, voice_name, process, max_retries=2):
+        """تغذية ffmpeg ببيانات edge-tts مع إعادة محاولة عند الفشل"""
+        retries = 0
+        while retries <= max_retries:
             try:
+                communicate = edge_tts.Communicate(text, voice_name)
+                async for chunk in communicate.stream():
+                    if chunk["type"] == "audio":
+                        chunk_data = chunk["data"]
+                        if isinstance(chunk_data, str):
+                            chunk_data = base64.b64decode(chunk_data)
+                        process.stdin.write(chunk_data)
+                        await process.stdin.drain()
+                # نجاح
                 process.stdin.close()
-            except Exception:
-                pass
-            print("❌ Edge-tts feed error:", e)
-
-    feed_task = asyncio.create_task(feed())
-    return process, feed_task
+                return
+            except (asyncio.TimeoutError, ConnectionError, Exception) as e:
+                retries += 1
+                print(f"⚠️ Edge-tts feed failed (attempt {retries}/{max_retries}): {e}")
+                if retries > max_retries:
+                    # فشلت كل المحاولات
+                    try:
+                        process.stdin.close()
+                    except:
+                        pass
+                    raise RuntimeError("All retries exhausted") from e
+                # انتظار قبل إعادة المحاولة (backoff)
+                await asyncio.sleep(2 ** retries)
+   
+         return process, feed_task
 
 # -------------------------
 # دالة توليد الصوت (محسنة مع FIFO)
