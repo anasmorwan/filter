@@ -23,6 +23,15 @@ def generate_ai_response(action, messages):
 
         try:
             parsed_data = json.loads(json_text)
+            # --- إضافة طباعة التتبع (Debugging) ---
+            print("\n" + "="*40)
+            print("🔍 [AI JSON DEBUG]")
+            print(f"🔹 Action: {action}")
+            print(f"🔹 Response: {parsed_data.get('response_text', '')[:50]}...")
+            print(f"🎯 Radar Keywords: {parsed_data.get('priority_keywords', [])}")
+            print(f"✅ Bingo Keywords: {parsed_data.get('most_accurate_answers', [])}")
+            print(f"📈 Understanding: {parsed_data.get('class_understanding', 'none')}")
+            print("="*40 + "\n")
             # تحديث الجلسة بالكلمات المفتاحية الجديدة فور توليدها
             session["priority_keywords"] = [k.lower() for k in parsed_data.get("priority_keywords", [])]
             session["most_accurate_answers"] = [k.lower() for k in parsed_data.get("most_accurate_answers", [])]
@@ -47,6 +56,8 @@ def generate_ai_response(action, messages):
         expects_answer = parsed_data.get("expects_answer", False)
         class_understanding = parsed_data.get("class_understanding", "none")
         most_accurate_answers = parsed_data.get("most_accurate_answers", "none")
+        priority_keywords = parsed_data.get("priority_keywords", "none")
+
         
         # تصحيح نوع expects_answer
         if isinstance(expects_answer, str):
@@ -60,6 +71,7 @@ def generate_ai_response(action, messages):
             "response_text": response_text,
             "expects_answer": expects_answer,
             "class_understanding": class_understanding,
+            "priority_keywords": priority_keywords,
             "most_accurate_answers": most_accurate_answers
         }
 
