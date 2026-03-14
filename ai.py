@@ -46,7 +46,7 @@ def generate_ai_response(action, messages):
         response_text = parsed_data.get("response_text", "")
         expects_answer = parsed_data.get("expects_answer", False)
         class_understanding = parsed_data.get("class_understanding", "none")
-        most_accurate_answers = parsed_data.get("most_accurate_answers", "none").
+        most_accurate_answers = parsed_data.get("most_accurate_answers", "none")
         
         # تصحيح نوع expects_answer
         if isinstance(expects_answer, str):
