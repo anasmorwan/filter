@@ -1,33 +1,27 @@
 import os
-import io
 import asyncio
 import uuid
 import base64
-from pathlib import Path
 from collections import deque
 
 from pyrogram import Client, idle
 from pytgcalls import PyTgCalls
 from pytgcalls.types import MediaStream
-from gtts import gTTS
 from pydub import AudioSegment
-
-# استيراد الجلسة
-from session import session, get_session_voice_name
 import edge_tts
+
+from session import session, get_session_voice_name
 
 # -------------------------
 # إعداد Userbot (حساب المدرس)
 # -------------------------
 session_str = os.environ.get("SESSION_STRING")
-
 userbot = Client(
     "teacher_account",
     session_string=session_str,
     api_id=int(os.environ.get("TELEGRAM_API_ID")),
     api_hash=os.environ.get("TELEGRAM_API_HASH")
 )
-
 pytgcalls = PyTgCalls(userbot)
 is_engine_ready = False
 
@@ -37,54 +31,47 @@ is_engine_ready = False
 VOICE_CHAT_ID = int(os.environ.get("CHAT_ID"))
 voice_queue = deque()
 is_playing = False
-# 🌟 Event للتحكم في قطع الصوت
 stop_playback_event = asyncio.Event()
 
 # -------------------------
-# تحسينات جديدة للـ low‑latency
+# تحسينات low-latency
 # -------------------------
 FIFO_DIR = "/tmp/tts_fifos"
 os.makedirs(FIFO_DIR, exist_ok=True)
-ai_lock = asyncio.Lock()                      # قفل للحماية من التداخل
-current_ffmpeg_proc = None                     # عملية ffmpeg الجاري استخدامها
-current_feed_task = None                        # مهمة تغذية ffmpeg
+ai_lock = asyncio.Lock()
+current_ffmpeg_proc = None
+current_feed_task = None
 
 def make_fifo_path():
-    """إنشاء مسار فريد لـ FIFO داخل المجلد المخصص"""
     uid = uuid.uuid4().hex
     return os.path.join(FIFO_DIR, f"tts_fifo_{uid}.wav")
 
 def create_silence(duration_ms=1000, filepath=None):
-    """
-    إنشاء ملف صامت بصيغة WAV.
-    إذا لم يُعطَ مسار، يستخدم silence.wav داخل FIFO_DIR.
-    """
     if filepath is None:
         filepath = os.path.join(FIFO_DIR, "silence.wav")
-    silence = AudioSegment.silent(duration=duration_ms)
-    silence.export(filepath, format="wav")
+    AudioSegment.silent(duration=duration_ms).export(filepath, format="wav")
     return filepath
 
 async def start_ffmpeg_feed_to_fifo(text: str, voice_name: str, fifo_path: str):
     """
-    بدء عملية ffmpeg وربطها بـ FIFO، وتغذيتها ببيانات edge-tts مع إعادة محاولة تلقائية عند فشل الاتصال.
+    بدء ffmpeg يقرأ من stdin (MP3) ويكتب WAV إلى FIFO،
+    وتغذيته ببيانات edge-tts مع إعادة محاولة عند فشل الاتصال.
     تعيد (process, feed_task).
     """
-    # إنشاء FIFO إذا لم يكن موجوداً
+    # إنشاء FIFO
     if not os.path.exists(fifo_path):
         os.mkfifo(fifo_path, 0o600)
 
-    # أمر ffmpeg: قراءة mp3 من stdin وتحويله إلى WAV مناسب لتليجرام
+    # أمر ffmpeg
     ffmpeg_cmd = [
         "ffmpeg",
         "-hide_banner", "-loglevel", "error",
-        "-i", "pipe:0",              # الإدخال من الأنبوب
-        "-ar", "48000",               # تردد 48kHz
-        "-ac", "2",                    # مجسم (stereo)
-        "-f", "wav",                    # صيغة الخرج
-        fifo_path                       # الكتابة إلى FIFO
+        "-i", "pipe:0",
+        "-ar", "48000",
+        "-ac", "2",
+        "-f", "wav",
+        fifo_path
     ]
-
     process = await asyncio.create_subprocess_exec(
         *ffmpeg_cmd,
         stdin=asyncio.subprocess.PIPE,
@@ -92,100 +79,63 @@ async def start_ffmpeg_feed_to_fifo(text: str, voice_name: str, fifo_path: str):
         stderr=asyncio.subprocess.DEVNULL
     )
 
-    async def feed_with_retry(text, voice_name, process, max_retries=2):
-        """تغذية ffmpeg ببيانات edge-tts مع إعادة محاولة عند الفشل"""
+    async def feed_with_retry(max_retries=2):
         retries = 0
         while retries <= max_retries:
             try:
                 communicate = edge_tts.Communicate(text, voice_name)
                 async for chunk in communicate.stream():
                     if chunk["type"] == "audio":
-                        chunk_data = chunk["data"]
-                        if isinstance(chunk_data, str):
-                            chunk_data = base64.b64decode(chunk_data)
-                        # تأكد من أن stdin لا يزال مفتوحاً
-                        process.stdin.write(chunk_data)
+                        data = chunk["data"]
+                        if isinstance(data, str):
+                            data = base64.b64decode(data)
+                        # الكتابة إلى ffmpeg مع التحقق من أن stdin مفتوح
+                        if process.stdin.is_closing():
+                            raise BrokenPipeError("stdin مغلق")
+                        process.stdin.write(data)
                         await process.stdin.drain()
-                # نجاح: أغلق stdin لينهي ffmpeg بعد انتهاء البيانات
+                # نجاح: إغلاق stdin لإنهاء ffmpeg
                 process.stdin.close()
                 return
-            except (asyncio.TimeoutError, ConnectionError, BrokenPipeErorr, Exception) as e:
+            except (asyncio.TimeoutError, ConnectionError, BrokenPipeError, Exception) as e:
                 retries += 1
                 print(f"⚠️ Edge-tts feed failed (attempt {retries}/{max_retries}): {e}")
                 if retries > max_retries:
-                    # فشلت كل المحاولات
+                    # فشل كامل
                     try:
                         process.stdin.close()
                     except:
                         pass
-                    raise RuntimeError("All retries exhausted") from e
-                # انتظار قبل إعادة المحاولة (exponential backoff)
-                await asyncio.sleep(2 ** retries)
+                    raise RuntimeError("فشل توليد الصوت بعد عدة محاولات") from e
+                await asyncio.sleep(2 ** retries)  # انتظار تصاعدي
 
-    # إنشاء المهمة (task) من الدالة feed_with_retry
-    feed_task = asyncio.create_task(feed_with_retry(text, voice_name, process))
-
+    feed_task = asyncio.create_task(feed_with_retry())
     return process, feed_task
-   
-         
 
-# -------------------------
-# دالة توليد الصوت (محسنة مع FIFO)
-# -------------------------
-async def generate_audio_sync(text, voice_name=None, filename="ai_response.wav"):
+async def generate_audio_sync(text, voice_name=None):
     """
-    نسخة محسّنة: تنشئ FIFO وتبدأ ffmpeg والتغذية، ثم تعيد (fifo_path, duration_estimate).
-    تحتفظ بمرجع العملية والمهمة في متغيرات عامة للتمكن من الإلغاء لاحقاً.
+    تنشئ FIFO، تبدأ ffmpeg والتغذية، وتخزن المراجع العامة.
+    تعيد (fifo_path, duration_estimate).
     """
     global current_ffmpeg_proc, current_feed_task
 
     if voice_name is None:
         voice_name = get_session_voice_name() or "en-US-JennyNeural"
 
-    # إنشاء مسار FIFO فريد
     fifo_path = make_fifo_path()
-
-    # بدء ffmpeg والتغذية
     proc, task = await start_ffmpeg_feed_to_fifo(text, voice_name, fifo_path)
 
-    # تخزين المرجع للاستخدام في play_next (لإمكانية الإلغاء)
+    # تخزين المراجع للإلغاء لاحقاً
     current_ffmpeg_proc = proc
     current_feed_task = task
 
-    # تقدير المدة: متوسط 15 حرف في الثانية
+    # تقدير المدة (متوسط 15 حرف/ثانية)
     duration = max(2.0, len(text) / 15.0)
-    process = start_ffmpeg_only(fifo_path)
+    return fifo_path, duration
 
-    return fifo_path, process, text, voice_name
-
-
-async def start_ffmpeg_only(fifo_path):
-    if not os.path.exists(fifo_path):
-        os.mkfifo(fifo_path, 0o600)
-    ffmpeg_cmd = [
-        "ffmpeg",
-        "-hide_banner", "-loglevel", "error",
-        "-i", "pipe:0",              # الإدخال من الأنبوب
-        "-ar", "48000",               # تردد 48kHz
-        "-ac", "2",                    # مجسم (stereo)
-        "-f", "wav",                    # صيغة الخرج
-        fifo_path                       # الكتابة إلى FIFO
-    ]
-    process = await asyncio.create_subprocess_exec(
-        *ffmpeg_cmd,
-        stdin=asyncio.subprocess.PIPE,
-        stdout=asyncio.subprocess.DEVNULL,
-        stderr=asyncio.subprocess.DEVNULL
-
-        )
-    return process
-# -------------------------
-# تشغيل الصوت التالي في الطابور
-# -------------------------
 async def play_next():
     global is_playing, current_ffmpeg_proc, current_feed_task
 
-    # استخدم القفل لمنع تداخل استدعاءات متزامنة
     async with ai_lock:
         if not voice_queue or is_playing:
             return
@@ -200,132 +150,94 @@ async def play_next():
         fifo_path = None
         ffmpeg_proc = None
         feed_task = None
+        estimated_duration = 0
 
         try:
-            # استدعاء دالة التوليد المحسنة
-            fifo_path, ffmpeg_proc, text, voice_name = await generate_audio_sync(text, voice_name)
-
-            # استرجاع المراجع التي خزنتها generate_audio_sync
-            current_ffmpeg_proc = ffmpeg_proc
+            # بدء التوليد والبث
+            fifo_path, estimated_duration = await generate_audio_sync(text, voice_name)
+            ffmpeg_proc = current_ffmpeg_proc
             feed_task = current_feed_task
 
-            print(f"🎙️ بدء البث منخفض التأخير عبر FIFO: {fifo_path}")
-            await pytgcalls.play(
-                VOICE_CHAT_ID,
-                MediaStream(fifo_path)
-            )
-            await asyncio.sleep(0.5)
+            print(f"🎙️ بدء البث منخفض التأخير: {fifo_path}")
+            await pytgcalls.play(VOICE_CHAT_ID, MediaStream(fifo_path))
 
-            # انتظار انتهاء المدة أو حدوث قطع
+            # انتظار اكتمال الصوت أو قطعه
             try:
                 await asyncio.wait_for(stop_playback_event.wait(), timeout=estimated_duration + 2.0)
                 print("⚠️ تم قطع البث قبل اكتماله.")
             except asyncio.TimeoutError:
-                pass  # انتهى بشكل طبيعي
+                pass  # اكتمل طبيعياً
 
         except Exception as e:
             print(f"❌ خطأ أثناء البث: {e}")
 
         finally:
-            # إيقاف ffmpeg والمهمة المرتبطة به
-            if feed_task:
+            # إلغاء مهمة التغذية وقتل ffmpeg
+            if feed_task and not feed_task.done():
                 feed_task.cancel()
                 try:
                     await feed_task
                 except asyncio.CancelledError:
                     pass
                 except Exception as e:
-                    print("خطأ في إلغاء مهمة التغذية:", e)
+                    print(f"خطأ في إلغاء مهمة التغذية: {e}")
 
-            if ffmpeg_proc:
+            if ffmpeg_proc and ffmpeg_proc.returncode is None:
                 try:
                     ffmpeg_proc.kill()
-                except Exception:
-                    pass
-                try:
                     await ffmpeg_proc.wait()
                 except Exception:
                     pass
 
-            # حذف FIFO إن وجد
+            # حذف FIFO
             if fifo_path and os.path.exists(fifo_path):
                 try:
                     os.unlink(fifo_path)
                 except Exception as e:
-                    print("فشل حذف FIFO:", e)
+                    print(f"فشل حذف FIFO: {e}")
 
             # إعادة تعيين المتغيرات العامة
             current_ffmpeg_proc = None
             current_feed_task = None
-
             session["is_speaking"] = False
             is_playing = False
 
-            # إذا بقيت عناصر في الطابور، شغل التالي
+            # تشغيل التالي إن وجد
             if voice_queue:
                 asyncio.create_task(play_next())
 
-# -------------------------
-# دالة قطع الصوت
-# -------------------------
 async def stop_audio():
     global is_playing
-
-    voice_queue.clear()  # تفريغ الطابور
-
+    voice_queue.clear()
     if is_playing:
-        print("🛑 أمر إيقاف الصوت: تشغيل صامت وضبط حدث القطع.")
-        try:
-            # تأكد من وجود ملف صامت
-            silence_path = os.path.join(FIFO_DIR, "silence.wav")
-            if not os.path.exists(silence_path):
-                create_silence(filepath=silence_path)
-            await pytgcalls.play(VOICE_CHAT_ID, MediaStream(silence_path))
-        except Exception as e:
-            print("خطأ في تشغيل الصامت:", e)
-
+        print("🛑 إيقاف الصوت...")
+        silence_path = os.path.join(FIFO_DIR, "silence.wav")
+        if not os.path.exists(silence_path):
+            create_silence(filepath=silence_path)
+        await pytgcalls.play(VOICE_CHAT_ID, MediaStream(silence_path))
         stop_playback_event.set()
         is_playing = False
 
-# -------------------------
-# إضافة الرد الصوتي إلى الطابور
-# -------------------------
 async def broadcast_ai_response(response_text):
-    print(f"📢 إضافة نص إلى طابور الصوت: {response_text[:40]}...")
+    print(f"📢 إضافة إلى طابور الصوت: {response_text[:40]}...")
     voice_queue.append(response_text)
     if not is_playing:
         await play_next()
 
-# -------------------------
-# بدء محرك الصوت
-# -------------------------
 async def start_voice_engine():
     global is_engine_ready
-
     await pytgcalls.start()
-    print("محاولة الانضمام إلى المحادثة الصوتية...")
-
-    # إنشاء ملف صامت إذا لم يكن موجوداً
     silence_path = os.path.join(FIFO_DIR, "silence.wav")
     if not os.path.exists(silence_path):
         create_silence(filepath=silence_path)
-
-    await pytgcalls.play(
-        VOICE_CHAT_ID,
-        MediaStream(silence_path)
-    )
-
+    await pytgcalls.play(VOICE_CHAT_ID, MediaStream(silence_path))
     is_engine_ready = True
     print("✅ محرك الصوت جاهز وتم الانضمام إلى المحادثة الصوتية")
 
-# -------------------------
-# التشغيل المستقل (اختباري)
-# -------------------------
 if __name__ == "__main__":
     async def main():
         await userbot.start()
         await start_voice_engine()
         print("البوت الصوتي قيد التشغيل...")
         await idle()
-
     asyncio.run(main())
