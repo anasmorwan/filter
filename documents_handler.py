@@ -124,3 +124,54 @@ def extract_text_from_pdf(file_path):
 def clean_text(text):
     lines = [line.strip() for line in text.splitlines() if line.strip()]
     return "\n".join(lines)
+
+
+
+import re
+
+def smart_split(text, max_chars=100):
+    """
+    تقسيم النص إلى قطع صغيرة لضمان سرعة التوليد.
+    max_chars: الحد الأقصى للحروف في القطعة الواحدة قبل كسرها قسرياً.
+    """
+    # 1. التنظيف الأولي
+    text = text.replace('\n', ' ')
+    
+    # 2. التقسيم بناءً على علامات الوقف الرئيسية (. ! ؟ ?)
+    # استخدمنا regex للحفاظ على علامة الوقف مع الجملة
+    sentences = re.split(r'(?<=[.!?؟])\s+', text)
+    
+    final_chunks = []
+    
+    for sentence in sentences:
+        if len(sentence) <= max_chars:
+            final_chunks.append(sentence.strip())
+        else:
+            # 3. إذا كانت الجملة طويلة، نقسمها بناءً على الفواصل (, ، ;)
+            sub_parts = re.split(r'(?<=[,،;؛])\s+', sentence)
+            for part in sub_parts:
+                if len(part) <= max_chars:
+                    final_chunks.append(part.strip())
+                else:
+                    # 4. التقسيم القسري بناءً على عدد الكلمات (آخر حل)
+                    words = part.split(' ')
+                    current_chunk = []
+                    current_length = 0
+                    for word in words:
+                        if current_length + len(word) + 1 <= max_chars:
+                            current_chunk.append(word)
+                            current_length += len(word) + 1
+                        else:
+                            final_chunks.append(" ".join(current_chunk))
+                            current_chunk = [word]
+                            current_length = len(word) + 1
+                    if current_chunk:
+                        final_chunks.append(" ".join(current_chunk))
+                        
+    # تصفية أي قطع فارغة
+    return [c.strip() for c in final_chunks if c.strip()]
+
+# مثال على الاستخدام:
+# chunks = smart_split(long_ai_response)
+# for chunk in chunks:
+#     await broadcast_ai_response(chunk)
