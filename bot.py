@@ -524,7 +524,7 @@ async def start_cmd(client, message):
         voice = parts[1]
     
 
-    change_ai_voice(topic)
+    change_ai_voice(voice)
     await message.reply_text(f"Ai voice channged! current voice: {voice}")
     
 
