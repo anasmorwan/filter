@@ -3,6 +3,8 @@ from docx import Document
 from pptx import Presentation
 from pypdf import PdfReader
 MIN_TEXT_LENGTH = 500
+import fitz  # PyMuPDF
+
 
 
 def extract_text_from_file(file_path):
@@ -16,7 +18,7 @@ def extract_text_from_file(file_path):
         text = extract_text_from_txt(file_path)
 
     elif ext == ".pdf":
-        text = extract_text_from_pdf(file_path)
+        return extract_visual_chunks_from_pdf(file_path)
 
     elif ext == ".docx":
         text = extract_text_from_docx(file_path)
@@ -34,7 +36,7 @@ def extract_text_from_file(file_path):
     if not text or len(text) < MIN_TEXT_LENGTH:
         raise ValueError("Extracted text is too short. The file may require OCR.")
 
-    return text
+    return [{"text": chunk, "image_path": None} for chunk in text.split('\n\n') if len(chunk) > 20]
     
 
 def extract_text_from_txt(file_path):
@@ -74,11 +76,39 @@ def extract_text_from_pptx(file_path):
 
     return "\n".join(full_text)
 
+def extract_visual_chunks_from_pdf(file_path):
+    doc = fitz.open(file_path)
+    chunks = []
+    
+    # إنشاء مجلد مؤقت لحفظ صور الصفحات
+    os.makedirs("session_images", exist_ok=True)
+    
+    for page_num in range(len(doc)):
+        page = doc.load_page(page_num)
+        text = page.get_text("text").strip()
+        
+        # تجاهل الصفحات الفارغة جداً
+        if len(text) < 20: 
+            continue
+            
+        # تحويل الصفحة إلى صورة عالية الجودة
+        img_path = f"session_images/page_{page_num}.png"
+        pix = page.get_pixmap(matrix=fitz.Matrix(2, 2)) # Matrix(2,2) لزيادة الدقة
+        pix.save(img_path)
+        
+        chunks.append({
+            "text": clean_text(text),
+            "image_path": img_path
+        })
+        
+    doc.close()
+    return chunks
 
+"""
 def extract_text_from_pdf(file_path):
-    """
+    
     استخراج النص من ملفات PDF
-    """
+    
     reader = PdfReader(file_path)
 
     full_text = []
@@ -90,7 +120,7 @@ def extract_text_from_pdf(file_path):
 
     return "\n".join(full_text)
 
-
+"""
 def clean_text(text):
     lines = [line.strip() for line in text.splitlines() if line.strip()]
     return "\n".join(lines)
