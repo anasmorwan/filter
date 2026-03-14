@@ -119,6 +119,19 @@ async def process_message(user, user_id, text, timestamp):
             session["pending_questions"].append(message)
             print("📥 Question queued to avoid distraction.")
 
+    # ---------------------------------------------------------
+    # 3. صائد الإجابات الذكي (Bingo Check) - لتسريع الـ Heartbeat
+    # ---------------------------------------------------------
+    if session.get("waiting_for_answer"):
+        accurate_keywords = session.get("most_accurate_answers", [])
+        clean_text = text.lower()
+        
+        # إذا وجدنا كلمة من "الإجابات النموذجية" التي توقعها الـ AI
+        if any(word in clean_text for word in accurate_keywords):
+            print(f"🎯 [BINGO] Accurate answer detected from {user}!")
+            session["bingo_answer_received"] = True 
+            # ملاحظة: الـ Heartbeat سيلتقط هذه الإشارة في أقل من ثانية ويقوم بالرد فوراً
+
 
 
     if session["current_question"]:
@@ -139,22 +152,6 @@ async def process_message(user, user_id, text, timestamp):
         action = decide_next_action([msg])
 
         await handle_action(action, [msg]) # أضفنا await
-
-
-async def on_student_message(client, message):
-    text = message.text.lower()
-    
-    # ... (كود معالجة المقاطعات priorities_keywords الذي كتبناه سابقاً) ...
-
-    # 🟢 فحص "الضربة الصائبة" (Bingo Check)
-    if session.get("waiting_for_answer") and not session.get("bingo_answer_received"):
-        accurate_keywords = session.get("most_accurate_answers", [])
-        
-        # إذا كانت أي من الكلمات الدقيقة موجودة في إجابة الطالب
-        if any(word in text for word in accurate_keywords):
-            print(f"🎯 BINGO! Student {message.from_user.first_name} gave the right answer.")
-            # نرفع الراية لكي يقوم الـ Heartbeat بقطع الانتظار فوراً
-            session["bingo_answer_received"] = True
 
 
 
