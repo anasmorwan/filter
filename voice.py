@@ -104,14 +104,12 @@ async def start_ffmpeg_feed_to_fifo(text: str, voice_name: str, fifo_path: str):
                         if isinstance(chunk_data, str):
                             chunk_data = base64.b64decode(chunk_data)
                         # تأكد من أن stdin لا يزال مفتوحاً
-                        if process.stdin.is_closing():
-                            raise RuntimeError("stdin مغلق، لا يمكن الكتابة")
                         process.stdin.write(chunk_data)
                         await process.stdin.drain()
                 # نجاح: أغلق stdin لينهي ffmpeg بعد انتهاء البيانات
                 process.stdin.close()
                 return
-            except (asyncio.TimeoutError, ConnectionError, Exception) as e:
+            except (asyncio.TimeoutError, ConnectionError, BrokenPipeErorr, Exception) as e:
                 retries += 1
                 print(f"⚠️ Edge-tts feed failed (attempt {retries}/{max_retries}): {e}")
                 if retries > max_retries:
@@ -156,9 +154,31 @@ async def generate_audio_sync(text, voice_name=None, filename="ai_response.wav")
 
     # تقدير المدة: متوسط 15 حرف في الثانية
     duration = max(2.0, len(text) / 15.0)
+    process = start_ffmpeg_only(fifo_path)
 
-    return fifo_path, duration
+    return fifo_path, process, text, voice_name
 
+
+async def start_ffmpeg_only(fifo_path):
+    if not os.path.exists(fifo_pat
+        os.mkfifo(fifo_path, 0o600)
+    ffmpeg_cmd = [
+        "ffmpeg",
+        "-hide_banner", "-loglevel", "error",
+        "-i", "pipe:0",              # الإدخال من الأنبوب
+        "-ar", "48000",               # تردد 48kHz
+        "-ac", "2",                    # مجسم (stereo)
+        "-f", "wav",                    # صيغة الخرج
+        fifo_path                       # الكتابة إلى FIFO
+    ]
+    process = await asyncio.create_subprocess_exec(
+        *ffmpeg_cmd,
+        stdin=asyncio.subprocess.PIPE,
+        stdout=asyncio.subprocess.DEVNULL,
+        stderr=asyncio.subprocess.DEVNULL
+
+        )
+    return process
 # -------------------------
 # تشغيل الصوت التالي في الطابور
 # -------------------------
@@ -183,10 +203,10 @@ async def play_next():
 
         try:
             # استدعاء دالة التوليد المحسنة
-            fifo_path, estimated_duration = await generate_audio_sync(text, voice_name)
+            fifo_path, ffmpeg_proc, text, voice_name = await generate_audio_sync(text, voice_name)
 
             # استرجاع المراجع التي خزنتها generate_audio_sync
-            ffmpeg_proc = current_ffmpeg_proc
+            current_ffmpeg_proc = ffmpeg_proc
             feed_task = current_feed_task
 
             print(f"🎙️ بدء البث منخفض التأخير عبر FIFO: {fifo_path}")
@@ -194,6 +214,7 @@ async def play_next():
                 VOICE_CHAT_ID,
                 MediaStream(fifo_path)
             )
+            await asyncio.sleep(0.5)
 
             # انتظار انتهاء المدة أو حدوث قطع
             try:
@@ -308,4 +329,3 @@ if __name__ == "__main__":
         await idle()
 
     asyncio.run(main())
-
