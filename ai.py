@@ -11,7 +11,7 @@ client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
 ALLOWED_UNDERSTANDING = {"good", "poor", "none"}
 
 
-# النسخة الاخيرة
+# النسخة الاخيرة    
 def generate_ai_response(action, messages):
 
     prompt = build_prompt(action, messages)
@@ -25,6 +25,10 @@ def generate_ai_response(action, messages):
             parsed_data = json.loads(json_text)
             # تحديث الجلسة بالكلمات المفتاحية الجديدة فور توليدها
             session["priority_keywords"] = [k.lower() for k in parsed_data.get("priority_keywords", [])]
+            session["most_accurate_answers"] = [k.lower() for k in parsed_data.get("most_accurate_answers", [])]
+            # تفريغ حالة "الضربة الصائبة" السابقة
+            session["bingo_answer_received"] = False 
+    
     
 
         except json.JSONDecodeError:
@@ -33,6 +37,10 @@ def generate_ai_response(action, messages):
             parsed_data = json.loads(fixed_json)
             # تحديث الجلسة بالكلمات المفتاحية الجديدة فور توليدها
             session["priority_keywords"] = [k.lower() for k in parsed_data.get("priority_keywords", [])]
+            session["most_accurate_answers"] = [k.lower() for k in parsed_data.get("most_accurate_answers", [])]
+            # تفريغ حالة "الضربة الصائبة" السابقة
+            session["bingo_answer_received"] = False 
+    
     
 
         response_text = parsed_data.get("response_text", "")
