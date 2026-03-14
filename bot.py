@@ -100,6 +100,7 @@ async def process_message(user, user_id, text, timestamp):
         messages = pop_window_messages()
 
         action = decide_next_action([msg])
+        print(f"a question detected, action: {action}", flush=True)
 
         await handle_action(action, [msg]) # أضفنا await
 
@@ -150,6 +151,7 @@ async def process_message(user, user_id, text, timestamp):
             return
 
         action = decide_next_action([msg])
+        print(f"no questions or bingo answers.. procsessing window, action_decided: {action}", flush=True)
 
         await handle_action(action, [msg]) # أضفنا await
 
