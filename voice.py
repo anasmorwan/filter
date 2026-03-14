@@ -67,8 +67,8 @@ def create_silence(duration_ms=1000, filepath=None):
 
 async def start_ffmpeg_feed_to_fifo(text: str, voice_name: str, fifo_path: str):
     """
-    بدء عملية ffmpeg وربطها بـ FIFO، وتغذيتها ببيانات edge-tts.
-    تعود بـ (process, feed_task).
+    بدء عملية ffmpeg وربطها بـ FIFO، وتغذيتها ببيانات edge-tts مع إعادة محاولة تلقائية عند فشل الاتصال.
+    تعيد (process, feed_task).
     """
     # إنشاء FIFO إذا لم يكن موجوداً
     if not os.path.exists(fifo_path):
@@ -103,9 +103,12 @@ async def start_ffmpeg_feed_to_fifo(text: str, voice_name: str, fifo_path: str):
                         chunk_data = chunk["data"]
                         if isinstance(chunk_data, str):
                             chunk_data = base64.b64decode(chunk_data)
+                        # تأكد من أن stdin لا يزال مفتوحاً
+                        if process.stdin.is_closing():
+                            raise RuntimeError("stdin مغلق، لا يمكن الكتابة")
                         process.stdin.write(chunk_data)
                         await process.stdin.drain()
-                # نجاح
+                # نجاح: أغلق stdin لينهي ffmpeg بعد انتهاء البيانات
                 process.stdin.close()
                 return
             except (asyncio.TimeoutError, ConnectionError, Exception) as e:
@@ -118,8 +121,11 @@ async def start_ffmpeg_feed_to_fifo(text: str, voice_name: str, fifo_path: str):
                     except:
                         pass
                     raise RuntimeError("All retries exhausted") from e
-                # انتظار قبل إعادة المحاولة (backoff)
+                # انتظار قبل إعادة المحاولة (exponential backoff)
                 await asyncio.sleep(2 ** retries)
+
+    # إنشاء المهمة (task) من الدالة feed_with_retry
+    feed_task = asyncio.create_task(feed_with_retry(text, voice_name, process))
 
     return process, feed_task
    
