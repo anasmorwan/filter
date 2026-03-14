@@ -153,6 +153,6 @@ def get_chat_history():
 def get_session_voice_name():
     return session["voice_name"]
 
-def set_session_voice_name(voice_name):
+def change_ai_voice(voice_name):
     session["voice_name"] = voice_name
     
