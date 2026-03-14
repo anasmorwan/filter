@@ -12,3 +12,6 @@ python-docx
 python-pptx
 edge_tts
 PyMuPDF
+pyrogram
+ffmpeg-python
+asyncio
