@@ -56,6 +56,27 @@ waiting_for_lecture = False
 #........  MVP steps ...........
 
 #........جمع الرسائل .........
+    # داخل process_message في bot.py
+    
+    if msg_type == "question" and session.get("is_speaking"):
+        # إذا كان المدرس يتحدث حالياً وتم طرح سؤال، نفحص الرادار
+        if should_interrupt(message, session):
+            await stop_audio()
+            session["is_speaking"] = False
+            await handle_action("ANSWER_INTERRUPTION", [msg])
+        else:
+            session.setdefault("pending_questions", []).append(msg)
+            print("📥 Question queued.")
+        return # نخرج لأننا عالجنا المقاطعة
+
+    # إذا لم تكن مقاطعة أثناء الحديث، نمررها لمحرك القرار
+    messages = pop_window_messages()
+    action = decide_next_action(messages if messages else [msg])
+    
+    if action != "WAIT":
+        await handle_action(action, messages if messages else [msg])
+
+
 async def process_message(user, user_id, text, timestamp):
     session = get_session_info()
     messages = pop_window_messages()
@@ -119,6 +140,16 @@ async def process_message(user, user_id, text, timestamp):
             # تخزين السؤال للرد عليه لاحقاً (بين الفقرات)
             session["pending_questions"].append(message)
             print("📥 Question queued to avoid distraction.")
+
+        return # نخرج لأننا عالجنا المقاطعة
+
+
+        messages = pop_window_messages()
+        action = decide_next_action(messages if messages else [msg])
+    
+        if action != "WAIT":
+            await handle_action(action, messages if messages else [msg])
+
 
     # ---------------------------------------------------------
     # 3. صائد الإجابات الذكي (Bingo Check) - لتسريع الـ Heartbeat
