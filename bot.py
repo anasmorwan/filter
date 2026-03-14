@@ -659,10 +659,14 @@ def index():
 if __name__ == "__main__":
     from threading import Thread
 
-    # تشغيل Flask في Thread منفصل
-    Thread(target=lambda: flask_app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 10000)))).start()
-
-    # تشغيل Pyrogram
+    # 1. إيقاف الـ Reloader يمنع تشغيل الكود مرتين
+    Thread(target=lambda: flask_app.run(
+        host="0.0.0.0", 
+        port=int(os.environ.get("PORT", 10000)),
+        use_reloader=False # 👈 هذا هو السطر السحري
+    )).start()
+    
+  # تشغيل Pyrogram
   #  bot_app.run()
     async def start_all():
         print("🚀 [STARTUP] Starting Bot and Voice Engine...")
