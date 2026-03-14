@@ -160,7 +160,7 @@ async def generate_audio_sync(text, voice_name=None, filename="ai_response.wav")
 
 
 async def start_ffmpeg_only(fifo_path):
-    if not os.path.exists(fifo_pat
+    if not os.path.exists(fifo_path):
         os.mkfifo(fifo_path, 0o600)
     ffmpeg_cmd = [
         "ffmpeg",
