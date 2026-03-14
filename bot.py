@@ -188,19 +188,33 @@ async def handle_action(action, messages):
     if mode == "conversation":
         await handle_conversation_action(action, session, understanding, ai_data)
         
-    
-    
-    
-    
+
+
     
 async def handle_lecture_action(action, session, understanding, ai_data):
     
     response_text = ai_data.get("response_text", "Error generating response.")
     expects_answer = ai_data.get("expects_answer", False)
     
-    if action == "TEACH_NEXT_CHUNK":
-        # نزيد العداد فقط بعد نجاح الشرح
-        session["current_chunk_index"] += 1
+    # --- التعامل مع الانتقال لفقرة جديدة ---
+    if action == "TEACH_NEXT_CHUNK" or (action == "INTRODUCE_LECTURE"):
+        
+        current_index = session.get("current_chunk_index", 0)
+        chunks = session.get("lecture_chunks", [])
+        
+        if current_index < len(chunks):
+            current_chunk = chunks[current_index]
+            
+            # 🖼️ إرسال الصورة للطلاب إذا كانت موجودة
+            if current_chunk.get("image_path") and os.path.exists(current_chunk["image_path"]):
+                print(f"🖼️ Sending image for chunk {current_index}...")
+                from bot import bot_app, CHAT_ID # تأكد من استدعائها بشكل صحيح
+                await bot_app.send_photo(
+                    chat_id=CHAT_ID, 
+                    photo=current_chunk["image_path"],
+                    caption=f"📄 شريحة رقم {current_index + 1}"
+                )
+        
             
     elif action == "EVALUATE_AND_CONTINUE":
         if understanding == "poor":
@@ -209,6 +223,10 @@ async def handle_lecture_action(action, session, understanding, ai_data):
         else:
             # الفهم جيد، ننتقل للفقرة التالية
             session["current_chunk_index"] += 1
+
+    if action == "TEACH_NEXT_CHUNK":
+        # نزيد العداد فقط بعد نجاح الشرح
+        session["current_chunk_index"] += 1
 
     
     add_to_chat_history("Teacher (You)", response_text) # 👈 أضف هذه لتوثيق كلام المدرس
