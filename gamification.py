@@ -3,6 +3,7 @@ from memory import update_student_memory, student_memory
 
 
 
+last_daily_report = None
 
 def check_bingo(answer_text, bingo_keywords):
 
@@ -29,13 +30,8 @@ def register_bingo(user_id):
         return
 
     student_memory[user_id]["bingo_hits"] += 1
-    award_star(user_id, 2) def register_bingo(user_id):
-
-    if user_id not in student_memory:
-        return
-
-    student_memory[user_id]["bingo_hits"] += 1
-    award_star(user_id, 2)
+    award_star(user_id, 2) 
+    
 
 
 def get_rank(stars):
@@ -100,34 +96,8 @@ def get_daily_report_if_changed():
     return None
 
 
-last_daily_report = None
 
-def build_daily_report():
 
-    leaders = get_leaderboard()
 
-    if not leaders:
-        return None
 
-    text = "🏆 Daily Activity Report\n\n"
 
-    for i, (uid, data) in enumerate(leaders, 1):
-
-        stars = data["stars"]
-        rank = get_rank(stars)
-
-        text += f"{i}. {data['name']} ⭐{stars} ({rank})\n"
-
-    return text
-
-def get_daily_report_if_changed():
-
-    global last_daily_report
-
-    report = build_daily_report()
-
-    if report != last_daily_report:
-        last_daily_report = report
-        return report
-
-    return None
