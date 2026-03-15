@@ -21,7 +21,7 @@ from decision_engine import decide_next_action
 from ai import generate_ai_response
 from buffer import clear_buffer
 from voice import broadcast_ai_response
-from memory import update_student_memory
+from memory import update_student_memory, check_bingo, register_bingo
 # تأكد أن voice.py يحتوي على userbot و pytgcalls و start_voice_engine
 from voice import broadcast_ai_response, userbot, pytgcalls, start_voice_engine, stop_audio
 
@@ -61,7 +61,7 @@ async def process_message(user, user_id, text, timestamp):
     messages = pop_window_messages()
     Bingo_Keywords = session.get("Bingo_Keywords", [])
 
-
+    
     if not session_is_active():
         return
 
@@ -94,6 +94,13 @@ async def process_message(user, user_id, text, timestamp):
     }
 
     add_message(msg)
+    
+    if msg_type in ["answer", "short_answer"]:
+
+        if check_bingo(message.text, Bingo_Keywords):
+
+            register_bingo(user_id)
+
 
     print("\n--- NEW MESSAGE RECEIVED ---", flush=True)
     print("Stored:", msg, flush=True)
