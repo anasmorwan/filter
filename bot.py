@@ -124,6 +124,7 @@ async def process_message(user, user_id, text, timestamp):
         if should_interrupt(message, session):
             # الطالب يقاطع المدرس بسؤال!
             await stop_audio() # اقطع صوت المدرس فوراً
+            print("a student asked a question, audio stopped, answering now the question", flush=True)
             # (اختياري) بث ملف الحشو هنا إذا أردت: await broadcast_ai_response("Good question...")
             session["is_speaking"] = False
             await handle_action("ANSWER_INTERRUPTION", [msg]) # المدرس يرد: "سؤال جيد يا أحمد، تفضل..."
