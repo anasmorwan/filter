@@ -1,5 +1,5 @@
 from groq import Groq
-from prompts import TEACHER_SYSTEM_PROMPT, ACTION_PROMPTS, LECTURER_SYSTEM_PROMPT, JSON_SYSTEM_PROMPT
+from prompts import TEACHER_SYSTEM_PROMPT, ACTION_PROMPTS, LECTURER_SYSTEM_PROMPT, JSON_SYSTEM_PROMPT, LEARNING_OBJECTIVES_PROMPT
 import os
 from session import session, get_session_info, get_chat_history
 import json
@@ -87,21 +87,6 @@ def generate_ai_response(action, messages):
             "most_accurate_answers": "none"
         }
 
-# دالة جديدة لتلخيص المستند بالكامل
-def generate_global_summary(full_text):
-    prompt = f"""
-    قم بتحليل النص التالي واستخرج منه "أهداف التعلم" بأسلوب مشوق.
-    المخرجات يجب أن تكون:
-    1. عنوان جذاب للمحاضرة.
-    2. قائمة بـ 3-5 نقاط تمثل الأهداف الأساسية (ماذا سيتعلم الطالب؟).
-    3. سؤال "تشويقي" واحد يثير الفضول حول المحتوى.
-    
-    النص: {full_text[:4000]} # نأخذ أول 4000 حرف لضمان عدم تجاوز التوكنز
-    """
-    # استدعاء الـ AI هنا لإنتاج الملخص
-    summary_data = call_ai(prompt) 
-    return summary_data
-
 
 
 
@@ -156,41 +141,14 @@ Teacher task: {action_prompt}
     return prompt
 
 
-
-
-'''
-def build_prompt(action, context_messages):
-    session = get_session_info()
-    topic = session.get("topic", "General English")
-    level = session.get("difficulty", "Intermediate")
-    question = session.get("current_question", "None")
-    
-    # جلب المحادثة المتسلسلة (مدرس وطلاب)
-    full_conversation = get_chat_history()
-
-    action_prompt = ACTION_PROMPTS.get(action, "")
-
-    prompt = f"""
-{TEACHER_SYSTEM_PROMPT}
-
-Current Active Question you asked (if any):
-{question}
-[CURRENT SESSION CONTEXT]
-- Topic: {topic}
-- Student Level: {level}
-
---- RECENT CONVERSATION HISTORY ---
-{full_conversation}
------------------------------------
-
-Teacher task right now:
-{action_prompt}
-Important: Read the conversation history above. Your response MUST naturally follow the context of what was just said. Do not repeat your previous questions.
-ONLY address users who have actually spoken in the [CONVERSATION HISTORY]. Do not invent names or talk to imaginary students.
-    """
-    return prompt
-
-'''
+# دالة جديدة لتلخيص المستند بالكامل
+def generate_global_summary(full_text):  
+    prompt = LEARNING_OBJECTIVES_PROMPT.format(
+    text=full_text[:4000]
+    )
+    # استدعاء الـ AI هنا لإنتاج الملخص
+    summary_data = call_ai(prompt) 
+    return summary_data
 
 
 def call_ai(prompt):
@@ -208,77 +166,3 @@ def call_ai(prompt):
         max_tokens=1024
     )
     return response.choices[0].message.content
-
-
-
-"""
-def extract_json(text):
-    """
-"""
-    استخراج JSON من النص حتى لو احتوى على شرح أو markdown
-    """
-"""
-    # إزالة markdown
-    text = re.sub(r"```json|```", "", text)
-
-    match = re.search(r"\{.*\}", text, re.DOTALL)
-
-    if not match:
-        raise ValueError("No JSON found")
-
-    return match.group()
-
-"""
-
-def extract_json(text):
-    """
-    استخراج JSON من النص حتى لو كان داخله شرح أو markdown
-    """
-
-    # إزالة markdown
-    text = re.sub(r"```json|```", "", text)
-
-    # البحث عن أول JSON
-    match = re.search(r"\{.*\}", text, re.DOTALL)
-
-    if not match:
-        raise ValueError("No JSON found")
-
-    return match.group()
-
-"""
-def heal_json(text):
-    """
-"""
-    إصلاح الأخطاء الشائعة في JSON القادم من الذكاء الاصطناعي
-    """
-"""
-    # إزالة الفواصل الزائدة
-    text = re.sub(r",\s*}", "}", text)
-    text = re.sub(r",\s*]", "]", text)
-
-    # تحويل single quotes
-    text = text.replace("'", '"')
-
-    # إزالة newline داخل النص
-    text = text.replace("\n", " ")
-
-    return text
-
-"""
-def heal_json(text):
-    """
-    إصلاح الأخطاء الشائعة في JSON
-    """
-
-    # إزالة الفواصل الزائدة
-    text = re.sub(r",\s*}", "}", text)
-    text = re.sub(r",\s*]", "]", text)
-
-    # تحويل ' إلى "
-    text = text.replace("'", '"')
-
-    # إزالة newline داخل النصوص
-    text = text.replace("\n", " ")
-
-    return text
