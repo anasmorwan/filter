@@ -503,6 +503,9 @@ async def request_lecture_file(client, message):
     await message.reply_text("Please send the lecture file (PDF or TXT).")
 
 # استقبال الملف بعد الأمر
+from ai import generate_global_summary
+session["lecture_goals"] = generate_global_summary(full_text)
+
 @bot_app.on_message(filters.document & filters.user(ADMIN_ID))
 async def handle_lecture_file(client, message):
     global waiting_for_lecture
