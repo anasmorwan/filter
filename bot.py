@@ -207,11 +207,12 @@ async def handle_lecture_action(action, session, understanding, ai_data=None):
         session["current_chunk_index"] += 1
     elif action == "TEACH_NEXT_CHUNK":
         session["current_chunk_index"] += 1
+        
 
     current_index = session.get("current_chunk_index", 0)
 
     # 2. منطق إرسال الصور
-    transition_actions = ["INTRODUCE_LECTURE", "TEACH_NEXT_CHUNK", "EVALUATE_AND_CONTINUE"]
+    transition_actions = ["INTRODUCE_LECTURE", "TEACH_NEXT_CHUNK", "EVALUATE_AND_CONTINUE", "ANSWER_AND_CONTINUE", " ANSWER_AND_TEACH"]
     
     if action in transition_actions:
         if current_index < len(chunks):
