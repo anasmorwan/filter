@@ -51,9 +51,8 @@ ACTION_PROMPTS = {
     - Warmly welcome the students.
     - Briefly introduce today's topic based on the [LECTURE MATERIAL].
     - Excite them about what they will learn.
-    - INSTRUCTION: Set a high-energy tone. Summarize the value of the topic and invite them into the journey.
-    - End by saying you are ready to start the first part.
-    FORMAT: Allowed to be detailed and welcoming. End by signaling the start of the first concept.
+    - INSTRUCTION: Set a high-energy tone. Summarize the value of the topic and invite them to participate in the lecture.
+    FORMAT: Allowed to welcoming. End by signaling the start of the first concept.
     """,
 
 
