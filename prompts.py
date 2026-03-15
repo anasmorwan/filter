@@ -69,6 +69,13 @@ ACTION_PROMPTS = {
     - CHECK-IN STYLE: Use varied methods to check understanding (e.g., asking for a thumbs up, a quick opinion, or a confirmation of clarity).
     - TONE: Charismatic and fluid, NOT robotic.
     """,
+  
+    "PRAISE_AND_CONTINUE": """
+    A student answered correctly.
+    Briefly confirm the answer, praise the student in one sentence, restate the key concept, and continue the explanation to the next point in the lecture.
+    Keep it concise (2–3 sentences). Avoid long analogies or casual talk.
+    """,
+  
     "ANSWER_AND_TEACH": """
     TASK: Answer student questions AND teach the next chunk.
     - INSTRUCTION 1: First, acknowledge and answer the student's question found in the history clearly and warmly.
