@@ -87,64 +87,20 @@ def generate_ai_response(action, messages):
             "most_accurate_answers": "none"
         }
 
-
-"""
-# النسخة الثانية
-def generate_ai_response(action, messages):
+# دالة جديدة لتلخيص المستند بالكامل
+def generate_global_summary(full_text):
+    prompt = f"""
+    قم بتحليل النص التالي واستخرج منه "أهداف التعلم" بأسلوب مشوق.
+    المخرجات يجب أن تكون:
+    1. عنوان جذاب للمحاضرة.
+    2. قائمة بـ 3-5 نقاط تمثل الأهداف الأساسية (ماذا سيتعلم الطالب؟).
+    3. سؤال "تشويقي" واحد يثير الفضول حول المحتوى.
     
-    توليد الرد المناسب حسب action و context الرسائل
-    
-
-    context = list(messages)[-5:]
-    prompt = build_prompt(action, context)
-
-    raw_response = call_ai(prompt).strip()
-
-    try:
-        json_text = extract_json(raw_response)
-        return json.loads(json_text)
-
-    except json.JSONDecodeError:
-        # محاولة إصلاح JSON
-        try:
-            fixed_json = heal_json(json_text)
-            return json.loads(fixed_json)
-
-        except Exception as e:
-            print(f"❌ JSON Parsing Error: {e}\nRaw: {raw_response}")
-
-            return {
-                "response_text": "I had a bit of a glitch, let's continue our topic.",
-                "expects_answer": False
-            }
-
-
-def generate_ai_response(action, messages):
-    
-    توليد الرد المناسب حسب action و context الرسائل
-
-    context = list(messages)[-5:]  # آخر 5 رسائل فقط
-    prompt = build_prompt(action, context)
-    raw_response = call_ai(prompt).strip()
-    
-    # استخراج محتوى الـ JSON بدقة بين الأقواس
-    try:
-        start_idx = raw_response.find('{')
-        end_idx = raw_response.rfind('}') + 1
-        if start_idx == -1 or end_idx == 0:
-            raise ValueError("No JSON brackets found")
-            
-        json_content = raw_response[start_idx:end_idx]
-        parsed_response = json.loads(json_content)
-        return parsed_response
-    except (json.JSONDecodeError, ValueError) as e:
-        print(f"❌ JSON Parsing Error: {e}")
-        return {
-            "response_text": "I had a bit of a glitch, let's continue our topic.",
-            "expects_answer": False
-        }
-
-"""
+    النص: {full_text[:4000]} # نأخذ أول 4000 حرف لضمان عدم تجاوز التوكنز
+    """
+    # استدعاء الـ AI هنا لإنتاج الملخص
+    summary_data = call_ai(prompt) 
+    return summary_data
 
 
 
