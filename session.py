@@ -111,9 +111,21 @@ def start_session(topic, difficulty):
     print("Topic:", topic)
     print("Difficulty:", difficulty)
 
+# داخل session.py
 def stop_session():
-    session["active"] = False
-    print("\n=== SESSION STOPPED ===")
+    # تنظيف شامل لكل بيانات المحاضرة والمود
+    session.update({
+        "is_active": False,
+        "mode": "conversation", # العودة للوضع الافتراضي
+        "lecture_chunks": [],
+        "current_chunk_index": 0,
+        "lecture_started": False,
+        "lecture_goals": None,
+        "waiting_for_answer": False,
+        "pending_questions": []
+    })
+    print("🧹 Session data cleared and reset to conversation mode.")
+
 
 def session_is_active():
     return session["active"]
