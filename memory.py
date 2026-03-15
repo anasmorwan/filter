@@ -83,3 +83,40 @@ def get_leaderboard(top=5):
     )
 
     return ranked[:top]
+
+
+
+last_daily_report = None
+
+def build_daily_report():
+
+    leaders = get_leaderboard()
+
+    if not leaders:
+        return None
+
+    text = "🏆 Daily Activity Report\n\n"
+
+    for i, (uid, data) in enumerate(leaders, 1):
+
+        stars = data["stars"]
+        rank = get_rank(stars)
+
+        text += f"{i}. {data['name']} ⭐{stars} ({rank})\n"
+
+    return text
+
+
+
+def get_daily_report_if_changed():
+
+    global last_daily_report
+
+    report = build_daily_report()
+
+    if report != last_daily_report:
+        last_daily_report = report
+        return report
+
+    return None
+
