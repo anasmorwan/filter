@@ -61,7 +61,6 @@ def get_leaderboard(top=5):
 
 
 
-last_daily_report = None
 
 def build_daily_report():
 
