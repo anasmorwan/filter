@@ -37,7 +37,18 @@ Note: response_text should be as long as necessary to be truly helpful and educa
 - `priority_keywords`: 1-3 broad topics you are listening for.
 - `most_accurate_answers`: 1-2 EXACT correct answers if you just asked a question. If expects_answer is false, leave as [].
 """
- 
+LEARNING_OBJECTIVES_PROMPT = """
+Analyze the following text and extract the learning objectives in an engaging way.
+
+The output should include:
+1. A compelling title for the lecture.
+2. A list of 3–5 key learning objectives (what the student will learn).
+3. One curiosity-driven question that sparks interest in the topic.
+
+Text:
+{text}
+"""
+
 
 
 ACTION_PROMPTS = {
