@@ -1,12 +1,16 @@
 import time
+from ai import generate_global_summary
+
+
 
 # دالة جديدة لبدء المحاضرة
-def start_lecture_session(extracted_chunks):
+def start_lecture_session(extracted_chunks, full_text):
     session["active"] = True
     session["mode"] = "lecture"
     session["current_stage"] = "INTRO"
     session["current_chunk_index"] = 0
-    
+    session["lecture_goals"] = generate_global_summary(full_text)
+
     
     # حفظ الـ Chunks المجهزة (التي تحتوي على text و image_path)
     session["lecture_chunks"] = extracted_chunks
