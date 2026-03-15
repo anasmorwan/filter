@@ -9,7 +9,8 @@ def start_lecture_session(extracted_chunks, full_text):
     session["mode"] = "lecture"
     session["current_stage"] = "INTRO"
     session["current_chunk_index"] = 0
-    session["lecture_goals"] = generate_global_summary(full_text)
+    goals_summary = generate_global_summary(full_text)
+    session["lecture_goals"] = goals_summary
 
     
     # حفظ الـ Chunks المجهزة (التي تحتوي على text و image_path)
