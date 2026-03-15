@@ -482,6 +482,7 @@ async def start_cmd(client, message):
 # 1. إضافة مستقبل الملفات (للمشرفين أو بحسب صلاحياتك)
 # متغير لمعرفة هل البوت ينتظر ملف محاضرة
 # الأمر الذي يطلب الملف
+
 @bot_app.on_message(filters.command("lecture") & filters.user(ADMIN_ID) & filters.private)
 async def request_lecture_file(client, message):
     global waiting_for_lecture
@@ -497,6 +498,7 @@ async def request_lecture_file(client, message):
     session["topic"] = topic if topic else "medical content"
 
     await message.reply_text("Please send the lecture file (PDF or TXT).")
+    
 
 # استقبال الملف بعد الأمر
 @bot_app.on_message(filters.document & filters.user(ADMIN_ID) & filters.private)
@@ -512,25 +514,25 @@ async def handle_lecture_file(client, message):
 
     try:
         full_text, extracted_text = extract_text_from_file(file_path)
+        start_lecture_session(extracted_text, full_text) 
+        await message.reply_text("Lecture loaded successfully! Starting proactive delivery...")
+        await handle_action("INTRODUCE_LECTURE", [])
 
     except ValueError as e:
         await message.reply_text(
             "❌ Could not extract enough text from the file.\n"
             "The file may be scanned and requires OCR."
         )
+        
+    finally:
+        # 🗑️ حذف الملف من السيرفر بعد المعالجة لتوفير المساحة
+        if os.path.exists(file_path):
+            os.remove(file_path)
+
         return
 
-    start_lecture_session(extracted_text, full_text)
+
     
-
-    await message.reply_text(
-        "Lecture loaded successfully! Starting proactive delivery..."
-    )
-
-    await handle_action("INTRODUCE_LECTURE", [])
-# 2. تعديل بسيط في Heartbeat Loop
-# سنجعل وقت النبض في وضع المحاضرة أسرع (مثلاً 10 ثوانٍ) لأن المدرس هو من يتحدث باستمرار
-
 
 
 from pyrogram import filters
