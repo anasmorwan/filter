@@ -76,7 +76,7 @@ async def process_message(user, user_id, text, timestamp):
     # تصنيف الرسالة
     msg_type, confidence = classify_message(text)
     add_to_chat_history(user, text) # 👈 أضف هذه لتوثيق كلام الطالب
-    bingo_answers = 
+    
 
     # تحديث ذاكرة الطالب
     update_student_memory(
