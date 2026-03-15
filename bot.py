@@ -92,7 +92,7 @@ async def process_message(user, user_id, text, timestamp):
                 register_bingo(user_id)
                 session["bingo_answer_received"] = True
                 print("🎯 Bingo registered! Heartbeat will catch this instantly.")
-                # لا نتخذ أكشن هنا! الـ Heartbeat مبرمج لتصفير عداده (dynamic_limit = 0) والتدخل
+                # لاتخذ أكشن هنا! الـ Heartbeat مبرمج لتصفير عداده (dynamic_limit = 0) والتدخل
         elif msg_type == "question":
             session["pending_questions"].append(msg)
             print("📥 Question queued for the next chunk transition.")
