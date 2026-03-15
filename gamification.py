@@ -1,4 +1,4 @@
-
+from memory import update_student_memory, 
 def check_bingo(answer_text, bingo_keywords):
 
     answer = answer_text.lower()
