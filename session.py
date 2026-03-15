@@ -57,7 +57,7 @@ def move_to_next_stage():
 
 
 session = {
-    "most_accurate_answers": [],
+    "Bingo_Keywords": [],
     "bingo_answer_received": False,
     "voice_name": "en-US-GuyNeural",
     "chat_history": [], # 👈 هذه هي ذاكرة السياق القصيرة
