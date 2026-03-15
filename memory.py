@@ -9,6 +9,7 @@ def update_student_memory(user_id, username, msg_type):
             "questions": 0,
             "answers": 0,
             "mistakes": 0,
+            "bingo_hits": 0,
             "last_seen": 0
         }
 
