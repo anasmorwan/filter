@@ -60,7 +60,7 @@ def move_to_next_stage():
 session = {
     "most_accurate_answers": [],
     "bingo_answer_received": False,
-    "voice_name": "en-US-AndrewMultilingualNeural",
+    "voice_name": "en-US-GuyNeural",
     "chat_history": [], # 👈 هذه هي ذاكرة السياق القصيرة
     "is_speaking": True,
     "priority_keywords": [],
