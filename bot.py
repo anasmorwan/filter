@@ -426,14 +426,12 @@ async def heartbeat_loop():
 """
 # ............. Handlers and commands........
 # لاحظ: نقلنا الأوامر لتكون في الأعلى، وأضفنا async/await
-
-@bot_app.on_message(filters.command("ping") & (filters.chat(CHAT_ID) | filters.private))
+@bot_app.on_message(filters.command("ping") & filters.user(ADMIN_ID) & filters.private)
 async def ping(client, message):
     # أضفنا await وجعلنا الدالة async
     await message.reply_text("Bot is alive!")
 
-
-@bot_app.on_message(filters.command("status") & filters.user(ADMIN_ID))
+@bot_app.on_message(filters.command("status") & filters.user(ADMIN_ID) & filters.private)
 async def check_status(client, message):
     messages = get_recent_messages(10)
     queue_content = "\n".join(
@@ -446,8 +444,7 @@ async def check_status(client, message):
     )
     await message.reply_text(status_text)
 
-
-@bot_app.on_message(filters.command("startsession") & (filters.chat(CHAT_ID) | filters.user(ADMIN_ID)))
+@bot_app.on_message(filters.command("startsession") & filters.user(ADMIN_ID) & filters.private)
 async def start_cmd(client, message):
     parts = message.text.split()
     topic = "general"
@@ -461,7 +458,7 @@ async def start_cmd(client, message):
     start_session(topic, difficulty)
     await message.reply_text(f"Session started! Topic: {topic}, Difficulty: {difficulty}")
     
-@bot_app.on_message(filters.command("stopsession") & (filters.chat(CHAT_ID) | filters.user(ADMIN_ID)))
+@bot_app.on_message(filters.command("stopsession") & filters.user(ADMIN_ID) & filters.private)
 async def stop_cmd(client, message):
 
     stop_session()
@@ -469,8 +466,7 @@ async def stop_cmd(client, message):
 
     await message.reply_text("Session stopped.")
 
-
-@bot_app.on_message(filters.command("change_voice") & (filters.chat(CHAT_ID) | filters.user(ADMIN_ID)))
+@bot_app.on_message(filters.command("change_voice") & filters.user(ADMIN_ID) & filters.private)
 async def start_cmd(client, message):
     parts = message.text.split()
     
@@ -486,7 +482,7 @@ async def start_cmd(client, message):
 # 1. إضافة مستقبل الملفات (للمشرفين أو بحسب صلاحياتك)
 # متغير لمعرفة هل البوت ينتظر ملف محاضرة
 # الأمر الذي يطلب الملف
-@bot_app.on_message(filters.command("lecture") & filters.user(ADMIN_ID))
+@bot_app.on_message(filters.command("lecture") & filters.user(ADMIN_ID) & filters.private)
 async def request_lecture_file(client, message):
     global waiting_for_lecture
     session = get_session_info()
@@ -503,7 +499,7 @@ async def request_lecture_file(client, message):
     await message.reply_text("Please send the lecture file (PDF or TXT).")
 
 # استقبال الملف بعد الأمر
-@bot_app.on_message(filters.document & filters.user(ADMIN_ID))
+@bot_app.on_message(filters.document & filters.user(ADMIN_ID) & filters.private)
 async def handle_lecture_file(client, message):
     global waiting_for_lecture
 
@@ -539,7 +535,7 @@ async def handle_lecture_file(client, message):
 
 from pyrogram import filters
 
-@bot_app.on_message(filters.command("daily_stats") & filters.user(ADMIN_ID))
+@bot_app.on_message(filters.command("daily_stats") & filters.user(ADMIN_ID) & filters.private)
 async def send_daily_stats(client, message):
 
     report = get_daily_report_if_changed()
@@ -551,7 +547,7 @@ async def send_daily_stats(client, message):
     )
 
 
-@bot_app.on_message(filters.command("test_ai") & filters.user(ADMIN_ID))
+@bot_app.on_message(filters.command("test_ai") & filters.user(ADMIN_ID) & filters.private)
 async def test_ai(client, message):
     # خذ آخر N رسائل من buffer أو نافذة الـ AI
     sample_messages = get_recent_messages(5)
@@ -582,7 +578,7 @@ async def test_ai(client, message):
 
         await message.reply_text(reply_text)
 
-@bot_app.on_message(filters.command("session"))
+@bot_app.on_message(filters.command("session") & filters.user(ADMIN_ID) & filters.private)
 async def session_status(client, message):
 
     if session_is_active():
@@ -590,7 +586,7 @@ async def session_status(client, message):
     else:
         await message.reply_text("Session is STOPPED")
 
-@bot_app.on_message(filters.command("where"))
+@bot_app.on_message(filters.command("where") & filters.user(ADMIN_ID))
 async def where(client, message):
     await message.reply_text(f"Chat ID: {message.chat.id}")
 
@@ -628,7 +624,7 @@ async def get_vc_id_handler(client: Client, message: Message):
     except Exception as e:
         await message.reply_text(f"❌ حدث خطأ: {e}")
 
-@bot_app.on_message(filters.command("id", prefixes=".") & (filters.chat(CHAT_ID) | filters.private))
+@bot_app.on_message(filters.command("id", prefixes=".") & filters.chat(CHAT_ID))
 async def get_chat_id(client, message):
     # أزلنا filters.me لأنه لا يعمل مع البوتات
     chat_id = message.chat.id
@@ -658,7 +654,7 @@ async def daily_report_loop():
 """
 
 # ........... الدوال العامة يجب أن تكون في الأسفل ...........
-@bot_app.on_message(filters.text)
+@bot_app.on_message(filters.text & filters.chat(CHAT_ID))
 async def handle_message(client, message):
 
     print("MESSAGE RECEIVED:", message.text, flush=True)
