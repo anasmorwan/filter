@@ -503,9 +503,6 @@ async def request_lecture_file(client, message):
     await message.reply_text("Please send the lecture file (PDF or TXT).")
 
 # استقبال الملف بعد الأمر
-from ai import generate_global_summary
-session["lecture_goals"] = generate_global_summary(full_text)
-
 @bot_app.on_message(filters.document & filters.user(ADMIN_ID))
 async def handle_lecture_file(client, message):
     global waiting_for_lecture
@@ -518,7 +515,7 @@ async def handle_lecture_file(client, message):
     file_path = await message.download()
 
     try:
-        extracted_text = extract_text_from_file(file_path)
+        full_text, extracted_text = extract_text_from_file(file_path)
 
     except ValueError as e:
         await message.reply_text(
@@ -527,7 +524,8 @@ async def handle_lecture_file(client, message):
         )
         return
 
-    start_lecture_session(extracted_text)
+    start_lecture_session(extracted_text, full_text)
+    
 
     await message.reply_text(
         "Lecture loaded successfully! Starting proactive delivery..."
