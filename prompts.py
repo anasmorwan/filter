@@ -84,6 +84,20 @@ ACTION_PROMPTS = {
     - CHECK-IN: End with a unique, natural spoken check-in.
     - TONE: Professional, encouraging, and fluid.
     """,
+  
+    "ANSWER_AND_CONTINUE": """
+    The lecturer asked a question but no student answered.
+
+    Respond as a university lecturer:
+    • Briefly provide the correct answer to the question.
+    • Explain the key idea clearly in a concise way.
+    • Maintain an academic and calm tone.
+    • Do not sound frustrated or overly casual.
+
+    After giving the answer, smoothly continue the lecture toward the next concept or explanation.
+
+    Keep the response concise (2–4 sentences). Avoid long analogies or unnecessary storytelling.
+    """,
 
 
     "EVALUATE_AND_CONTINUE": """
