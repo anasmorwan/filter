@@ -116,6 +116,7 @@ def build_prompt(action, context_messages):
         prompt = f"""
 {JSON_SYSTEM_PROMPT}
 {LECTURER_SYSTEM_PROMPT}
+{goals_context}
 
 [LECTURE MATERIAL TO FOCUS ON NOW]:
 {current_material}
