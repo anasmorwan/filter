@@ -1,6 +1,5 @@
 import time
 
-
 # دالة جديدة لبدء المحاضرة
 def start_lecture_session(extracted_chunks):
     session["active"] = True
@@ -8,27 +7,13 @@ def start_lecture_session(extracted_chunks):
     session["current_stage"] = "INTRO"
     session["current_chunk_index"] = 0
     
+    
     # حفظ الـ Chunks المجهزة (التي تحتوي على text و image_path)
     session["lecture_chunks"] = extracted_chunks
     
     session["start_time"] = time.time()
     session["last_ai_message"] = time.time()
     
-"""
-def start_lecture_session(topic, text_content):
-    session["active"] = True
-    session["mode"] = "lecture"
-    session["topic"] = topic
-    session["current_stage"] = "INTRO"
-    session["current_chunk_index"] = 0
-    
-    # تقسيم النص إلى "لقيمات" (Micro-learning) كل فقرة لوحدها
-    # يمكنك تحسين دالة التقسيم لاحقاً لتعتمد على النقاط أو الفواصل
-    session["lecture_chunks"] = [chunk for chunk in text_content.split('\n\n') if len(chunk) > 20]
-    
-    session["start_time"] = time.time()
-    session["last_ai_message"] = time.time()
-"""
 
 
 
@@ -57,6 +42,7 @@ def move_to_next_stage():
 
 
 session = {
+    "lecture_goals": [],
     "Bingo_Keywords": [],
     "bingo_answer_received": False,
     "voice_name": "en-US-GuyNeural",
