@@ -182,33 +182,30 @@ async def handle_action(action, messages):
 
 
 
-
 async def handle_lecture_action(action, session, understanding, ai_data=None):
     
     response_text = ai_data.get("response_text", "Error generating response.")
     expects_answer = ai_data.get("expects_answer", False)
-    current_index = session.get("current_chunk_index", 0)
     chunks = session.get("lecture_chunks", [])
 
-    # 2. منطق إرسال الصور (يحدث عند البداية، أو الانتقال، أو الاستمرار بعد التقييم)
+    # 1. تحديث الفهرس (Index) أولاً قبل أي شيء بناءً على الأكشن
+    if action == "EVALUATE_AND_CONTINUE" and understanding != "poor":
+        session["current_chunk_index"] += 1
+    elif action == "TEACH_NEXT_CHUNK":
+        session["current_chunk_index"] += 1
+
+    current_index = session.get("current_chunk_index", 0)
+
+    # 2. منطق إرسال الصور
     transition_actions = ["INTRODUCE_LECTURE", "TEACH_NEXT_CHUNK", "EVALUATE_AND_CONTINUE"]
     
-    # --- التعامل مع الانتقال لفقرة جديدة ---
     if action in transition_actions:
-        # إذا كان الأكشن "استمرار"، نزيد العداد أولاً لنرسل الصورة التالية
-        if action == "EVALUATE_AND_CONTINUE" and understanding != "poor":
-            session["current_chunk_index"] += 1
-            current_index = session["current_chunk_index"]
-        
-        
-        
         if current_index < len(chunks):
             current_chunk = chunks[current_index]
             
-            # 🖼️ إرسال الصورة للطلاب إذا كانت موجودة
+            # 🖼️ إرسال الصورة للطلاب
             if current_chunk.get("image_path") and os.path.exists(current_chunk["image_path"]):
                 print(f"🖼️ Sending image for chunk {current_index}...")
-                # بدلاً من الاستدعاء المباشر إذا كان يسبب مشكلة، تأكد أن البوت "جاهز"
                 if not bot_app.is_connected:
                     await bot_app.start()
 
@@ -221,39 +218,27 @@ async def handle_lecture_action(action, session, understanding, ai_data=None):
                 except Exception as e:
                     print(f"❌ Error sending photo: {e}")
 
-            # تصفير الأعلام لضمان عدم المماطلة في الشريحة الجديدة
+            # تصفير الأعلام 
             session["waiting_for_answer"] = False
             session["current_question"] = None
             session["bingo_answer_received"] = False
 
-       
-            
     elif action == "EVALUATE_AND_CONTINUE":
         if understanding == "poor":
-            # الطلاب لم يفهموا، لا نزيد العداد (سيعيد الشرح في النبضة القادمة)
             print("⚠️ Students confused. Staying on current chunk for re-explanation.")
-        else:
-            # الفهم جيد، ننتقل للفقرة التالية
-            session["current_chunk_index"] += 1
 
-    # 3. الآن نولد الرد النصي والصوتي (يحدث في الخلفية بينما يشاهد الطالب الصورة)
+    # 3. إرسال النص لمحرك البث (الذي سيعمل في الخلفية الآن بفضل voice.py الجديد)
     if not ai_data:
         ai_data = generate_ai_response(action, [])
+        response_text = ai_data.get("response_text", "سأكمل الشرح...")
 
-    response_text = ai_data.get("response_text", "سأكمل الشرح...")
+    add_to_chat_history("Teacher (You)", response_text) 
     
-
-    if action == "TEACH_NEXT_CHUNK":
-        # نزيد العداد فقط بعد نجاح الشرح
-        session["current_chunk_index"] += 1
-
-    
-    add_to_chat_history("Teacher (You)", response_text) # 👈 أضف هذه لتوثيق كلام المدرس
+    # 🟢 هنا نرسل النص، وسيعود الكود فوراً دون انتظار بينما البوت يتحدث
     await broadcast_ai_response(response_text)
-    # await broadcast_ai_response(response_text)
-    # ✅ تحديث وقت آخر نطق للبوت لكي يتم تصفير العداد
+    
     update_ai_timestamp()
-    print("✅ AI responded and timer reset.", flush=True) 
+    print("✅ AI response sent to audio queue and timer reset.", flush=True) 
     print(f"\n--- AI RESPONSE ---\n{response_text}", flush=True)
 
 
