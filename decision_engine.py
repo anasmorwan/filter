@@ -125,13 +125,39 @@ def decide_next_action(messages):
 # ---------------------------------------------------------
 def decide_lecture_logic(messages, session, stats):
     waiting = session.get("waiting_for_answer", False)
+    # دمج الأسئلة الجديدة مع الأسئلة المعلقة في الجلسة
+    has_questions = stats["questions"] > 0 or len(session.get("pending_questions", [])) > 0
+    
+    current_index = session.get("current_chunk_index", 0)
+    chunks = session.get("lecture_chunks", [])
+
+    # 1. هل نحن في البداية تماماً؟
+    if current_index == 0 and not session.get("lecture_started"):
+        session["lecture_started"] = True
+        print("🧠 -> Starting the lecture for the first time.")
+        return "INTRODUCE_LECTURE"
+
+    
+    
+
+    
+    # 5. تدفق المحاضرة الطبيعي (بدون أسئلة)
+    print(f"🧠 -> Advancing to chunk {current_index + 1}.")
+    return "TEACH_NEXT_CHUNK"
+
+def decide_lecture_logic(messages, session, stats):
+    waiting = session.get("waiting_for_answer", False)
     bingo = session.get("bingo_answer_received", False)
     has_questions = stats["questions"] > 0
+    current_index = session.get("current_chunk_index", 0)
+    chunks = session.get("lecture_chunks", [])
 
-    # 1. أولوية قصوى: سؤال من الطالب (سواء قاطعنا أو في النافذة)
+
+    # 4. 🌟 السحر هنا: تدفق المحاضرة الطبيعي مع وجود أسئلة
     if has_questions:
-        print("🧠 -> Question detected. Redirecting to ANSWER_QUESTION.")
-        return "ANSWER_QUESTION"
+        print("🧠 -> Question detected. AI will answer AND teach the next chunk.")
+        session["pending_questions"] = [] # تفريغ الأسئلة المعلقة لأننا أرسلناها للذكاء
+        return "ANSWER_AND_TEACH"
 
     # 2. أولوية عالية: الضربة الصائبة (طالب جاوب إجابة نموذجية بسرعة)
     if bingo:
@@ -152,24 +178,27 @@ def decide_lecture_logic(messages, session, stats):
     # 4. تدفق المحاضرة الطبيعي (المدرس يشرح وانتهى وقت توقفه لالتقاط الأنفاس)
     if not messages:
         # أ. هل لدينا أسئلة معلقة من مقاطعات سابقة؟ نجاوب عليها قبل الشريحة الجديدة
+        """
         if session.get("pending_questions"):
             print("🧠 -> Clearing pending questions before moving to next chunk.")
             # يمكنك تفريغها في دالة handle_action
             return "ANSWER_PENDING_QUESTIONS"
+            """
 
-        current_index = session.get("current_chunk_index", 0)
-        chunks = session.get("lecture_chunks", [])
-
+        
         # ب. هل نحن في البداية تماماً؟
         if current_index == 0 and not session.get("lecture_started"):
             session["lecture_started"] = True
             print("🧠 -> Starting the lecture for the first time.")
             return "INTRODUCE_LECTURE"
 
-        # ج. هل انتهت الشرائح كلها؟
-        if current_index >= len(chunks):
-            print("🧠 -> Reached the end of chunks. Summarizing.")
-            return "SUMMARIZE_LECTURE"
+    # 2. هل انتهت الشرائح كلها؟
+    if current_index >= len(chunks):
+        if has_questions: 
+            session["pending_questions"] = [] # تفريغ الأسئلة
+            return "ANSWER_PENDING_QUESTIONS"
+        print("🧠 -> Reached the end of chunks. Summarizing.")
+        return "SUMMARIZE_LECTURE"
 
         # د. الانتقال الطبيعي للشريحة التالية
         print(f"🧠 -> Advancing to chunk {current_index + 1}.")
