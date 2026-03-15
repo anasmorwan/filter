@@ -46,7 +46,7 @@ def generate_ai_response(action, messages):
             parsed_data = json.loads(fixed_json)
             # تحديث الجلسة بالكلمات المفتاحية الجديدة فور توليدها
             session["priority_keywords"] = [k.lower() for k in parsed_data.get("priority_keywords", [])]
-            session["most_accurate_answers"] = [k.lower() for k in parsed_data.get("most_accurate_answers", [])]
+            session["Bingo_Keywords"] = [k.lower() for k in parsed_data.get("most_accurate_answers", [])]
             # تفريغ حالة "الضربة الصائبة" السابقة
             session["bingo_answer_received"] = False 
     
