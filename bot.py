@@ -249,9 +249,7 @@ async def handle_lecture_action(action, session, understanding, ai_data=None):
 
     
     add_to_chat_history("Teacher (You)", response_text) # 👈 أضف هذه لتوثيق كلام المدرس
-    chunks = smart_split(response_text)
-    for chunk in chunks:
-        await broadcast_ai_response(chunk)
+    await broadcast_ai_response(response_text)
     # await broadcast_ai_response(response_text)
     # ✅ تحديث وقت آخر نطق للبوت لكي يتم تصفير العداد
     update_ai_timestamp()
@@ -291,9 +289,7 @@ async def handle_conversation_action(action, session, understanding, ai_data):
 
     
     add_to_chat_history("Teacher (You)", response_text) # 👈 أضف هذه لتوثيق كلام المدرس
-    chunks = smart_split(response_text)
-    for chunk in chunks:
-        await broadcast_ai_response(chunk)
+    await broadcast_ai_response(response_text)
     # ✅ تحديث وقت آخر نطق للبوت لكي يتم تصفير العداد
     update_ai_timestamp()
     print("✅ AI responded and timer reset.", flush=True)   
