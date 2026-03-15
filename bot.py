@@ -21,7 +21,7 @@ from decision_engine import decide_next_action
 from ai import generate_ai_response
 from buffer import clear_buffer
 from voice import broadcast_ai_response
-from memory import update_student_memory, check_bingo, register_bingo, get_rank, get_leaderboard
+from memory import update_student_memory, check_bingo, register_bingo, get_rank, get_leaderboard, send_daily_stats
 # تأكد أن voice.py يحتوي على userbot و pytgcalls و start_voice_engine
 from voice import broadcast_ai_response, userbot, pytgcalls, start_voice_engine, stop_audio
 
@@ -60,6 +60,7 @@ async def process_message(user, user_id, text, timestamp):
     session = get_session_info()
     messages = pop_window_messages()
     Bingo_Keywords = session.get("Bingo_Keywords", [])
+    mode = session.get("mode", "lecture")
 
     
     if not session_is_active():
@@ -94,12 +95,13 @@ async def process_message(user, user_id, text, timestamp):
     }
 
     add_message(msg)
+    if mode = "conversation":
     
-    if msg_type in ["answer", "short_answer"]:
+        if msg_type in ["answer", "short_answer"]:
 
-        if check_bingo(message.text, Bingo_Keywords):
+            if check_bingo(message.text, Bingo_Keywords):
 
-            register_bingo(user_id)
+                register_bingo(user_id)
 
 
     print("\n--- NEW MESSAGE RECEIVED ---", flush=True)
@@ -576,6 +578,19 @@ async def handle_lecture_file(client, message):
 
 
 
+from pyrogram import filters
+
+@bot_app.on_message(filters.command("daily_stats") & filters.user(ADMIN_ID))
+async def send_daily_stats(client, message):
+
+    report = get_daily_report_if_changed()
+
+    if report:
+        await client.send_message(
+            message.chat.id,
+            report
+    )
+
 
 @bot_app.on_message(filters.command("test_ai") & filters.user(ADMIN_ID))
 async def test_ai(client, message):
@@ -665,6 +680,23 @@ async def get_chat_id(client, message):
         f"**Chat ID:** `{chat_id}`\n"
         f"**Message ID:** `{message_id}`"
     )
+
+
+"""
+async def daily_report_loop():
+
+    while True:
+
+        await asyncio.sleep(3600)  # فحص كل ساعة
+
+        report = get_daily_report_if_changed()
+
+        if report:
+            await bot_app.send_message(
+                GROUP_ID,
+                report
+            )
+"""
 
 # ........... الدوال العامة يجب أن تكون في الأسفل ...........
 @bot_app.on_message(filters.text)
