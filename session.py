@@ -5,6 +5,7 @@ import time
 # دالة جديدة لبدء المحاضرة
 def start_lecture_session(extracted_chunks, full_text):
     from ai import generate_global_summary
+    from documents_handler import clear_old_assets
 
     session["active"] = True
     session["mode"] = "lecture"
@@ -19,6 +20,7 @@ def start_lecture_session(extracted_chunks, full_text):
     
     session["start_time"] = time.time()
     session["last_ai_message"] = time.time()
+    clear_old_assets()
     
 
 
