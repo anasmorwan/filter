@@ -96,7 +96,7 @@ async def process_message(user, user_id, text, timestamp):
     }
 
     add_message(msg)
-    if mode = "conversation":
+    if mode == "conversation":
     
         if msg_type in ["answer", "short_answer"]:
 
