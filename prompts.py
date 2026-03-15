@@ -69,6 +69,15 @@ ACTION_PROMPTS = {
     - CHECK-IN STYLE: Use varied methods to check understanding (e.g., asking for a thumbs up, a quick opinion, or a confirmation of clarity).
     - TONE: Charismatic and fluid, NOT robotic.
     """,
+    "ANSWER_AND_TEACH": """
+    TASK: Answer student questions AND teach the next chunk.
+    - INSTRUCTION 1: First, acknowledge and answer the student's question found in the history clearly and warmly.
+    - INSTRUCTION 2: Then, seamlessly bridge from your answer into explaining the current [LECTURE MATERIAL].
+    - EXPLAIN: Break down the new chunk using a vivid analogy.
+    - CHECK-IN: End with a unique, natural spoken check-in.
+    - TONE: Professional, encouraging, and fluid.
+    """,
+
 
     "EVALUATE_AND_CONTINUE": """
     ACTION: Evaluate student feedback, summarize, and move on.
