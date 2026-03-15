@@ -123,27 +123,6 @@ def decide_next_action(messages):
 # ---------------------------------------------------------
 # منطق اتخاذ القرار لوضع المحاضرة (The Brain)
 # ---------------------------------------------------------
-def decide_lecture_logic(messages, session, stats):
-    waiting = session.get("waiting_for_answer", False)
-    # دمج الأسئلة الجديدة مع الأسئلة المعلقة في الجلسة
-    has_questions = stats["questions"] > 0 or len(session.get("pending_questions", [])) > 0
-    
-    current_index = session.get("current_chunk_index", 0)
-    chunks = session.get("lecture_chunks", [])
-
-    # 1. هل نحن في البداية تماماً؟
-    if current_index == 0 and not session.get("lecture_started"):
-        session["lecture_started"] = True
-        print("🧠 -> Starting the lecture for the first time.")
-        return "INTRODUCE_LECTURE"
-
-    
-    
-
-    
-    # 5. تدفق المحاضرة الطبيعي (بدون أسئلة)
-    print(f"🧠 -> Advancing to chunk {current_index + 1}.")
-    return "TEACH_NEXT_CHUNK"
 
 def decide_lecture_logic(messages, session, stats):
     waiting = session.get("waiting_for_answer", False)
@@ -159,10 +138,12 @@ def decide_lecture_logic(messages, session, stats):
         session["pending_questions"] = [] # تفريغ الأسئلة المعلقة لأننا أرسلناها للذكاء
         return "ANSWER_AND_TEACH"
 
+
+
     # 2. أولوية عالية: الضربة الصائبة (طالب جاوب إجابة نموذجية بسرعة)
     if bingo:
         print("🧠 -> Bingo triggered! Evaluating excellent answer.")
-        return "EVALUATE_AND_CONTINUE"
+        return "PRAISE_AND_CONTINUE"
 
     # 3. نحن ننتظر إجابة (المدرس سأل سؤالاً للتو)
     if waiting:
@@ -173,24 +154,15 @@ def decide_lecture_logic(messages, session, stats):
         else:
             # صمت تام وانتهى وقت الـ Heartbeat (لم يجب أحد)
             print("🧠 -> Timeout. No one answered. Teacher will explain and move on.")
-            return "EVALUATE_AND_CONTINUE"
+            return "ANSWER_AND_CONTINUE"
 
-    # 4. تدفق المحاضرة الطبيعي (المدرس يشرح وانتهى وقت توقفه لالتقاط الأنفاس)
-    if not messages:
-        # أ. هل لدينا أسئلة معلقة من مقاطعات سابقة؟ نجاوب عليها قبل الشريحة الجديدة
-        """
-        if session.get("pending_questions"):
-            print("🧠 -> Clearing pending questions before moving to next chunk.")
-            # يمكنك تفريغها في دالة handle_action
-            return "ANSWER_PENDING_QUESTIONS"
-            """
 
         
-        # ب. هل نحن في البداية تماماً؟
-        if current_index == 0 and not session.get("lecture_started"):
-            session["lecture_started"] = True
-            print("🧠 -> Starting the lecture for the first time.")
-            return "INTRODUCE_LECTURE"
+    # ب. هل نحن في البداية تماماً؟
+    if current_index == 0 and not session.get("lecture_started"):
+        session["lecture_started"] = True
+        print("🧠 -> Starting the lecture for the first time.")
+        return "INTRODUCE_LECTURE"
 
     # 2. هل انتهت الشرائح كلها؟
     if current_index >= len(chunks):
@@ -200,13 +172,16 @@ def decide_lecture_logic(messages, session, stats):
         print("🧠 -> Reached the end of chunks. Summarizing.")
         return "SUMMARIZE_LECTURE"
 
-        # د. الانتقال الطبيعي للشريحة التالية
-        print(f"🧠 -> Advancing to chunk {current_index + 1}.")
-        return "TEACH_NEXT_CHUNK"
 
     # 5. إذا كان هناك رسائل تفاعل عادية (مثل "نعم"، "أكمل") ولا ننتظر إجابة
-    return "WAIT"
+    print(f"🧠 -> Advancing to chunk {current_index + 1}.")
+    return "TEACH_NEXT_CHUNK"
+    """
+    # د. الانتقال الطبيعي للشريحة التالية
+     print(f"🧠 -> Advancing to chunk {current_index + 1}.")
+     return "TEACH_NEXT_CHUNK"
 
+"""
 
 
 def decide_conversation_logic(messages, session, stats): # منطقك القديم هنا
