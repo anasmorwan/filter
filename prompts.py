@@ -221,7 +221,7 @@ Be encouraging.
     - Ask if the answer cleared things up.
     - Set expects_answer to true.
     - STRICT LIMIT: Maximum 40 words.
-    """,
+    """
 
 } 
 
