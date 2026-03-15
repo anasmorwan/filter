@@ -58,12 +58,13 @@ ACTION_PROMPTS = {
     # --------------------------------
 
     "INTRODUCE_LECTURE": """
-    ACTION: Start the lecture.
+    TASK: Start the lecture professionally.
+    CONTEXT: You are about to teach a lesson with these goals: {lecture_goals}
     - Warmly welcome the students.
     - Briefly introduce today's topic based on the [LECTURE MATERIAL].
-    - Excite them about what they will learn.
-    - INSTRUCTION: Set a high-energy tone. Summarize the value of the topic and invite them to participate in the lecture.
-    FORMAT: Allowed to welcoming. End by signaling the start of the first concept.
+    - Present the lecture title and the learning objectives in a structured, exciting way.
+    - INSTRUCTION: Summarize the value of the topic, Transition smoothly to the first slide (which will be sent after this message) and encourage them to ask in the lecture.
+    - TONE: high-energy, Inspirational, Academic, but clear.
     """,
 
 
