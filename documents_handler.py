@@ -5,13 +5,41 @@ from pypdf import PdfReader
 MIN_TEXT_LENGTH = 500
 import fitz  # PyMuPDF
 
-
-
 def extract_text_from_file(file_path):
     """
+    الدالة الرئيسية التي تستخرج كل شيء وتجهزه للـ Session
+    """
+    ext = os.path.splitext(file_path)[1].lower()
+    full_text = ""
+    chunks = []
+
+    if ext == ".pdf":
+        # في الـ PDF نستخرج النصوص والصور معاً
+        chunks = extract_visual_chunks_from_pdf(file_path)
+        full_text = "\n".join([c['text'] for c in chunks])
+    
+    elif ext in [".docx", ".pptx", ".txt"]:
+        if ext == ".docx": full_text = extract_text_from_docx(file_path)
+        elif ext == ".pptx": full_text = extract_text_from_pptx(file_path)
+        else: full_text = extract_text_from_txt(file_path)
+        
+        full_text = clean_text(full_text)
+        # تقسيم النصوص التي لا تحتوي على صور تلقائياً بناءً على الفقرات
+        chunks = [{"text": chunk, "image_path": None} for chunk in full_text.split('\n\n') if len(chunk) > 20]
+
+    if len(full_text) < MIN_TEXT_LENGTH:
+        raise ValueError("المستند قصير جداً أو يحتاج لـ OCR")
+
+    return full_text, chunks
+
+"""
+def extract_text_from_file(file_path):
+    """
+"""
     يحدد نوع الملف ويستخرج النص المناسب
     ويتأكد أن النص طويل كفاية للاستخدام
     """
+"""
     ext = os.path.splitext(file_path)[1].lower()
 
     if ext == ".txt":
@@ -37,7 +65,7 @@ def extract_text_from_file(file_path):
         raise ValueError("Extracted text is too short. The file may require OCR.")
 
     return [{"text": chunk, "image_path": None} for chunk in text.split('\n\n') if len(chunk) > 20]
-    
+    """
 
 def extract_text_from_txt(file_path):
     """
