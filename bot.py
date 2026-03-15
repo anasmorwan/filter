@@ -59,104 +59,57 @@ waiting_for_lecture = False
 #........جمع الرسائل .........
 async def process_message(user, user_id, text, timestamp):
     session = get_session_info()
-    messages = pop_window_messages()
-    Bingo_Keywords = session.get("Bingo_Keywords", [])
     mode = session.get("mode", "lecture")
-
+    Bingo_Keywords = session.get("Bingo_Keywords", [])
     
-    if not session_is_active():
+    if not session_is_active() or not should_store_message(text, user_id):
         return
 
-    
-    if not should_store_message(text, user_id):
-        print("Filter check:", text, user_id, flush=True)
-        return
-
-    
-    # تصنيف الرسالة
+    # 1. تصنيف وتخزين الرسالة
     msg_type, confidence = classify_message(text)
-    add_to_chat_history(user, text) # 👈 أضف هذه لتوثيق كلام الطالب
-    
-
-    # تحديث ذاكرة الطالب
-    update_student_memory(
-        user_id,
-        user,
-        msg_type,
-        bingo_answers
-    )
+    add_to_chat_history(user, text)
+    update_student_memory(user_id, user, msg_type, session.get("bingo_answers", []))
 
     msg = {
-        "user": user,
-        "user_id": user_id,
-        "text": text,
-        "type": msg_type,
-        "confidence": confidence,
-        "time": timestamp
+        "user": user, "user_id": user_id, "text": text,
+        "type": msg_type, "confidence": confidence, "time": timestamp
     }
+    add_message(msg) # تضاف للـ Buffer دائماً
+    print(f"\n--- NEW MESSAGE --- Stored: {msg['text']}", flush=True)
 
-    add_message(msg)
-    if mode == "conversation":
-    
-        if msg_type in ["answer", "short_answer"]:
-
-            if check_bingo(message.text, Bingo_Keywords):
-
-                register_bingo(user_id)
-
-
-    print("\n--- NEW MESSAGE RECEIVED ---", flush=True)
-    print("Stored:", msg, flush=True)
-
-    # --- معالجة فورية للأسئلة ---
-    if msg_type == "question":
-        messages = pop_window_messages()
-
-        action = decide_next_action([msg])
-        print(f"a question detected, action: {action}", flush=True)
-
-        await handle_action(action, [msg]) # أضفنا await
-
+    # 2. 🚨 التدخل الطارئ (إذا كان المدرس يتحدث والطالب قاطعه بكلمة مفتاحية أو سؤال طويل)
+    if session.get("is_speaking") and should_interrupt(msg, session):
+        await stop_audio()
+        session["is_speaking"] = False
+        print("🛑 AI Interrupted! Answering immediately.", flush=True)
+        await handle_action("ANSWER_INTERRUPTION", [msg])
         return
 
+    # 3. 🎓 منطق وضع المحاضرة (Lecture Mode)
+    if mode == "lecture":
+        if msg_type in ["answer", "short_answer"] and session.get("waiting_for_answer"):
+            if check_bingo(text, Bingo_Keywords):
+                register_bingo(user_id)
+                session["bingo_answer_received"] = True
+                print("🎯 Bingo registered! Heartbeat will catch this instantly.")
+                # لا نتخذ أكشن هنا! الـ Heartbeat مبرمج لتصفير عداده (dynamic_limit = 0) والتدخل
+        elif msg_type == "question":
+            session["pending_questions"].append(msg)
+            print("📥 Question queued for the next chunk transition.")
+        
+        # ⛔ الأهم: ننهي الدالة هنا في وضع المحاضرة. لا نستدعي decide_next_action!
+        # أي رسائل أخرى ("تمام"، "نعم") ستبقى في الـ buffer، والـ Heartbeat هو من سينقل الشريحة براحته.
+        return
 
-    if session["is_speaking"] and msg_type == "question":
-        if should_interrupt(message, session):
-            # الطالب يقاطع المدرس بسؤال!
-            await stop_audio() # اقطع صوت المدرس فوراً
-            print("a student asked a question, audio stopped, answering now the question", flush=True)
-            # (اختياري) بث ملف الحشو هنا إذا أردت: await broadcast_ai_response("Good question...")
-            session["is_speaking"] = False
-            await handle_action("ANSWER_INTERRUPTION", [msg]) # المدرس يرد: "سؤال جيد يا أحمد، تفضل..."
-
-        else:
-            # تخزين السؤال للرد عليه لاحقاً (بين الفقرات)
-            session["pending_questions"].append(message)
-            print("📥 Question queued to avoid distraction.")
-
-        return # نخرج لأننا عالجنا المقاطعة
-
-
-    messages = pop_window_messages()
-    action = decide_next_action(messages if messages else [msg])
-    
-    if action != "WAIT":
-        await handle_action(action, messages if messages else [msg])
-
-
-    # --- معالجة window ---
-    print("WINDOW SIZE:", len(messages))
+    # 4. 💬 منطق وضع المحادثة العادي (Conversation Mode)
+    # هنا نحتفظ بمنطق النافذة القديم لأننا نريد تفاعلاً سريعاً
     if should_process_window():
-
         messages = pop_window_messages()
+        if messages:
+            action = decide_next_action(messages)
+            if action != "WAIT":
+                await handle_action(action, messages)
 
-        if not messages:
-            return
-
-        action = decide_next_action([msg])
-        print(f"no questions or bingo answers.. procsessing window, action_decided: {action}", flush=True)
-
-        await handle_action(action, [msg]) # أضفنا await
 
 
 
