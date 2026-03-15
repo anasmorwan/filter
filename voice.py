@@ -110,7 +110,7 @@ async def tts_worker():
 # -------------------------
 # محرك التشغيل السريع (Micro-Chunk RAM-Disk)
 # -------------------------
-
+"""
 async def play_next():
     global is_playing
 
@@ -162,7 +162,7 @@ async def play_next():
         if voice_queue:
             asyncio.create_task(play_next())
 
-
+"""
 
 
 
