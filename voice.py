@@ -1,6 +1,7 @@
 import os
 import asyncio
 import uuid
+import re
 from collections import deque
 
 from pyrogram import Client, idle
@@ -28,7 +29,18 @@ is_playing = False
 stop_playback_event = asyncio.Event()
 
 # -------------------------
-# محرك التشغيل (RAM-Disk Engine)
+# 🧠 مقسم النصوص الذكي (Micro-Chunker)
+# -------------------------
+def smart_split(text):
+    """تقسيم الرد الطويل إلى جمل قصيرة لسرعة المعالجة"""
+    text = text.replace('\n', ' ')
+    # التقسيم عند النقطة، الفاصلة، أو علامة الاستفهام (مع الاحتفاظ بالعلامة)
+    # هذا يضمن أن edge-tts يأخذ قطعاً صغيرة جداً يولدها في أجزاء من الثانية
+    chunks = re.split(r'(?<=[.!?؟,،;])\s+', text)
+    return [c.strip() for c in chunks if c.strip()]
+
+# -------------------------
+# محرك التشغيل السريع (Micro-Chunk RAM-Disk)
 # -------------------------
 
 async def play_next():
@@ -41,54 +53,44 @@ async def play_next():
     stop_playback_event.clear()
     session["is_speaking"] = True
 
-    text = voice_queue.popleft()
-    # إنشاء "أنبوب مسمى" في الذاكرة المؤقتة
-    fifo_path = f"/tmp/{uuid.uuid4().hex}.fifo"
-    os.mkfifo(fifo_path)
-    
+    # سحب الجملة الصغيرة من الطابور
+    text_chunk = voice_queue.popleft()
+    temp_audio_path = f"/tmp/{uuid.uuid4().hex}.mp3"
     voice_name = get_session_voice_name() or "en-US-JennyNeural"
 
     try:
-        # 1. دالة لتوليد الصوت وضخه في الأنبوب (تنفذ في الخلفية)
-        async def stream_to_fifo():
-            communicate = edge_tts.Communicate(text, voice_name)
-            # نفتح الأنبوب للكتابة (هذا سيحجز العملية حتى يبدأ طرف آخر بالقراءة)
-            with open(fifo_path, 'wb') as fifo:
-                async for chunk in communicate.stream():
-                    if chunk["type"] == "audio":
-                        fifo.write(chunk["data"])
-                        fifo.flush() # دفع البيانات فوراً
+        # 1. توليد سريع جداً لأن الجملة قصيرة (يأخذ حوالي 0.2 إلى 0.5 ثانية)
+        communicate = edge_tts.Communicate(text_chunk, voice_name)
+        await communicate.save(temp_audio_path)
 
-        # 2. تشغيل التوليد كـ Task خلفي
-        gen_task = asyncio.create_task(stream_to_fifo())
-
-        # 3. انتظر جزءاً من الثانية فقط لضمان وجود بيانات في الأنبوب
-        await asyncio.sleep(0.3) 
-
-        print(f"🎙️ [FAST-START] Streaming to Telegram: {text[:30]}...")
+        print(f"🔊 [PLAYING CHUNK] {text_chunk}")
         
-        # 4. اطلب من تيليجرام القراءة من الأنبوب فوراً
-        # FFmpeg سيعتقد أنه ملف ويبدأ البث بينما نحن لا نزال نكتب في الطرف الآخر
-        await pytgcalls.play(VOICE_CHAT_ID, MediaStream(fifo_path))
+        # 2. التشغيل فوراً من الذاكرة
+        await pytgcalls.play(VOICE_CHAT_ID, MediaStream(temp_audio_path))
         
-        # وقت الانتظار بناءً على طول النص
-        duration = max(1.5, len(text) / 12.0)
+        # 3. حساب دقيق لزمن الانتظار للجملة الصغيرة
+        # نضيف ثانية إضافية كعازل للتأكد من انتهاء نطق الكلمة الأخيرة
+        duration = max(1.0, len(text_chunk) / 13.0)
+        
         try:
-            await asyncio.wait_for(stop_playback_event.wait(), timeout=duration + 1.0)
+            await asyncio.wait_for(stop_playback_event.wait(), timeout=duration + 0.5)
         except asyncio.TimeoutError:
-            pass
+            pass # انتهى نطق الجملة بسلام
 
     except Exception as e:
-        print(f"❌ Streaming Error: {e}")
+        print(f"❌ Playback Error: {e}")
 
     finally:
-        # تنظيف الأنبوب
-        if os.path.exists(fifo_path):
-            os.remove(fifo_path)
+        # 4. تنظيف الذاكرة
+        if os.path.exists(temp_audio_path):
+            try:
+                os.remove(temp_audio_path)
+            except: pass
 
         session["is_speaking"] = False 
         is_playing = False
 
+        # 5. تشغيل الجملة التالية (والتي ستكون جاهزة فوراً)
         if voice_queue:
             asyncio.create_task(play_next())
 
@@ -97,18 +99,15 @@ async def play_next():
 # -------------------------
 
 def create_silence(filepath="/tmp/silence.mp3"):
-    """إنشاء ملف صمت صغير جداً لاستخدامه عند التوقف"""
     if not os.path.exists(filepath):
         os.system(f'ffmpeg -f lavfi -i anullsrc=r=48000:cl=stereo -t 0.5 -acodec libmp3lame {filepath} -y -loglevel quiet')
     return filepath
 
 async def stop_audio():
-    """إيقاف الصوت فوراً وتطهير الطابور"""
     global is_playing
     voice_queue.clear() 
     if is_playing:
         try:
-            # تشغيل صمت لقطع الصوت الحالي
             await pytgcalls.play(VOICE_CHAT_ID, MediaStream(create_silence()))
             stop_playback_event.set() 
         except: pass
@@ -116,26 +115,27 @@ async def stop_audio():
         session["is_speaking"] = False
 
 async def broadcast_ai_response(response_text):
-    """إضافة رد الذكاء الاصطناعي للطابور وبدء التشغيل"""
+    """استلام النص من الذكاء الاصطناعي وتقسيمه فوراً"""
+    # 1. تقسيم النص إلى جمل صغيرة
+    # 2. وضعها في الطابور
     voice_queue.append(response_text)
+    # 3. بدء التشغيل (سيبدأ فوراً بأول جملة صغيرة)
     if not is_playing:
         await play_next()
 
 async def start_voice_engine():
-    """تشغيل المحرك والانضمام للمكالمة"""
     await pytgcalls.start()
-    # تشغيل صمت قصير لضمان استقرار الاتصال عند البدء
     await pytgcalls.play(VOICE_CHAT_ID, MediaStream(create_silence()))
     print("✅ Voice Engine Joined Voice Chat Successfully")
 
 # -------------------------
-# نقطة الانطلاق الرئيسية
+# نقطة الانطلاق
 # -------------------------
 if __name__ == "__main__":
     async def main():
         await userbot.start()
         await start_voice_engine()
-        print("Teacher Bot is Online (RAM-Disk Mode)...")
+        print("Teacher Bot is Online (Micro-Chunking RAM-Disk Mode)...")
         await idle()
 
     asyncio.run(main())
