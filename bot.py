@@ -519,11 +519,18 @@ async def start_cmd(client, message):
 # الأمر الذي يطلب الملف
 @bot_app.on_message(filters.command("lecture") & filters.user(ADMIN_ID))
 async def request_lecture_file(client, message):
-    global waiting_for_lecture    
-    waiting_for_lecture = True
+    global waiting_for_lecture
     
-    await message.reply_text("Please send the lecture file (PDF or TXT).")
+    parts = message.text.split()
+    topic = None
 
+    if len(parts) >= 2:
+        topic = parts[1]
+
+    waiting_for_lecture = True
+    session["topic"] = topic if topic else "medical content"
+
+    await message.reply_text("Please send the lecture file (PDF or TXT).")
 
 # استقبال الملف بعد الأمر
 @bot_app.on_message(filters.document & filters.user(ADMIN_ID))
@@ -547,7 +554,7 @@ async def handle_lecture_file(client, message):
         )
         return
 
-    start_lecture_session("Document Lecture", extracted_text)
+    start_lecture_session(extracted_text)
 
     await message.reply_text(
         "Lecture loaded successfully! Starting proactive delivery..."
