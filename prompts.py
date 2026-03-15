@@ -58,8 +58,13 @@ ACTION_PROMPTS = {
 
     "TEACH_NEXT_CHUNK": """
     ACTION: Explain the next piece of information [LECTURE MATERIAL] with educational depth..
-    - Bridge from the previous point, explain the new concept using a vivid analogy, and then ensure the students are following. 
-    - Use conversational language or a quick analogy.
+    - Bridge from the previous point, explain the new concept, and then ensure the students are following. 
+    Explain concepts like a university lecturer.
+    - Start with a clear definition.
+    - Then explain the mechanism briefly if found in the [LECTURE MATERIAL].
+    - Use analogies only when the concept is complex.
+    - Avoid casual or unnecessary comparisons.
+    - if a there are any questions from 
     - VARIETY RULE: End your explanation with a UNIQUE, natural spoken check-in. Do NOT repeat phrases from previous turns.
     - CHECK-IN STYLE: Use varied methods to check understanding (e.g., asking for a thumbs up, a quick opinion, or a confirmation of clarity).
     - TONE: Charismatic and fluid, NOT robotic.
