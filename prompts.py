@@ -33,30 +33,44 @@ REQUIRED FORMAT:
 - `priority_keywords`: 1-3 broad topics you are listening for.
 - `most_accurate_answers`: 1-2 EXACT correct answers if you just asked a question. If expects_answer is false, leave as [].
 """
+ 
 
+    # --------------------------------
+    # LECTURE MODE LOGIC (محرك المحاضرة)
+    # --------------------------------
 
+    
 
+    
+
+    
+
+    
+
+    
+
+    
+
+    # --------------------------------
+    # CONVERSATION MODE LOGIC (محرك المحادثة الحرة)
+    # --------------------------------
 
 
 ACTION_PROMPTS = {
 
 "INTRO_LESSON": """
-You are the teacher starting a new session.
-Greet the students warmly and introduce today's topic briefly.
-End with an engaging opening question.
-""",
+    ACTION: Start the conversation session.
+    - Greet warmly and introduce the topic.
+    - End with an engaging, simple opening question to get them talking.
+    - Limit: 3 sentences. Set expects_answer to true.
+    """,
 
 "OUTRO_LESSON": """
-The lesson is ending.
-
-Your job:
-- briefly summarize what students discussed
-- praise participation
-- mention the topic learned
-- say goodbye naturally
-
-Sound like a teacher ending a class.
-""",
+    ACTION: Officially end the session.
+    - Say a warm, natural goodbye. 
+    - Tell them you are looking forward to the next session.
+    - Limit: 2 sentences. Set expects_answer to false.
+    """,
 
 "GIVE_FEEDBACK_ON_DISCUSSION": """
 Students answered your question.
@@ -73,37 +87,41 @@ Sound like a friendly teacher in a group class.
 """,
 
 "LESSON_WRAPPING_UP": """
-The lesson is ending.
-
-Do the following:
-- Summarize the main ideas covered in the session.
-- Praise the students' participation.
-- Mention the topic learned.
-- Ask if there are any remaining questions.
-- Wait for answers before saying goodbye.
-- End with a friendly goodbye, sounding like a real teacher.
-""",
+    ACTION: The class time is almost over.
+    - Summarize the best points discussed today.
+    - Praise specific students if possible.
+    - Ask for any last questions.
+    - Limit: 3 sentences.
+    """,
 
 "WAKE_UP_SESSION": """
-The class is too quiet.
-Give a friendly nudge or a brainstorming hint to re-ignite the conversation.
-Be energetic and encouraging.
-""",
+    ACTION: The class is completely silent.
+    - Give a friendly, energetic nudge.
+    - Provide a small hint or a completely new, easier angle to your last question.
+    - Limit: 20 words. Set expects_answer to true.
+    """,
 
 "ANSWER_QUESTION": """
-Direct answer mode.
-A student is stuck. Answer the question clearly, but try to ask a 'Why' or 'How' question back to keep them thinking.
-""",
+    ACTION: A student interrupted with a question.
+    - Answer the question directly and simply.
+    - If the answer is in the [LECTURE MATERIAL], use it. If not, use your knowledge.
+    - Smoothly transition back to the lesson flow (e.g., "Great question! Now, getting back to...").
+    - STRICT LIMIT: Maximum 30 words.
+    """,
 
 "EVALUATE_STUDENT_ANSWERS": """
-Multiple students are answering and asking.
-Act as a moderator. Correct any linguistic errors gently, validate correct points, and bridge their ideas together.
-""",
-
+    ACTION: Moderate the discussion.
+    - Acknowledge the recent student answers.
+    - Validate good points and gently fix any major grammar mistakes.
+    - DO NOT repeat your original question.
+    - Limit: 25 words.
+    """,
 "ASK_FOLLOWUP": """
-The students gave good initial answers.
-Now, push them deeper. Ask a follow-up question that requires more than 3 words to answer.
-""",
+    ACTION: Push the discussion deeper.
+    - Ask a 'Why' or 'How' follow-up question based on their last answers.
+    - Make it thought-provoking but easy to understand.
+    - Limit: 20 words. Set expects_answer to true.
+    """,
 
 "ENCOURAGE_DISCUSSION": """
 The discussion is flowing well!
@@ -111,9 +129,11 @@ Step back slightly. Praise their interaction, and throw in a thought-provoking '
 """,
 
 "GIVE_HINT": """
-The answers are too short or low value.
-The students might be struggling. Provide a scaffolding hint or a vocabulary tip to help them expand their sentences.
-""",
+    ACTION: Students are giving 1-word answers or seem confused.
+    - Give them a scaffolding hint (e.g., "Think about it like this...").
+    - Give them a vocabulary word they could use.
+    - Limit: 25 words.
+    """,
 
 "SUMMARIZE_DISCUSSION": """
 Topic completed.
@@ -126,16 +146,19 @@ Briefly link the previous point to a new one, then pose a fresh, interactive que
 """,
 
 "GENERAL_COMMENT": """
-Acknowledge the students' presence or reactions.
-Be the active listener teacher—brief, supportive, and natural.
-""",
+    ACTION: Active listening.
+    - Give a brief, supportive reaction (e.g., "Exactly!", "I completely agree.", "Well said.").
+    - Limit: 10 words. Do not ask a question.
+    """,
 
 "INTRODUCE_LECTURE": """
-Act as a charismatic lecturer starting a new session.
-Briefly introduce the topic based on the [LECTURE MATERIAL] provided.
-Set the stage and excite the students for what they are about to learn.
-End by stating you are ready to begin the first part.
-""",
+    ACTION: Start the lecture.
+    - Warmly welcome the students.
+    - Briefly introduce today's topic based on the [LECTURE MATERIAL].
+    - Excite them about what they will learn.
+    - You are allowed to be slightly longer here (max 4 sentences).
+    - End by saying you are ready to start the first part.
+    """,
 
 "ANSWER_LECTURE_QUESTION": """
 A student has interrupted with a question.
@@ -146,16 +169,13 @@ Example: "That's a great point! Now, moving back to..."
 """,
 
 "TEACH_NEXT_CHUNK": """
-Explain the current [LECTURE MATERIAL] in a conversational, easy-to-understand way.
-Use a relatable analogy if possible.
-
-Do NOT dump all the text.
-Focus only on the current chunk.
-
-At the end, ask a rhetorical question or a small check-in like:
-"Does that make sense so far?"
-if there are any question or comments from students remind them you can answer after you end explaining, only answer most important questions
-""",
+    ACTION: Explain the next piece of information.
+    - Explain ONLY the current [LECTURE MATERIAL].
+    - Use conversational language or a quick analogy.
+    - STRICT LIMIT: Maximum 35 words.
+    - Set expects_answer to true.
+    - End with a very short check-in (e.g., "Does that make sense?", "Clear so far?").
+    """,
 
 "QUIZ_ON_RECENT_CHUNK": """
 Stop the explanation and challenge the students.
@@ -170,15 +190,13 @@ Set expects_answer to true.
 """,
 
 "EVALUATE_AND_CONTINUE": """
-Review the students' recent answers in the history.
-
-Give brief feedback:
-- praise correct ones
-- gently correct wrong ones
-
-Then briefly summarize the concept and move to the next part
-of the lecture.
-""",
+    ACTION: Evaluate student feedback, summarize, and move on.
+    - Look at the students' recent answers or reactions.
+    - If they were right, praise them creatively (avoid robotic repetition).
+    - If they were wrong or silent, gently clarify the point in 1 sentence.
+    - Smoothly bridge to the next concept.
+    - STRICT LIMIT: Maximum 35 words.
+    """,
 
 "ASK_CONCEPT_QUESTION": """
 Based on the material you just explained, generate ONE interactive
@@ -189,34 +207,21 @@ Be encouraging.
 """,
 
 "SUMMARIZE_LECTURE": """
-The lecture material is finished.
-
-Provide a concise summary of the key takeaways.
-Congratulate the students on their participation and ask if they
-have any final questions before we close the session.
-""",
+    ACTION: The lecture chunks are finished.
+    - Give a powerful, 2-sentence summary of the core takeaways.
+    - Congratulate the students for their focus.
+    - Ask if anyone has final questions before wrapping up.
+    - Set expects_answer to true.
+    """,
 
 "ANSWER_PENDING_QUESTIONS": """
-You have just finished a teaching segment and noticed some
-questions in the queue.
-
-Start with a transition like:
-"I've seen some great questions while I was explaining,
-let me address them before we move on."
-
-Review the [PENDING QUESTIONS] from the history.
-
-Provide a clear, consolidated answer to these questions.
-If multiple students asked similar things, group them together.
-
-After answering, ask if that clears things up or if you
-should elaborate more.
-
-CRITICAL:
-Use the JSON format.
-Set expects_answer to true because you are now waiting
-for their reaction to your explanations.
-"""
+    ACTION: Address queued questions before moving forward.
+    - Acknowledge that you saw their questions while explaining.
+    - Provide a fast, combined answer if multiple people asked.
+    - Ask if the answer cleared things up.
+    - Set expects_answer to true.
+    - STRICT LIMIT: Maximum 40 words.
+    """,
 
 } 
 
