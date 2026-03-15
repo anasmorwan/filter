@@ -107,6 +107,12 @@ def build_prompt(action, context_messages):
         idx = session.get("current_chunk_index", 0)
         current_material = chunks[idx] if idx < len(chunks) else "End of material."
         
+        # 🎯 السحر هنا: حقن الأهداف فقط في بداية المحاضرة
+        goals_context = ""
+        if action == "INTRODUCE_LECTURE":
+            goals = session.get("lecture_goals", "No goals defined.")
+            goals_context = f"\n[GLOBAL LECTURE GOALS & OBJECTIVES]:\n{goals}\n"
+        
         prompt = f"""
 {JSON_SYSTEM_PROMPT}
 {LECTURER_SYSTEM_PROMPT}
@@ -121,8 +127,9 @@ def build_prompt(action, context_messages):
 {action_prompt}
 
 Instruction: Focus on the 'LECTURE MATERIAL'. If students ask unrelated questions, gently bring them back to the topic after answering briefly.
-"""
 
+{"Remember to present the learning goals clearly to the students." if action == "INTRODUCE_LECTURE" else ""}
+"""
     # --- الحالة الثانية: نمط المحادثة الحرة (القديم) ---
     else:
         topic = session.get("topic", "General English")
