@@ -212,7 +212,9 @@ def smart_split(text, max_chars=100):
     # تصفية أي قطع فارغة
     return [c.strip() for c in final_chunks if c.strip()]
 
-# مثال على الاستخدام:
-# chunks = smart_split(long_ai_response)
-# for chunk in chunks:
-#     await broadcast_ai_response(chunk)
+import shutil
+
+def clear_old_assets():
+    if os.path.exists("session_images"):
+        shutil.rmtree("session_images") # حذف المجلد بكل ما فيه
+    os.makedirs("session_images", exist_ok=True) # إعادة إنشائه فارغاً
