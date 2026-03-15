@@ -159,7 +159,7 @@ async def handle_lecture_action(action, session, understanding, ai_data=None):
     # 1. تحديث الفهرس (Index) أولاً قبل أي شيء بناءً على الأكشن
     if action == "EVALUATE_AND_CONTINUE" and understanding != "poor":
         session["current_chunk_index"] += 1
-    elif action in ["TEACH_NEXT_CHUNK", "ANSWER_AND_TEACH", "ANSWER_AND_CONTINUE", "ANSWER_AND_TEACH"]: # 👈 تمت إضافة الأكشن الجديد هنا ليزيد رقم الشريحة
+    elif action in ["TEACH_NEXT_CHUNK", "ANSWER_AND_TEACH", "ANSWER_AND_CONTINUE", "INTRODUCE_LECTURE"]: # 👈 تمت إضافة الأكشن الجديد هنا ليزيد رقم الشريحة
         session["current_chunk_index"] += 1
 
 
