@@ -533,6 +533,7 @@ async def start_cmd(client, message):
 @bot_app.on_message(filters.command("lecture") & filters.user(ADMIN_ID))
 async def request_lecture_file(client, message):
     global waiting_for_lecture
+    session = get_session_info()
     
     parts = message.text.split()
     topic = None
