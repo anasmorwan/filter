@@ -21,7 +21,8 @@ from decision_engine import decide_next_action
 from ai import generate_ai_response
 from buffer import clear_buffer
 from voice import broadcast_ai_response
-from memory import update_student_memory, check_bingo, register_bingo, get_rank, get_leaderboard, send_daily_stats
+from memory import update_student_memory
+from starts import check_bingo, register_bingo, get_rank, get_leaderboard, send_daily_stats, get_daily_report_if_changed
 # تأكد أن voice.py يحتوي على userbot و pytgcalls و start_voice_engine
 from voice import broadcast_ai_response, userbot, pytgcalls, start_voice_engine, stop_audio
 
