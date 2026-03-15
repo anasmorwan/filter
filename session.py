@@ -2,10 +2,9 @@ import time
 
 
 # دالة جديدة لبدء المحاضرة
-def start_lecture_session(topic, extracted_chunks):
+def start_lecture_session(extracted_chunks):
     session["active"] = True
     session["mode"] = "lecture"
-    session["topic"] = topic
     session["current_stage"] = "INTRO"
     session["current_chunk_index"] = 0
     
