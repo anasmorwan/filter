@@ -1,3 +1,6 @@
+import json
+import re
+
 def extract_json(text):
     """
     استخراج JSON من النص حتى لو كان داخله شرح أو markdown
