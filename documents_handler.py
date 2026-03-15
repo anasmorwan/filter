@@ -16,8 +16,8 @@ def extract_text_from_file(file_path):
     if ext == ".pdf":
         # في الـ PDF نستخرج النصوص والصور معاً
         chunks = extract_visual_chunks_from_pdf(file_path)
-        full_text = "\n".join([c['text'] for c in chunks])
-    
+        full_text = extract_full_pdf(file_path)
+        
     elif ext in [".docx", ".pptx", ".txt"]:
         if ext == ".docx": full_text = extract_text_from_docx(file_path)
         elif ext == ".pptx": full_text = extract_text_from_pptx(file_path)
@@ -66,6 +66,19 @@ def extract_text_from_file(file_path):
 
     return [{"text": chunk, "image_path": None} for chunk in text.split('\n\n') if len(chunk) > 20]
     """
+
+def extract_full_pdf(path: str) -> str:
+    try:
+        doc = fitz.open(path)
+        text = "\n".join([page.get_text() for page in doc])
+        return text.strip()
+    except Exception as e:
+        logging.error(f"Error extracting PDF text: {e}")
+        return ""
+    # fallback to PyMuPDF text extraction
+    doc = fitz.open(path)
+    return "\n".join([page.get_text() for page in doc])
+
 
 def extract_text_from_txt(file_path):
     """
