@@ -59,6 +59,7 @@ waiting_for_lecture = False
 async def process_message(user, user_id, text, timestamp):
     session = get_session_info()
     messages = pop_window_messages()
+    Bingo_Keywords = session.get("Bingo_Keywords", [])
 
 
     if not session_is_active():
@@ -73,12 +74,14 @@ async def process_message(user, user_id, text, timestamp):
     # تصنيف الرسالة
     msg_type, confidence = classify_message(text)
     add_to_chat_history(user, text) # 👈 أضف هذه لتوثيق كلام الطالب
+    bingo_answers = 
 
     # تحديث ذاكرة الطالب
     update_student_memory(
         user_id,
         user,
-        msg_type
+        msg_type,
+        bingo_answers
     )
 
     msg = {
