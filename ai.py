@@ -4,6 +4,8 @@ import os
 from session import session, get_session_info, get_chat_history
 import json
 import re
+from utils import heal_json, extract_json
+
 
 # تهيئة العميل باستخدام مفتاح API الخاص بـ Groq
 client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
