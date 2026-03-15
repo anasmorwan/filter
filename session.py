@@ -1,10 +1,11 @@
 import time
-from ai import generate_global_summary
 
 
 
 # دالة جديدة لبدء المحاضرة
 def start_lecture_session(extracted_chunks, full_text):
+    from ai import generate_global_summary
+
     session["active"] = True
     session["mode"] = "lecture"
     session["current_stage"] = "INTRO"
