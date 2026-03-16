@@ -178,8 +178,22 @@ async def stop_audio():
         session["is_speaking"] = False
 
 async def start_voice_engine():
-    await pytgcalls.start()
-    await pytgcalls.play(VOICE_CHAT_ID, MediaStream(create_silence()))
-    # 🟢 السر هنا: تشغيل العامل الخلفي تلقائياً عند بدء المحرك
-    asyncio.create_task(tts_preparer_worker())
-    print("✅ Voice Engine & Background Audio Builder Started Successfully!")
+    try:
+        print("📡 [VOICE] Starting PyTgCalls...")
+        await pytgcalls.start()
+        
+        # محاولة تشغيل الصمت الابتدائي مع معالجة الخطأ
+        try:
+            print("🔇 [VOICE] Playing initial silence...")
+            await pytgcalls.play(VOICE_CHAT_ID, MediaStream(create_silence()))
+        except Exception as e:
+            print(f"⚠️ [VOICE] Could not play initial silence (Telegram Busy/Server Error): {e}")
+            # لا نوقف التشغيل هنا، سنكتفي بالتحذير
+            
+        # تشغيل العامل الخلفي
+        asyncio.create_task(tts_preparer_worker())
+        print("✅ Voice Engine & Background Audio Builder Started Successfully!")
+        
+    except Exception as e:
+        print(f"❌ [CRITICAL] Failed to start Voice Engine: {e}")
+        # هنا قد ترغب في إبقاء المهام الأخرى تعمل حتى لو فشل الصوت
