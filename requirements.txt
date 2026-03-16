@@ -16,3 +16,6 @@ pyrogram
 ffmpeg-python
 asyncio
 aiohttp
+requests
+google.genai
+cohere
