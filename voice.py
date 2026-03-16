@@ -76,16 +76,22 @@ async def play_next():
     is_playing = True
     session["is_speaking"] = True
 
+    # ✅ الإصلاح الأساسي: تصفير زر الإيقاف قبل الدخول في اللوب
+    # لضمان عدم تأثير أي إيقاف قديم على الشريحة الجديدة
+    stop_playback_event.clear() 
+
     try:
         while not ready_audio_queue.empty():
-            if stop_playback_event.is_set(): break
+            # إذا ضغط أحدهم على إيقاف أثناء التشغيل، نخرج من اللوب
+            if stop_playback_event.is_set(): 
+                print("🛑 [VOICE] Playback stopped by event!")
+                break
             
             audio_data = await ready_audio_queue.get()
             audio_path = audio_data["file"]
             duration = audio_data["duration"]
             
             print(f"🔊 [PLAYING] Streaming: {audio_data['text'][:30]}...")
-            stop_playback_event.clear()
             
             try:
                 # محاولة البث الفعلي
@@ -96,10 +102,9 @@ async def play_next():
             except asyncio.TimeoutError:
                 pass # هذا طبيعي، معناه انتهى الوقت بسلام
             except Exception as e:
-                # 🚨 هنا نصطاد الخطأ الذي كان يخرب النظام بصمت!
+                # إذا حدث خطأ في الخادم، ننتظر وهمياً لكي لا ينهار تسلسل المحاضرة
                 print(f"❌ [PYTGCALLS PLAY ERROR]: {e}")
-                print(f"⚠️ [FALLBACK] Simulating audio playback for {duration}s to keep sync...")
-                # نجبر النظام على الانتظار حتى لو فشل الصوت، لكي لا تتلاحق الشرائح كالمسدس الآلي
+                print(f"⚠️ [FALLBACK] Simulating wait for {duration}s...")
                 await asyncio.sleep(duration)
             
             if os.path.exists(audio_path): os.remove(audio_path)
