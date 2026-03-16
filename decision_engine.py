@@ -123,13 +123,14 @@ def decide_next_action(messages):
 # ---------------------------------------------------------
 # منطق اتخاذ القرار لوضع المحاضرة (The Brain)
 # ---------------------------------------------------------
-
 def decide_lecture_logic(messages, session, stats):
     waiting = session.get("waiting_for_answer", False)
     bingo = session.get("bingo_answer_received", False)
     has_questions = stats["questions"] > 0
     current_index = session.get("current_chunk_index", 0)
     chunks = session.get("lecture_chunks", [])
+    deferred_qs = session.get("deferred_questions", [])
+
 
 
     # 4. 🌟 السحر هنا: تدفق المحاضرة الطبيعي مع وجود أسئلة
@@ -166,8 +167,11 @@ def decide_lecture_logic(messages, session, stats):
 
     # 2. هل انتهت الشرائح كلها؟
     if current_index >= len(chunks):
-        if has_questions: 
+        if has_questions or deferred_qs:
+            return "FINAL_Q_AND_A"
+            
             session["pending_questions"] = [] # تفريغ الأسئلة
+            
             return "ANSWER_PENDING_QUESTIONS"
         print("🧠 -> Reached the end of chunks. Summarizing.")
         return "SUMMARIZE_LECTURE"
