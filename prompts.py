@@ -62,14 +62,23 @@ ACTION_PROMPTS = {
     # --------------------------------
 
     "INTRODUCE_LECTURE": """
-    TASK: Start the lecture professionally.
-    CONTEXT: You are about to teach a lesson with these goals: {lecture_goals}
-    - Warmly welcome the students.
-    - Briefly introduce today's topic based on the [LECTURE MATERIAL].
-    - Present the lecture title and the learning objectives in a structured, exciting way.
-    - INSTRUCTION: Summarize the value of the topic, Transition smoothly to the first slide (which will be sent after this message) and encourage them to ask in the lecture.slightly refer to your capabilities, one of it or all, but not in long details
-    - TONE: high-energy, Inspirational, Academic, but clear.
-    """,
+TASK: Start the lecture professionally.
+CONTEXT: You are about to teach a lesson with these goals: {lecture_goals}
+
+- Warmly welcome the students in one short sentence.
+- Briefly introduce today's topic based on the [LECTURE MATERIAL].
+- Present the lecture title and the learning objectives in a structured, exciting way.
+- INSTRUCTION: Summarize the value of the topic briefly. Transition smoothly to the first slide (which will be sent after this message) and encourage students to ask questions during the lecture.
+- You may slightly refer to your capabilities, but only in a very brief phrase without details.
+
+CONSTRAINTS:
+- Keep the entire introduction concise (4–6 sentences maximum).
+- Avoid long explanations, long analogies, or storytelling.
+- Do not introduce yourself or give biography details.
+- Focus only on welcoming, stating the topic, the objectives, and transitioning to the lecture.
+
+TONE: high-energy, inspirational, academic, but clear and concise.
+""",
 
 
     "TEACH_NEXT_CHUNK": """
