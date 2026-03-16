@@ -3,52 +3,50 @@
 import re
 from typing import Tuple
 
-# كلمات ردود سطحية أو تفاعلية
+
 LOW_VALUE = {
     "ok","yes","no","lol","haha","hi","hello",
-    "thanks","cool","nice","bye","okey"
+    "thanks","cool","nice","bye","okey", "تمام", "واضح", "نعم", "لا"
 }
 
-# كلمات مفتاحية لتحديد السؤال
 QUESTION_KEYWORDS = {
     "what","who","when","where","why","how","can","is","are",
-    "do","does","did","will","would","should","could","which"
+    "do","does","did","will","would","should","could","which",
+    "لماذا", "كيف", "متى", "أين", "من", "ماذا", "هل"
+}
+
+# كلمات تدل على حاجة فورية للتوضيح
+URGENT_TRIGGERS = {
+    "عيد", "لم افهم", "ما معنى", "اعد", "توقف", "لحظة", "شرح",
+    "repeat", "explain", "mean", "stop", "wait", "confused", " understand"
 }
 
 def classify_message(text: str) -> Tuple[str, float]:
-    """
-    تصنيف الرسائل بدقة عالية مع إعطاء درجة ثقة.
-    إرجاع: (message_type, confidence)
-    message_type ∈ {"question", "answer", "short_answer", "reaction", "other"}
-    confidence ∈ [0, 1]
-    """
     text = text.strip().lower()
-    
-    if not text:
-        return "other", 0.9  # فارغ أو غير مفهوم
+    if not text: return "other", 0.9
     
     words = text.split()
     
-    # --------- السؤال ---------
-    # إذا انتهت بعلامة ? أو بدأت بكلمة مفتاحية
-    if text.endswith("?") or any(text.startswith(w + " ") for w in QUESTION_KEYWORDS):
-        return "question", 0.95
+    # --------- منطق الأسئلة المطور ---------
+    is_question_format = text.endswith("?") or any(text.startswith(w + " ") for w in QUESTION_KEYWORDS)
     
-    # --------- ردود سطحية ---------
+    if is_question_format:
+        # فحص هل السؤال عاجل (توضيحي) أم آجل (استقصائي)
+        is_urgent = any(trigger in text for trigger in URGENT_TRIGGERS) or len(text) < 25
+        
+        if is_urgent:
+            return "urgent_question", 0.98
+        else:
+            return "question", 0.92
+    
+    # --------- باقي التصنيفات كما هي ---------
     if text in LOW_VALUE:
         return "reaction", 0.95
     
-    # --------- إجابة قصيرة ---------
     if len(words) <= 3:
-        # افحص إذا كانت كلمات مفيدة (تجنب الرموز)
-        if re.match(r"^[a-zA-Z0-9]+$", text):
-            return "short_answer", 0.85
-        else:
-            return "other", 0.8
+        return "short_answer", 0.85 if re.match(r"^[\w\s]+$", text) else "other", 0.8
     
-    # --------- إجابة مفهومة ---------
-    if re.match(r"^[a-zA-Z0-9\s,.'!?]+$", text):
+    if re.match(r"^[\w\s,.'!?]+$", text):
         return "answer", 0.9
     
-    # --------- غير معروف ---------
     return "other", 0.7
