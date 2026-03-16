@@ -20,7 +20,7 @@ def start_lecture_session(extracted_chunks, full_text):
     
     session["start_time"] = time.time()
     session["last_ai_message"] = time.time()
-    clear_old_assets()
+    
     
 
 
@@ -126,6 +126,7 @@ def stop_session():
         "waiting_for_answer": False,
         "pending_questions": []
     })
+    clear_old_assets()
     print("🧹 Session data cleared and reset to conversation mode.")
 
 
