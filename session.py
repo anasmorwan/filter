@@ -2,26 +2,28 @@ import time
 
 
 
-
 # 3. تحويل بدء المحاضرة إلى دالة Async لدعم تلخيص الـ AI
 async def start_lecture_session(extracted_chunks, full_text):
     from ai import generate_global_summary
     
-    session["active"] = True
+    # تجهيز البيانات أولاً (بدون تفعيل الجلسة)
     session["mode"] = "lecture"
     session["current_stage"] = "INTRO"
     session["current_chunk_index"] = 0
+    
+    # حفظ الـ Chunks المجهزة قبل استدعاء الـ AI
+    session["lecture_chunks"] = extracted_chunks
+    
+    # الآن ننتظر الذكاء الاصطناعي (أثناء هذا الانتظار، المهام الخلفية لن تتدخل لأن active=False)
     goals_summary = await generate_global_summary(full_text)
     session["lecture_goals"] = goals_summary
 
-    
-    # حفظ الـ Chunks المجهزة (التي تحتوي على text و image_path)
-    session["lecture_chunks"] = extracted_chunks
-    
+    # بعد اكتمال كل شيء، نقوم بتفعيل الجلسة وبدء العدادات
     session["start_time"] = time.time()
     session["last_ai_message"] = time.time()
-    
-    
+    session["active"] = True  # 🟢 يتم تفعيلها هنا فقط لتجنب التداخل
+
+
 
 
 
