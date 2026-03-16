@@ -5,8 +5,7 @@ import time
 # دالة جديدة لبدء المحاضرة
 def start_lecture_session(extracted_chunks, full_text):
     from ai import generate_global_summary
-    from documents_handler import clear_old_assets
-
+    
     session["active"] = True
     session["mode"] = "lecture"
     session["current_stage"] = "INTRO"
@@ -115,6 +114,7 @@ def start_session(topic, difficulty):
 
 # داخل session.py
 def stop_session():
+    from documents_handler import clear_old_assets
     # تنظيف شامل لكل بيانات المحاضرة والمود
     session.update({
         "is_active": False,
