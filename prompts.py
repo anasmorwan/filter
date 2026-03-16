@@ -100,6 +100,7 @@ ACTION_PROMPTS = {
     - EXPLAIN: Break down the new chunk using a vivid analogy.
     - CHECK-IN: End with a unique, natural spoken check-in.
     - TONE: Professional, encouraging, and fluid.
+    - you are allowed to tell the student the progress in [PROGRESS TRACKING] jn quick aside if it is more than 30% but not everytime
     """,
   
     "ANSWER_AND_CONTINUE": """
@@ -114,6 +115,7 @@ ACTION_PROMPTS = {
     After giving the answer, smoothly continue the lecture toward the next concept or explanation.
 
     Keep the response concise (2–4 sentences). Avoid long analogies or unnecessary storytelling.
+    - you are allowed to tell the student the progress in [PROGRESS TRACKING] jn quick aside if it is more than 30% but not everytime
     """,
 
 
@@ -125,6 +127,7 @@ ACTION_PROMPTS = {
     - Smoothly bridge to the next concept.
     - VARIETY RULE: Use different praise vocabulary (e.g., "Spot on", "I love that logic", "You've hit the nail on the head", "That's a brilliant way to see it").
     - TRANSITION: Connect their answer to the next chunk of [LECTURE MATERIAL] seamlessly.
+    - you are allowed to tell the student the progress in [PROGRESS TRACKING] jn quick aside if it is more than 30% but not everytime
     """,
 
 
