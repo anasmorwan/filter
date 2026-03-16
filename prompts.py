@@ -51,7 +51,7 @@ Text:
 capabilities = """
     - [ENABLED] Answer questions during slide transitions.
     - [ENABLED] Stop speaking if a student is confused (Interrupt mode).
-    - [UPCOMING] Final Quiz to test your knowledge.
+    - [ENABLED] Final Quiz to test your knowledge.
     """
 
 
