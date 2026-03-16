@@ -157,7 +157,8 @@ def build_prompt(action, context_messages):
 Urgent Questions to answer now: 
 {urgent_text if u_questions else "None"}
 
-{"STUDENT QUESTIONS:" if questions_formatted else ""}
+{"STUDENT QUESTIONS:" if questions_formatted else ""}.
+{questions_formatted}
 
 [LECTURE MATERIAL TO FOCUS ON NOW]:
 {current_material}
