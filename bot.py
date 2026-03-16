@@ -520,19 +520,27 @@ async def handle_lecture_file(client, message):
         return
 
     waiting_for_lecture = False
+    
+    # 1. إرسال رسالة فورية ليطمئن المستخدم
+    status_msg = await message.reply_text("📥 File received! Extracting text and generating lesson plan...")
 
     file_path = await message.download()
 
     try:
+        # 2. استخراج النص
         full_text, extracted_text = extract_text_from_file(file_path)
-        # داخل دالة handle_lecture_file
-        await start_lecture_session(extracted_text, full_text) # 🟢 أضف await هنا
+        
+        # 3. بدء الجلسة (التي ستنتظر توليد أهداف الدرس)
+        await start_lecture_session(extracted_text, full_text)
 
-        await message.reply_text("Lecture loaded successfully! Starting proactive delivery...")
+        # 4. تعديل الرسالة السابقة لتأكيد النجاح
+        await status_msg.edit_text("✅ Lecture loaded successfully! Starting proactive delivery...")
+        
+        # 5. تقديم المحاضرة
         await handle_action("INTRODUCE_LECTURE", [])
 
     except ValueError as e:
-        await message.reply_text(
+        await status_msg.edit_text(
             "❌ Could not extract enough text from the file.\n"
             "The file may be scanned and requires OCR."
         )
@@ -542,7 +550,6 @@ async def handle_lecture_file(client, message):
         if os.path.exists(file_path):
             os.remove(file_path)
 
-        return
 
 
     
