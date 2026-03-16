@@ -159,7 +159,7 @@ Urgent Questions to answer now:
 {urgent_text if u_questions else "None"}
 
 {"STUDENT QUESTIONS:" if questions_formatted else ""}.
-{questions_formatted}
+{questions_formatted if action == "FINAL_Q_AND_A" else ""}
 
 [LECTURE MATERIAL TO FOCUS ON NOW]:
 {current_material}
