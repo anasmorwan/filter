@@ -1,6 +1,6 @@
 student_memory = {}
 
-def update_student_memory(user_id, username, msg_type):
+def update_student_memory(user_id, username, msg_type, bingo_hits):
 
     if user_id not in student_memory:
         student_memory[user_id] = {
