@@ -525,7 +525,9 @@ async def handle_lecture_file(client, message):
 
     try:
         full_text, extracted_text = extract_text_from_file(file_path)
-        start_lecture_session(extracted_text, full_text) 
+        # داخل دالة handle_lecture_file
+        await start_lecture_session(extracted_text, full_text) # 🟢 أضف await هنا
+
         await message.reply_text("Lecture loaded successfully! Starting proactive delivery...")
         await handle_action("INTRODUCE_LECTURE", [])
 
