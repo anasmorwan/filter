@@ -87,19 +87,29 @@ async def process_message(user, user_id, text, timestamp):
 
     # 3. 🎓 منطق وضع المحاضرة (Lecture Mode)
     if mode == "lecture":
+        if msg_type == "urgent_question":
+            session.setdefault("urgent_questions", []).append(msg)
+            print(f"🚨 Priority 1: {text}")
+            
+        
+        elif msg_type == "question":
+            session.setdefault("deferred_questions", []).append(msg)
+            print(f"📥 Priority 2 (Deferred): {text}")
+            session["pending_questions"].append(msg)
+            print("📥 Question queued for the next chunk transition.")
+                    
+        # ⛔ الأهم: ننهي الدالة هنا في وضع المحاضرة. لا نستدعي decide_next_action!
+        # أي رسائل أخرى ("تمام"، "نعم") ستبقى في الـ buffer، والـ Heartbeat هو من سينقل الشريحة براحته.
+        return
+
+    elif mode == "conversation":    
         if msg_type in ["answer", "short_answer"] and session.get("waiting_for_answer"):
             if check_bingo(text, Bingo_Keywords):
                 register_bingo(user_id)
                 session["bingo_answer_received"] = True
                 print("🎯 Bingo registered! Heartbeat will catch this instantly.")
                 # لاتخذ أكشن هنا! الـ Heartbeat مبرمج لتصفير عداده (dynamic_limit = 0) والتدخل
-        elif msg_type == "question":
-            session["pending_questions"].append(msg)
-            print("📥 Question queued for the next chunk transition.")
-        
-        # ⛔ الأهم: ننهي الدالة هنا في وضع المحاضرة. لا نستدعي decide_next_action!
-        # أي رسائل أخرى ("تمام"، "نعم") ستبقى في الـ buffer، والـ Heartbeat هو من سينقل الشريحة براحته.
-        return
+
 
     # 4. 💬 منطق وضع المحادثة العادي (Conversation Mode)
     # هنا نحتفظ بمنطق النافذة القديم لأننا نريد تفاعلاً سريعاً
