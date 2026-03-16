@@ -87,6 +87,48 @@ async def play_next():
             print(f"🔊 [PLAYING] Streaming: {audio_data['text'][:30]}...")
             stop_playback_event.clear()
             
+            try:
+                # محاولة البث الفعلي
+                await pytgcalls.play(VOICE_CHAT_ID, MediaStream(audio_path))
+                # ننتظر مدة الملف + 0.3 ثانية أمان
+                await asyncio.wait_for(stop_playback_event.wait(), timeout=duration + 0.3)
+            
+            except asyncio.TimeoutError:
+                pass # هذا طبيعي، معناه انتهى الوقت بسلام
+            except Exception as e:
+                # 🚨 هنا نصطاد الخطأ الذي كان يخرب النظام بصمت!
+                print(f"❌ [PYTGCALLS PLAY ERROR]: {e}")
+                print(f"⚠️ [FALLBACK] Simulating audio playback for {duration}s to keep sync...")
+                # نجبر النظام على الانتظار حتى لو فشل الصوت، لكي لا تتلاحق الشرائح كالمسدس الآلي
+                await asyncio.sleep(duration)
+            
+            if os.path.exists(audio_path): os.remove(audio_path)
+            ready_audio_queue.task_done()
+            
+    finally:
+        is_playing = False
+        session["is_speaking"] = False
+        print("🔈 [PLAYBACK ENDED] Ready for next chunk.")
+
+"""
+async def play_next():
+    global is_playing
+    if ready_audio_queue.empty() or is_playing: return
+
+    is_playing = True
+    session["is_speaking"] = True
+
+    try:
+        while not ready_audio_queue.empty():
+            if stop_playback_event.is_set(): break
+            
+            audio_data = await ready_audio_queue.get()
+            audio_path = audio_data["file"]
+            duration = audio_data["duration"]
+            
+            print(f"🔊 [PLAYING] Streaming: {audio_data['text'][:30]}...")
+            stop_playback_event.clear()
+            
             await pytgcalls.play(VOICE_CHAT_ID, MediaStream(audio_path))
             
             try:
@@ -102,12 +144,13 @@ async def play_next():
         is_playing = False
         session["is_speaking"] = False
         print("🔈 [PLAYBACK ENDED] Ready for next chunk.")
-
+"""
 # -------------------------
 # 3. دوال التحكم المتاحة لـ bot.py
 # -------------------------
 async def broadcast_ai_response(response_text):
     """هذه الدالة الآن ترمي النص للمصنع وتعود فوراً بدون تعطيل البوت"""
+    session["is_speaking"] = True
     await text_queue.put(response_text)
 
 def create_silence(filepath="/tmp/silence.mp3"):
