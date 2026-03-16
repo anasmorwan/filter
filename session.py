@@ -15,7 +15,7 @@ async def start_lecture_session(extracted_chunks, full_text):
     session["lecture_chunks"] = extracted_chunks
     
     # الآن ننتظر الذكاء الاصطناعي (أثناء هذا الانتظار، المهام الخلفية لن تتدخل لأن active=False)
-    goals_summary = await generate_global_summary(full_text)
+    goals_summary = generate_global_summary(full_text)
     session["lecture_goals"] = goals_summary
 
     # بعد اكتمال كل شيء، نقوم بتفعيل الجلسة وبدء العدادات
