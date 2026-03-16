@@ -92,21 +92,6 @@ def generate_ai_response(action, messages):
 
 
 
-prompt = f"""
-...
-[CURRENT CONTEXT]
-Urgent Questions to answer now: 
-{urgent_text if u_questions else "None"}
-
-[SYSTEM STATUS]
-Pending Curiosity Questions (to be answered at the end): {d_count}
-
-[LECTURER INSTRUCTION]
-- If there are Urgent Questions, integrate their answers into your explanation.
-- If 'Pending Curiosity Questions' > 0, mention once: "I've received your deep questions and saved them for our Q&A at the end!"
-"""
-
-
 def build_prompt(action, context_messages):
     session = get_session_info()
     mode = session.get("mode", "conversation")
@@ -149,18 +134,30 @@ def build_prompt(action, context_messages):
             - Remaining Slides: {remaining}
             - Completion: {int((current_slide_num/total_chunks)*100)}%
             """
+        if action == "FINAL_Q_AND_A":
+            deferred_qs = session.get("deferred_questions", [])
+        
+            # تحويل قائمة الأسئلة إلى نص منسق للـ AI
+            questions_formatted = ""
+            for i, q in enumerate(deferred_qs, 1):
+                questions_formatted += f"{i}. Student ({q['user']}): {q['text']}\n"
+
         
         prompt = f"""
 {JSON_SYSTEM_PROMPT}
 {LECTURER_SYSTEM_PROMPT}
+
 [SYSTEM CAPABILITIES - WHAT YOU CAN DO]:
 {capabilities}
+
+
 {goals_context}
 {progress_context}
 
 Urgent Questions to answer now: 
 {urgent_text if u_questions else "None"}
 
+{"STUDENT QUESTIONS:" if questions_formatted else ""}
 
 [LECTURE MATERIAL TO FOCUS ON NOW]:
 {current_material}
