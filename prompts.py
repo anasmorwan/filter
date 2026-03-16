@@ -48,7 +48,11 @@ The output should include:
 Text:
 {text}
 """
-
+capabilities = """
+    - [ENABLED] Answer questions during slide transitions.
+    - [ENABLED] Stop speaking if a student is confused (Interrupt mode).
+    - [UPCOMING] Final Quiz to test your knowledge.
+    """
 
 
 ACTION_PROMPTS = {
