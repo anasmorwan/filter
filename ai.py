@@ -92,9 +92,27 @@ def generate_ai_response(action, messages):
 
 
 
+prompt = f"""
+...
+[CURRENT CONTEXT]
+Urgent Questions to answer now: 
+{urgent_text if u_questions else "None"}
+
+[SYSTEM STATUS]
+Pending Curiosity Questions (to be answered at the end): {d_count}
+
+[LECTURER INSTRUCTION]
+- If there are Urgent Questions, integrate their answers into your explanation.
+- If 'Pending Curiosity Questions' > 0, mention once: "I've received your deep questions and saved them for our Q&A at the end!"
+"""
+
+
 def build_prompt(action, context_messages):
     session = get_session_info()
     mode = session.get("mode", "conversation")
+    # نحصل على الأعداد من السيشن
+
+
     
     
     # --- جلب البيانات المشتركة ---
@@ -107,6 +125,11 @@ def build_prompt(action, context_messages):
         chunks = session.get("lecture_chunks", [])
         idx = session.get("current_chunk_index", 0)
         current_material = chunks[idx] if idx < len(chunks) else "End of material."
+        u_questions = session.get("urgent_questions", [])
+        d_count = len(session.get("deferred_questions", []))
+        # نرسل النصوص الكاملة للأسئلة العاجلة فقط
+        urgent_text = "\n".join([m['text'] for m in u_questions])
+
         
         
         # 🎯 السحر هنا: حقن الأهداف فقط في بداية المحاضرة
@@ -134,6 +157,10 @@ def build_prompt(action, context_messages):
 {capabilities}
 {goals_context}
 {progress_context}
+
+Urgent Questions to answer now: 
+{urgent_text if u_questions else "None"}
+
 
 [LECTURE MATERIAL TO FOCUS ON NOW]:
 {current_material}
