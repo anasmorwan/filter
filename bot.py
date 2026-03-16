@@ -77,13 +77,7 @@ async def process_message(user, user_id, text, timestamp):
     add_message(msg) # تضاف للـ Buffer دائماً
     print(f"\n--- NEW MESSAGE --- Stored: {msg['text']}", flush=True)
 
-    # 2. 🚨 التدخل الطارئ (إذا كان المدرس يتحدث والطالب قاطعه بكلمة مفتاحية أو سؤال طويل)
-    if session.get("is_speaking") and should_interrupt(msg, session):
-        # await stop_audio()
-        # session["is_speaking"] = False
-        # print("🛑 AI Interrupted! Answering immediately.", flush=True)
-        await handle_action("ANSWER_INTERRUPTION", [msg])
-        return
+    
 
     # 3. 🎓 منطق وضع المحاضرة (Lecture Mode)
     if mode == "lecture":
@@ -109,6 +103,14 @@ async def process_message(user, user_id, text, timestamp):
                 session["bingo_answer_received"] = True
                 print("🎯 Bingo registered! Heartbeat will catch this instantly.")
                 # لاتخذ أكشن هنا! الـ Heartbeat مبرمج لتصفير عداده (dynamic_limit = 0) والتدخل
+
+        # 2. 🚨 التدخل الطارئ (إذا كان المدرس يتحدث والطالب قاطعه بكلمة مفتاحية أو سؤال طويل)
+        if session.get("is_speaking") and should_interrupt(msg, session):
+            await stop_audio()
+            session["is_speaking"] = False
+            print("🛑 AI Interrupted! Answering immediately.", flush=True)
+            await handle_action("ANSWER_INTERRUPTION", [msg])
+            return
 
 
     # 4. 💬 منطق وضع المحادثة العادي (Conversation Mode)
