@@ -50,8 +50,8 @@ Text:
 """
 capabilities = """
     - [ENABLED] Answer questions during slide transitions.
-    - [ENABLED] Stop speaking if a student is confused (Interrupt mode).
-    - [ENABLED] Final Quiz to test your knowledge.
+    - [ENABLED] Stop speaking if a student is confused.
+    - [ENABLED] Final Quiz to test your knowledge from the objective of the lecture.
     """
 
 
@@ -67,7 +67,7 @@ ACTION_PROMPTS = {
     - Warmly welcome the students.
     - Briefly introduce today's topic based on the [LECTURE MATERIAL].
     - Present the lecture title and the learning objectives in a structured, exciting way.
-    - INSTRUCTION: Summarize the value of the topic, Transition smoothly to the first slide (which will be sent after this message) and encourage them to ask in the lecture.
+    - INSTRUCTION: Summarize the value of the topic, Transition smoothly to the first slide (which will be sent after this message) and encourage them to ask in the lecture.slightly refer to your capabilities, one of it or all, but not in long details
     - TONE: high-energy, Inspirational, Academic, but clear.
     """,
 
@@ -84,6 +84,7 @@ ACTION_PROMPTS = {
     - VARIETY RULE: End your explanation with a UNIQUE, natural spoken check-in. Do NOT repeat phrases from previous turns.
     - CHECK-IN STYLE: Use varied methods to check understanding (e.g., asking for a thumbs up, a quick opinion, or a confirmation of clarity).
     - TONE: Charismatic and fluid, NOT robotic.
+    - you are allowed to tell the student the progress in [PROGRESS TRACKING] jn quick aside if it is more than 30% but not everytime
     """,
   
     "PRAISE_AND_CONTINUE": """
