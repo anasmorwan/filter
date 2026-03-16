@@ -2,15 +2,16 @@ import time
 
 
 
-# دالة جديدة لبدء المحاضرة
-def start_lecture_session(extracted_chunks, full_text):
+
+# 3. تحويل بدء المحاضرة إلى دالة Async لدعم تلخيص الـ AI
+async def start_lecture_session(extracted_chunks, full_text):
     from ai import generate_global_summary
     
     session["active"] = True
     session["mode"] = "lecture"
     session["current_stage"] = "INTRO"
     session["current_chunk_index"] = 0
-    goals_summary = generate_global_summary(full_text)
+    goals_summary = await generate_global_summary(full_text)
     session["lecture_goals"] = goals_summary
 
     
@@ -49,12 +50,14 @@ def move_to_next_stage():
 
 
 session = {
+    "urgent_questions": [],
+    "deferred_questions": [],
     "lecture_goals": [],
     "Bingo_Keywords": [],
     "bingo_answer_received": False,
     "voice_name": "en-US-GuyNeural",
     "chat_history": [], # 👈 هذه هي ذاكرة السياق القصيرة
-    "is_speaking": True,
+    "is_speaking": False,
     "priority_keywords": [],
     "waiting_for_answer": False,
     "pending_questions": [],
@@ -117,7 +120,7 @@ def stop_session():
     from documents_handler import clear_old_assets
     # تنظيف شامل لكل بيانات المحاضرة والمود
     session.update({
-        "is_active": False,
+        "active": False,
         "mode": "conversation", # العودة للوضع الافتراضي
         "lecture_chunks": [],
         "current_chunk_index": 0,
@@ -126,7 +129,10 @@ def stop_session():
         "waiting_for_answer": False,
         "pending_questions": []
     })
-    clear_old_assets()
+    try:
+        clear_old_assets()
+    except:
+        pass
     print("🧹 Session data cleared and reset to conversation mode.")
 
 
