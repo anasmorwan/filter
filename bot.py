@@ -159,7 +159,7 @@ async def handle_action(action, messages):
 
 
 
-
+    
 async def handle_lecture_action(action, session, understanding, ai_data=None):
     
     response_text = ai_data.get("response_text", "Error generating response.")
@@ -169,14 +169,14 @@ async def handle_lecture_action(action, session, understanding, ai_data=None):
     # 1. تحديث الفهرس (Index) أولاً قبل أي شيء بناءً على الأكشن
     if action == "EVALUATE_AND_CONTINUE" and understanding != "poor":
         session["current_chunk_index"] += 1
-    elif action in ["TEACH_NEXT_CHUNK", "ANSWER_AND_TEACH", "ANSWER_AND_CONTINUE", "INTRODUCE_LECTURE"]: # 👈 تمت إضافة الأكشن الجديد هنا ليزيد رقم الشريحة
+    elif action in ["TEACH_NEXT_CHUNK", "ANSWER_AND_TEACH", "ANSWER_AND_CONTINUE"]: # 👈 تمت إضافة الأكشن الجديد هنا ليزيد رقم الشريحة
         session["current_chunk_index"] += 1
 
 
     current_index = session.get("current_chunk_index", 0)
 
     # 2. منطق إرسال الصور
-    transition_actions = ["INTRODUCE_LECTURE", "TEACH_NEXT_CHUNK", "EVALUATE_AND_CONTINUE", "ANSWER_AND_CONTINUE", " ANSWER_AND_TEACH"]
+    transition_actions = ["TEACH_NEXT_CHUNK", "EVALUATE_AND_CONTINUE", "ANSWER_AND_CONTINUE", " ANSWER_AND_TEACH", "INTRODUCE_LECTURE"]
     
     if action in transition_actions:
         if current_index < len(chunks):
