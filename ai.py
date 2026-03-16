@@ -1,5 +1,5 @@
 from groq import Groq
-from prompts import TEACHER_SYSTEM_PROMPT, ACTION_PROMPTS, LECTURER_SYSTEM_PROMPT, JSON_SYSTEM_PROMPT, LEARNING_OBJECTIVES_PROMPT
+from prompts import TEACHER_SYSTEM_PROMPT, ACTION_PROMPTS, LECTURER_SYSTEM_PROMPT, JSON_SYSTEM_PROMPT, LEARNING_OBJECTIVES_PROMPT, capabilities
 import os
 from session import session, get_session_info, get_chat_history
 import json
@@ -90,6 +90,8 @@ def generate_ai_response(action, messages):
         }
 
 
+
+
 def build_prompt(action, context_messages):
     session = get_session_info()
     mode = session.get("mode", "conversation")
@@ -128,6 +130,8 @@ def build_prompt(action, context_messages):
         prompt = f"""
 {JSON_SYSTEM_PROMPT}
 {LECTURER_SYSTEM_PROMPT}
+[SYSTEM CAPABILITIES - WHAT YOU CAN DO]:
+{capabilities}
 {goals_context}
 {progress_context}
 
