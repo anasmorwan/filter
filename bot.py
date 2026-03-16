@@ -313,6 +313,7 @@ async def heartbeat_loop():
 
             # --- فحص تجاوز الحد ---
             if silence_time >= dynamic_limit:
+                mode = session.get("mode", "conversation")
                 messages = pop_window_messages()
                 
                 if messages:
