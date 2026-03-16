@@ -15,7 +15,7 @@ import logging
 
 
 # تهيئة العميل باستخدام مفتاح API الخاص بـ Groq
-client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
+# client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
 GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
 COHERE_API_KEY = os.getenv("COHERE_API_KEY")
