@@ -90,11 +90,10 @@ def generate_ai_response(action, messages):
         }
 
 
-
-
 def build_prompt(action, context_messages):
     session = get_session_info()
     mode = session.get("mode", "conversation")
+    
     
     # --- جلب البيانات المشتركة ---
     full_conversation = get_chat_history()
@@ -107,16 +106,30 @@ def build_prompt(action, context_messages):
         idx = session.get("current_chunk_index", 0)
         current_material = chunks[idx] if idx < len(chunks) else "End of material."
         
+        
         # 🎯 السحر هنا: حقن الأهداف فقط في بداية المحاضرة
         goals_context = ""
         if action == "INTRODUCE_LECTURE":
             goals = session.get("lecture_goals", "No goals defined.")
             goals_context = f"\n[GLOBAL LECTURE GOALS & OBJECTIVES]:\n{goals}\n"
+
+        progress_context = ""
+        if action != "INTRODUCE_LECTURE" and total_chunks > 0:
+            # نحسب رقم الشريحة الحالية والقطع المتبقية
+            current_slide_num = idx + 1
+            remaining = total_chunks - current_slide_num
+            progress_context = f"""
+            [PROGRESS TRACKING]:
+            - Current Slide: {current_slide_num} of {total_chunks}
+            - Remaining Slides: {remaining}
+            - Completion: {int((current_slide_num/total_chunks)*100)}%
+            """
         
         prompt = f"""
 {JSON_SYSTEM_PROMPT}
 {LECTURER_SYSTEM_PROMPT}
 {goals_context}
+{progress_context}
 
 [LECTURE MATERIAL TO FOCUS ON NOW]:
 {current_material}
