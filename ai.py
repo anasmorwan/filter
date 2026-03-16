@@ -135,14 +135,14 @@ def build_prompt(action, context_messages):
             - Remaining Slides: {remaining}
             - Completion: {int((current_slide_num/total_chunks)*100)}%
             """
+        questions_formatted = ""
+
         if action == "FINAL_Q_AND_A":
             deferred_qs = session.get("deferred_questions", [])
-        
-            # تحويل قائمة الأسئلة إلى نص منسق للـ AI
-            questions_formatted = ""
-            for i, q in enumerate(deferred_qs, 1):
-                questions_formatted += f"{i}. Student ({q['user']}): {q['text']}\n"
-
+            questions_formatted = "\n".join(
+                f"{i}. Student ({q['user']}): {q['text']}"
+                for i, q in enumerate(deferred_qs, 1)
+            )
         
         prompt = f"""
 {JSON_SYSTEM_PROMPT}
@@ -159,7 +159,7 @@ Urgent Questions to answer now:
 {urgent_text if u_questions else "None"}
 
 {"STUDENT QUESTIONS:" if questions_formatted else ""}.
-{questions_formatted if action == "FINAL_Q_AND_A" else ""}
+
 
 [LECTURE MATERIAL TO FOCUS ON NOW]:
 {current_material}
