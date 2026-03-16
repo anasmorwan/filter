@@ -44,10 +44,9 @@ def should_process_window():
     
 def pop_window_messages():
     global last_processing_time
-    with _queue_lock:
-        messages = list(message_queue)
-        message_queue.clear()
-        last_processing_time = time.time()
+    messages = list(message_queue)
+    message_queue.clear()
+    last_processing_time = time.time()
     return messages
 
 def add_message(msg):
