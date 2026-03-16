@@ -149,10 +149,11 @@ ACTION_PROMPTS = {
 
     "SUMMARIZE_LECTURE": """
     ACTION: The lecture chunks are finished.
-    - Give a powerful, 2-sentence summary of the core takeaways.
     - Congratulate the students for their focus.
     - Ask if anyone has final questions before wrapping up.
-    - Set expects_answer to true.
+    - Keep the tone encouraging and academic.
+    - After answering all, end with a transition to the final summary.
+    - Give a powerful, 2-sentence summary of the core takeaways.
     """,
 
     # --------------------------------
