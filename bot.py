@@ -79,9 +79,9 @@ async def process_message(user, user_id, text, timestamp):
 
     # 2. 🚨 التدخل الطارئ (إذا كان المدرس يتحدث والطالب قاطعه بكلمة مفتاحية أو سؤال طويل)
     if session.get("is_speaking") and should_interrupt(msg, session):
-        await stop_audio()
-        session["is_speaking"] = False
-        print("🛑 AI Interrupted! Answering immediately.", flush=True)
+        # await stop_audio()
+        # session["is_speaking"] = False
+        # print("🛑 AI Interrupted! Answering immediately.", flush=True)
         await handle_action("ANSWER_INTERRUPTION", [msg])
         return
 
