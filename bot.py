@@ -115,12 +115,12 @@ async def process_message(user, user_id, text, timestamp):
 
     # 4. 💬 منطق وضع المحادثة العادي (Conversation Mode)
     # هنا نحتفظ بمنطق النافذة القديم لأننا نريد تفاعلاً سريعاً
-    if should_process_window():
-        messages = pop_window_messages()
-        if messages:
-            action = decide_next_action(messages)
-            if action != "WAIT":
-                await handle_action(action, messages)
+        if should_process_window():
+            messages = pop_window_messages()
+            if messages:
+                action = decide_next_action(messages)
+                if action != "WAIT":
+                    await handle_action(action, messages)
 
 
 
@@ -288,7 +288,7 @@ async def heartbeat_loop():
             silence_time = get_silence_duration()
             
             # --- تحديد Limit الافتراضي بناءً على حالة الجلسة ---
-            dynamic_limit = 20 # القيمة الأساسية للجروبات الكبيرة
+            dynamic_limit = 10 # القيمة الأساسية للجروبات الكبيرة
             
             
             if mode == "lecture":
@@ -319,13 +319,14 @@ async def heartbeat_loop():
                 messages = pop_window_messages()
                 
                 if messages:
-                    # 🚨 إذا وجدت رسائل، الأولوية للتقييم وليس للشرح الجديد
-                    print(f"💓 [HEARTBEAT] Evaluating {len(messages)} messages...")
-                    action = decide_next_action(messages)
-                    # إذا محرك القرار أخطأ وأعطى TEACH، نصلحه يدوياً هنا
-                    if action == "TEACH_NEXT_CHUNK": 
-                        action = "EVALUATE_STUDENT_ANSWERS"
-                    await handle_action(action, messages)
+                    if mode == " lecture":
+                        # 🚨 إذا وجدت رسائل، الأولوية للتقييم وليس للشرح الجديد
+                        print(f"💓 [HEARTBEAT] Evaluating {len(messages)} messages...")
+                        action = decide_next_action(messages)
+                        # إذا محرك القرار أخطأ وأعطى TEACH، نصلحه يدوياً هنا
+                        if action == "TEACH_NEXT_CHUNK": 
+                            action = "EVALUATE_STUDENT_ANSWERS"
+                        await handle_action(action, messages)
                     
                 else:
                     if mode == "lecture":
@@ -333,7 +334,7 @@ async def heartbeat_loop():
                         # بل اجعله يجيب وينتقل للشريحة التالية
                         if session.get("waiting_for_answer"):
                             print("💓 [HEARTBEAT] Students silent. AI will provide answer and MOVE ON.")
-                            await handle_action("EVALUATE_AND_CONTINUE", [])
+                            await handle_action("ANSWER_AND_CONTINUE", [])
                         else:
                             print("💓 [HEARTBEAT] Continuing lecture flow...")
                             await handle_action("TEACH_NEXT_CHUNK", [])
