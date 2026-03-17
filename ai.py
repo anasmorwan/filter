@@ -140,29 +140,6 @@ def generate_ai_response(action, messages):
             "most_accurate_answers": "none"
         }
 
-
-
-
-# دالة جديدة لتلخيص المستند بالكامل
-def generate_global_summary(full_text):  
-    prompt = LEARNING_OBJECTIVES_PROMPT.format(
-    text=full_text[:4000]
-    )
-    # استدعاء الـ AI هنا لإنتاج الملخص
-    summary_data = call_ai(prompt) 
-    return summary_data
-
-
-
-
-
-
-
-
-
-
-
-
 # --- الدالة الموحدة لتوليد الردود ---
 
 def generate_smart_response(prompt: str) -> str:
@@ -271,6 +248,17 @@ def generate_smart_response(prompt: str) -> str:
     # 🚫 All models failed
     logging.error("❌ All API providers failed. Returning empty string.")
     return ""
+
+
+# دالة جديدة لتلخيص المستند بالكامل
+def generate_global_summary(full_text):  
+    prompt = LEARNING_OBJECTIVES_PROMPT.format(
+    text=full_text[:4000]
+    )
+    # استدعاء الـ AI هنا لإنتاج الملخص
+    summary_data = call_ai(prompt) 
+    return summary_data
+
 
 
 
