@@ -103,6 +103,7 @@ session = {
 }
 
 def start_session(topic, difficulty):
+    session["mode"] = "conversation"
     session["active"] = True
     session["topic"] = topic
     session["difficulty"] = difficulty
