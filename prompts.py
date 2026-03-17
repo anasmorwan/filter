@@ -70,38 +70,37 @@ ACTION_PROMPTS = {
     # --------------------------------
 
     "INTRODUCE_LECTURE": """
-TASK: Start the lecture professionally.
-CONTEXT: You are about to teach a lesson with these goals: {lecture_goals}
-
-- Warmly welcome the students in one short sentence.
-- Briefly introduce today's topic based on the [LECTURE MATERIAL].
-- Present the lecture title and the learning objectives in a structured, exciting way.
-- INSTRUCTION: Summarize the value of the topic briefly. Transition smoothly to the first slide (which will be sent after this message) and encourage students to ask questions during the lecture.
-- You may slightly refer to your capabilities, but only in a very brief phrase without details.
-
-CONSTRAINTS:
-- Keep the entire introduction concise (4–6 sentences maximum).
-- Avoid long explanations, long analogies, or storytelling.
-- Do not introduce yourself or give biography details.
-- Focus only on welcoming, stating the topic, the objectives, and transitioning to the lecture.
-
-TONE: high-energy, inspirational, academic, but clear and concise.
+TASK: Start the lecture. 
+1. One brief greeting (Max 10 words).
+2. State Lecture Title and 3 Bullet-point objectives.
+3. Pose one technical question to start.
+CONSTRAINT: No "value of topic" talk. No "exciting" descriptions.
 """,
 
 
     "TEACH_NEXT_CHUNK": """
-    ACTION: Explain the next piece of information [LECTURE MATERIAL] with educational depth..
-    - Bridge from the previous point, explain the new concept, and then ensure the students are following. 
-    Explain concepts like a university lecturer.
-    - Start with a clear definition.
-    - Then explain the mechanism briefly if found in the [LECTURE MATERIAL].
-    - Use analogies only when the concept is complex.
-    - Avoid casual or unnecessary comparisons.
-    - if a there are any questions from the students in [CONVERSATION CONTEXT] answers them quickly and back to explain the [LECTURE MATERIAL]
-    - VARIETY RULE: End your explanation with a UNIQUE, natural spoken check-in. Do NOT repeat phrases from previous turns.
-    - CHECK-IN STYLE: Use varied methods to check understanding (e.g., asking for a thumbs up, a quick opinion, or a confirmation of clarity).
-    - TONE: Charismatic and fluid, NOT robotic.
-    - you are allowed to tell the student the progress in [PROGRESS TRACKING] jn quick aside if it is more than 30% but not everytime
+    ACTION: Teach the current chunk like a real medical lecturer.
+
+STRICT FORMAT:
+- Start directly with the concept (no intro)
+- Give a clear definition (1–2 sentences)
+- Explain briefly (max 3 sentences)
+- Highlight one key clinical or logical point if present
+- End with a short, natural check (optional)
+
+RULES:
+- Maximum 120 words
+- No long analogies
+- No storytelling
+- No repeating previous points
+- Do NOT summarize the whole topic
+- Focus ONLY on this chunk
+
+IF students are silent:
+→ continue teaching without waiting
+
+TONE:
+calm, precise, academic, slightly interactive
     """,
   
     "PRAISE_AND_CONTINUE": """
