@@ -139,6 +139,7 @@ async def handle_action(action, messages):
     print(f"\n--- ACTION DECIDED: {action} ---", flush=True)
 
     ai_data = generate_ai_response(action, messages)
+    session["urgent_questions"] = [] # تصفير الأسئلة التي تم إرسالها للمحرك فوراً
     response_text = ai_data.get("response_text", "Error generating response.")
     expects_answer = ai_data.get("expects_answer", False)
     understanding = ai_data["class_understanding"]
