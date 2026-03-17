@@ -165,6 +165,7 @@ def build_prompt(action, context_messages):
         d_count = len(session.get("deferred_questions", []))
         # نرسل النصوص الكاملة للأسئلة العاجلة فقط
         urgent_text = "\n".join([m['text'] for m in u_questions])
+        pending_questions = session.get("pending_questions", [])
         total_chunks = len(chunks)
 
         
@@ -209,7 +210,7 @@ def build_prompt(action, context_messages):
 Urgent Questions to answer now: 
 {urgent_text if u_questions else "None"}
 
-{"STUDENT QUESTIONS:" if questions_formatted else ""}.
+{"STUDENT QUESTIONS:" if questions_formatted or pending_questions else ""}.
 
 
 [LECTURE MATERIAL TO FOCUS ON NOW]:
