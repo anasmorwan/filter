@@ -1,3 +1,11 @@
+from session import get_session_info
+
+session = get_session_info()
+
+
+
+
+
 
 TEACHER_SYSTEM_PROMPT = """
 ROLE: You are a professional, warm, and highly skilled English Teacher. 
@@ -227,3 +235,108 @@ TONE: high-energy, inspirational, academic, but clear and concise.
     - Limit: 10 words. Do not ask a question.
     """
 }
+
+
+
+
+def build_prompt(action, context_messages):
+    session = get_session_info()
+    mode = session.get("mode", "conversation")
+    # نحصل على الأعداد من السيشن
+
+
+    
+    
+    # --- جلب البيانات المشتركة ---
+    full_conversation = get_chat_history()
+    action_prompt = ACTION_PROMPTS.get(action, "")
+    
+    
+    # --- الحالة الأولى: نمط المحاضرة (Lecture Mode) ---
+    if mode == "lecture":
+        chunks = session.get("lecture_chunks", [])
+        idx = session.get("current_chunk_index", 0)
+        current_material = chunks[idx] if idx < len(chunks) else "End of material."
+        u_questions = session.get("urgent_questions", [])
+        d_count = len(session.get("deferred_questions", []))
+        # نرسل النصوص الكاملة للأسئلة العاجلة فقط
+        urgent_text = "\n".join([m['text'] for m in u_questions])
+        pending_questions = session.get("pending_questions", [])
+        total_chunks = len(chunks)
+
+        
+        
+        # 🎯 السحر هنا: حقن الأهداف فقط في بداية المحاضرة
+        goals_context = ""
+        if action == "INTRODUCE_LECTURE":
+            goals = session.get("lecture_goals", "No goals defined.")
+            goals_context = f"\n[GLOBAL LECTURE GOALS & OBJECTIVES]:\n{goals}\n"
+
+        progress_context = ""
+        if action != "INTRODUCE_LECTURE" and total_chunks > 0:
+            # نحسب رقم الشريحة الحالية والقطع المتبقية
+            current_slide_num = idx + 1
+            remaining = total_chunks - current_slide_num
+            progress_context = f"""
+            [PROGRESS TRACKING]:
+            - Current Slide: {current_slide_num} of {total_chunks}
+            - Remaining Slides: {remaining}
+            - Completion: {int((current_slide_num/total_chunks)*100)}%
+            """
+        questions_formatted = ""
+
+        if action == "FINAL_Q_AND_A":
+            deferred_qs = session.get("deferred_questions", [])
+            questions_formatted = "\n".join(
+                f"{i}. Student ({q['user']}): {q['text']}"
+                for i, q in enumerate(deferred_qs, 1)
+            )
+        
+        prompt = f"""
+{JSON_SYSTEM_PROMPT}
+{LECTURER_SYSTEM_PROMPT}
+
+[SYSTEM CAPABILITIES - WHAT YOU CAN DO]:
+{capabilities}
+
+
+{goals_context}
+{progress_context}
+
+Urgent Questions to answer now: 
+{urgent_text if u_questions else "None"}
+
+{"STUDENT QUESTIONS:" if questions_formatted or pending_questions else ""}.
+
+
+[LECTURE MATERIAL TO FOCUS ON NOW]:
+{current_material}
+
+[CONVERSATION CONTEXT]:
+{full_conversation}
+
+[YOUR SPECIFIC TASK]:
+{action_prompt}
+
+Instruction: Focus on the 'LECTURE MATERIAL'. If students ask unrelated questions, gently bring them back to the topic after answering briefly.
+
+{"Remember to present the learning goals clearly to the students." if action == "INTRODUCE_LECTURE" else ""}
+"""
+    # --- الحالة الثانية: نمط المحادثة الحرة (القديم) ---
+    else:
+        topic = session.get("topic", "General English")
+        level = session.get("difficulty", "Intermediate")
+        prompt = f"""
+{TEACHER_SYSTEM_PROMPT}
+{JSON_SYSTEM_PROMPT}
+[SESSION CONTEXT]
+- Topic: {topic} | Level: {level}
+
+[HISTORY]
+{full_conversation}
+
+Teacher task: {action_prompt}
+(Follow the context, don't invent names, be natural).
+"""
+
+    return prompt
