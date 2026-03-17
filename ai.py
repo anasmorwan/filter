@@ -11,7 +11,7 @@ import requests
 import cohere
 import traceback
 import logging
-
+import asyncio
 
 
 # تهيئة العميل باستخدام مفتاح API الخاص بـ Groq
@@ -251,13 +251,18 @@ def generate_smart_response(prompt: str) -> str:
 
 
 # دالة جديدة لتلخيص المستند بالكامل
-def generate_global_summary(full_text):  
+async def generate_global_summary(full_text):  
     prompt = LEARNING_OBJECTIVES_PROMPT.format(
     text=full_text[:4000]
     )
     # استدعاء الـ AI هنا لإنتاج الملخص
-    summary_data = call_ai(prompt) 
-    return summary_data
+    try:
+        summary_data = await asyncio.to_thread(call_ai, prompt) 
+        return summary_data
+    except Exception as e:
+        print(f"Error in global summary: {e}")
+        return "Lecture objectives: Understanding the core concepts of this material."
+
 
 
 
