@@ -279,7 +279,6 @@ def build_prompt(action, context_messages):
             [PROGRESS TRACKING]:
             - Current Slide: {current_slide_num} of {total_chunks}
             - Remaining Slides: {remaining}
-            - Completion: {int((current_slide_num/total_chunks)*100)}%
             """
         questions_formatted = ""
 
