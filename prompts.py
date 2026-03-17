@@ -1,6 +1,4 @@
-from session import get_session_info
-
-session = get_session_info()
+from session import get_session_info, get_chat_history
 
 
 
