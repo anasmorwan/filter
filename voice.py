@@ -202,3 +202,8 @@ async def start_voice_engine():
     except Exception as e:
         print(f"❌ [CRITICAL] Failed to start Voice Engine: {e}")
         # هنا قد ترغب في إبقاء المهام الأخرى تعمل حتى لو فشل الصوت
+
+
+def get_voice_queue_size():
+    # تعيد عدد العناصر التي يتم تجهيزها أو الجاهزة للبث
+    return text_queue.qsize() + ready_audio_queue.qsize()
