@@ -26,7 +26,7 @@ GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 from google import genai
 from groq import Groq
 import logging
-
+from prompts import LEARNING_OBJECTIVES_PROMPT
 # 1️⃣ Gemini
 gemini_model = None
 if GEMINI_API_KEY:
