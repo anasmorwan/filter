@@ -551,28 +551,30 @@ async def handle_lecture_file(client, message):
 
     waiting_for_lecture = False
 
+    # 1. رسالة استجابة فورية تمنع التجميد
+    status_msg = await message.reply_text("📥 File received! Extracting text (this might take a moment)...")
     file_path = await message.download()
 
     try:
-        full_text, extracted_text = extract_text_from_file(file_path)
-        # داخل دالة handle_lecture_file
-        await start_lecture_session(extracted_text, full_text) # 🟢 أضف await هنا
+        # 2. تشغيل استخراج النص الثقيل في مسار خلفي لكي لا يتجمد البوت
+        full_text, extracted_text = await asyncio.to_thread(extract_text_from_file, file_path)
+        
+        await status_msg.edit_text("⏳ Text extracted! Generating lesson plan objectives...")
 
-        await message.reply_text("Lecture loaded successfully! Starting proactive delivery...")
+        # 3. بدء الجلسة (تلخيص الـ AI هنا يعمل كـ async الآن)
+        await start_lecture_session(extracted_text, full_text) 
+
+        await status_msg.edit_text("✅ Lecture loaded successfully! Starting proactive delivery...")
         await handle_action("INTRODUCE_LECTURE", [])
 
-    except ValueError as e:
-        await message.reply_text(
-            "❌ Could not extract enough text from the file.\n"
-            "The file may be scanned and requires OCR."
-        )
+    except Exception as e:
+        # 🚨 اصطياد جميع الأخطاء (Exception) وليس فقط ValueError لكي نعرف أين الخلل إذا حدث
+        print(f"❌ ERROR in handle_lecture_file: {e}")
+        await message.reply_text(f"❌ Error loading lecture: {str(e)}")
         
     finally:
-        # 🗑️ حذف الملف من السيرفر بعد المعالجة لتوفير المساحة
         if os.path.exists(file_path):
             os.remove(file_path)
-
-        return
 
 
     
