@@ -32,9 +32,15 @@ stop_playback_event = asyncio.Event()
 # -------------------------
 # 1. مصنع الصوت الخلفي (يعمل باستمرار)
 # -------------------------
+# 2. تعديل المصنع (Worker)
 async def tts_preparer_worker():
     while True:
-        text = await text_queue.get()
+        item = await text_queue.get()
+        # استخراج البيانات
+        text = item["text"]
+        image_path = item["image_path"]
+        chunk_index = item["chunk_index"]
+
         temp_audio_path = f"/tmp/buf_{uuid.uuid4().hex}.mp3"
         voice_name = get_session_voice_name() or "en-US-JennyNeural"
         
@@ -43,7 +49,6 @@ async def tts_preparer_worker():
             communicate = edge_tts.Communicate(text, voice_name)
             await communicate.save(temp_audio_path)
             
-            # جلب المدة
             duration = 5.0
             try:
                 proc = await asyncio.create_subprocess_shell(
@@ -54,10 +59,16 @@ async def tts_preparer_worker():
                 duration = float(stdout.decode().strip())
             except: pass
 
-            await ready_audio_queue.put({"file": temp_audio_path, "duration": duration, "text": text})
+            # نمرر الصورة إلى طابور الجاهزية
+            await ready_audio_queue.put({
+                "file": temp_audio_path, 
+                "duration": duration, 
+                "text": text,
+                "image_path": image_path,
+                "chunk_index": chunk_index
+            })
             print(f"✅ [BUFFER] Audio Ready ({duration:.1f}s)")
             
-            # تشغيل محرك البث إذا كان نائماً
             if not is_playing:
                 asyncio.create_task(play_next())
                 
@@ -69,6 +80,57 @@ async def tts_preparer_worker():
 # -------------------------
 # 2. محرك البث المباشر (المتصل)
 # -------------------------
+# 3. التعديل السحري في محرك البث (play_next)
+async def play_next():
+    global is_playing
+    if ready_audio_queue.empty() or is_playing: return
+
+    is_playing = True
+    session["is_speaking"] = True
+    stop_playback_event.clear() 
+
+    try:
+        while not ready_audio_queue.empty():
+            if stop_playback_event.is_set(): 
+                break
+            
+            audio_data = await ready_audio_queue.get()
+            audio_path = audio_data["file"]
+            duration = audio_data["duration"]
+            
+            # 🖼️ 🌟 هنا السر: نرسل الصورة للجروب في اللحظة التي يبدأ فيها الصوت تماماً!
+            if audio_data.get("image_path") and os.path.exists(audio_data["image_path"]):
+                idx = audio_data.get("chunk_index", 0)
+                print(f"🖼️ [VOICE] Audio starting! Sending image for chunk {idx}...")
+                try:
+                    # نستخدم حساب المعلم (userbot) لرمي الصورة في الجروب بسلاسة
+                    await userbot.send_photo(
+                        chat_id=VOICE_CHAT_ID, 
+                        photo=audio_data["image_path"],
+                        caption=f"📄 شريحة رقم {idx + 1}"
+                    )
+                except Exception as e:
+                    print(f"❌ [VOICE] Error sending photo: {e}")
+
+            print(f"🔊 [PLAYING] Streaming: {audio_data['text'][:30]}...")
+            
+            try:
+                await pytgcalls.play(VOICE_CHAT_ID, MediaStream(audio_path))
+                await asyncio.wait_for(stop_playback_event.wait(), timeout=duration + 0.3)
+            except asyncio.TimeoutError:
+                pass 
+            except Exception as e:
+                print(f"❌ [PYTGCALLS PLAY ERROR]: {e}")
+                await asyncio.sleep(duration)
+            
+            if os.path.exists(audio_path): os.remove(audio_path)
+            ready_audio_queue.task_done()
+            
+    finally:
+        is_playing = False
+        session["is_speaking"] = False
+        print("🔈 [PLAYBACK ENDED] Ready for next chunk.")
+ """
 async def play_next():
     global is_playing
     if ready_audio_queue.empty() or is_playing: return
@@ -114,7 +176,7 @@ async def play_next():
         is_playing = False
         session["is_speaking"] = False
         print("🔈 [PLAYBACK ENDED] Ready for next chunk.")
-
+"""
 """
 async def play_next():
     global is_playing
@@ -153,11 +215,15 @@ async def play_next():
 # -------------------------
 # 3. دوال التحكم المتاحة لـ bot.py
 # -------------------------
-async def broadcast_ai_response(response_text):
-    """هذه الدالة الآن ترمي النص للمصنع وتعود فوراً بدون تعطيل البوت"""
+# 1. تعديل الاستقبال
+async def broadcast_ai_response(response_text, image_path=None, chunk_index=None):
     session["is_speaking"] = True
-    await text_queue.put(response_text)
-
+    # نضع قاموساً يحتوي على كل البيانات بدلاً من النص فقط
+    await text_queue.put({
+        "text": response_text,
+        "image_path": image_path,
+        "chunk_index": chunk_index
+    })
 def create_silence(filepath="/tmp/silence.mp3"):
     if not os.path.exists(filepath):
         os.system(f'ffmpeg -f lavfi -i anullsrc=r=48000:cl=stereo -t 0.5 -acodec libmp3lame {filepath} -y -loglevel quiet')
@@ -207,3 +273,4 @@ async def start_voice_engine():
 def get_voice_queue_size():
     # تعيد عدد العناصر التي يتم تجهيزها أو الجاهزة للبث
     return text_queue.qsize() + ready_audio_queue.qsize()
+
