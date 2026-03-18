@@ -160,8 +160,6 @@ async def handle_action(action, messages):
         await handle_conversation_action(action, session, understanding, ai_data)
 
 
-
-
     
 async def handle_lecture_action(action, session, understanding, ai_data=None):
     
@@ -176,25 +174,12 @@ async def handle_lecture_action(action, session, understanding, ai_data=None):
     # 2. منطق إرسال الصور
     transition_actions = ["TEACH_NEXT_CHUNK", "EVALUATE_AND_CONTINUE", "ANSWER_AND_CONTINUE", "ANSWER_AND_TEACH", "INTRODUCE_LECTURE"]
     
+    # 1. جلب مسار الصورة (بدون إرسالها الآن)
+    image_path = None
     if action in transition_actions:
         if current_index < len(chunks):
-            current_chunk = chunks[current_index]
-            
-            # 🖼️ إرسال الصورة للطلاب
-            if current_chunk.get("image_path") and os.path.exists(current_chunk["image_path"]):
-                print(f"🖼️ Sending image for chunk {current_index}...")
-                if not bot_app.is_connected:
-                    await bot_app.start()
-
-                try:
-                    await bot_app.send_photo(
-                        chat_id=CHAT_ID, 
-                        photo=current_chunk["image_path"],
-                        caption=f"📄 شريحة رقم {current_index + 1}"
-                   )
-                except Exception as e:
-                    print(f"❌ Error sending photo: {e}")
-
+            image_path = chunks[current_index].get("image_path")
+        
             # تصفير الأعلام 
             session["waiting_for_answer"] = False
             session["current_question"] = None
@@ -215,7 +200,7 @@ async def handle_lecture_action(action, session, understanding, ai_data=None):
     add_to_chat_history("Teacher (You)", response_text) 
     
     # 🟢 هنا نرسل النص، وسيعود الكود فوراً دون انتظار بينما البوت يتحدث
-    await broadcast_ai_response(response_text)
+    await broadcast_ai_response(response_text, image_path=image_path, chunk_index=current_index)
     
     update_ai_timestamp()
     
