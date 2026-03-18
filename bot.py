@@ -267,38 +267,6 @@ async def handle_conversation_action(action, session, understanding, ai_data):
     print(f"\n--- AI RESPONSE ---\n{response_text}", flush=True)
     
 
-            # --- داخل heartbeat_loop (قبل حساب الـ silence_time) ---
-            
-            if not session_is_active():
-                continue
-
-            # 🌟 المنطق الجديد: متى نسمح بالتوليد المسبق (Preload) أثناء التحدث؟
-            if session.get("is_speaking"):
-                from voice import get_voice_queue_size
-                
-                allow_ai_preload = False
-                
-                # شرط 1: لا نجهز شيئاً إذا كنا ننتظر إجابة من الطلاب (لأننا لا نعرف ماذا سيقولون)
-                if session.get("waiting_for_answer"):
-                    allow_ai_preload = False
-                
-                # شرط 2: إذا تجمع 3 أسئلة أو أكثر أثناء حديث المحاضر، نجهز الإجابة فوراً
-                elif sum(1 for m in message_queue if m['type'] == 'question') >= 3:
-                    allow_ai_preload = True
-                    
-                # شرط 3: إذا كانوا صامتين (يستمعون)، والطابور المستقبلي فارغ تماماً، نجهز الشريحة القادمة
-                elif get_voice_queue_size() == 0:
-                    allow_ai_preload = True
-
-                # إذا لم تتحقق شروط التجهيز المسبق، نوقف المحرك كالمعتاد
-                if not allow_ai_preload:
-                    continue
-                else:
-                    print("⚡ [PRELOAD] AI is preparing the next response while speaking!", flush=True)
-
-            silence_time = get_silence_duration()
-            # ... (باقي الكود لتحديد الـ dynamic_limit يعمل كما هو) ...
-
 async def heartbeat_loop():
     await asyncio.sleep(10) 
     print("💓 [HEARTBEAT] System is now ACTIVE and monitoring...", flush=True)
@@ -319,8 +287,30 @@ async def heartbeat_loop():
             if not session_is_active():
                 continue
 
+            # 🌟 المنطق الجديد: متى نسمح بالتوليد المسبق (Preload) أثناء التحدث؟
             if session.get("is_speaking"):
-                continue
+                from voice import get_voice_queue_size
+
+                allow_ai_preload = False
+                if session.get("waiting_for_answer"):
+                    allow_ai_preload = False
+
+                # شرط 2: إذا تجمع 3 أسئلة أو أكثر أثناء حديث المحاضر، نجهز الإجابة فوراً
+                elif sum(1 for m in message_queue if m['type'] == 'question') >= 3:
+                    allow_ai_preload = True
+
+                # شرط 3: إذا كانوا صامتين (يستمعون)، والطابور المستقبلي فارغ تماماً، نجهز الشريحة القادمة
+                elif get_voice_queue_size() == 0:
+                    allow_ai_preload = True
+
+                # إذا لم تتحقق شروط التجهيز المسبق، نوقف المحرك كالمعتاد
+                if not allow_ai_preload:
+                    continue
+                else:
+                    print("⚡ [PRELOAD] AI is preparing the next response while speaking!", flush=True)
+
+                
+                
 
             silence_time = get_silence_duration()
             
