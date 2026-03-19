@@ -280,8 +280,11 @@ async def heartbeat_loop():
                 if session.get("waiting_for_answer"):
                     allow_ai_preload = False
 
+                from buffer import get_recent_messages
+                current_messages = get_recent_messages()
+
                 # شرط 2: إذا تجمع 3 أسئلة أو أكثر أثناء حديث المحاضر، نجهز الإجابة فوراً
-                elif sum(1 for m in message_queue if m['type'] == 'question') >= 3:
+                elif sum(1 for m in current_messages if m['type'] == 'question') >= 3:
                     allow_ai_preload = True
 
                 # شرط 3: إذا كانوا صامتين (يستمعون)، والطابور المستقبلي فارغ تماماً، نجهز الشريحة القادمة
