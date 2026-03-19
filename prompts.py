@@ -258,7 +258,6 @@ CONSTRAINT: No "value of topic" talk. No "exciting" descriptions.
 
 
 
-
 def build_prompt(action, context_messages):
     session = get_session_info()
     mode = session.get("mode", "conversation")
@@ -283,6 +282,10 @@ def build_prompt(action, context_messages):
         urgent_text = "\n".join([m['text'] for m in u_questions])
         pending_questions = session.get("pending_questions", [])
         total_chunks = len(chunks)
+        show_caps = idx == 0 or idx == total_chunks // 2 or idx == total_chunks - 2
+        capabilities_to_send = capabilities if show_caps else "Reference your capabilities only if students seem lost."
+
+
 
         
         
@@ -316,7 +319,7 @@ def build_prompt(action, context_messages):
 {LECTURER_SYSTEM_PROMPT}
 
 [SYSTEM CAPABILITIES - WHAT YOU CAN DO]:
-{capabilities}
+{capabilities_to_send}
 
 
 {goals_context}
