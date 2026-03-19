@@ -102,16 +102,19 @@ async def play_next():
             if audio_data.get("image_path") and os.path.exists(audio_data["image_path"]):
                 idx = audio_data.get("chunk_index", 0)
                 print(f"🖼️ [VOICE] Audio starting! Sending image for chunk {idx}...")
+
                 try:
-                    # نستخدم حساب المعلم (userbot) لرمي الصورة في الجروب بسلاسة
-                    await userbot.send_photo(
-                        chat_id=VOICE_CHAT_ID, 
-                        photo=audio_data["image_path"],
-                        caption=f"📄 شريحة رقم {idx + 1}"
+                    # نضعها داخل create_task لكي تنطلق ولا ننتظرها (Fire and forget)
+                    asyncio.create_task(
+                        userbot.send_photo(
+                            chat_id=VOICE_CHAT_ID, 
+                            photo=audio_data["image_path"],
+                            caption=f"📄 شريحة رقم {idx + 1}"
+                        )
                     )
                 except Exception as e:
-                    print(f"❌ [VOICE] Error sending photo: {e}")
-
+                    print(f"❌ [VOICE] Error scheduling photo task: {e}")
+                    
             print(f"🔊 [PLAYING] Streaming: {audio_data['text'][:30]}...")
             
             try:
