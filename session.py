@@ -108,7 +108,10 @@ def start_session(topic, difficulty):
     session["topic"] = topic
     session["difficulty"] = difficulty
     session["start_time"] = time.time()
-    session["last_ai_message"] = time.time() # نعتبر أن البوت بدأ الآن
+    session["last_ai_message"] = time.time()
+    
+    # 👈 تأكيد مسح الذاكرة عند بدء جلسة جديدة
+    session["chat_history"] = [] 
     
     # تفريغ الإحصائيات للجلسة الجديدة
     session["stats"]["messages_since_last_ai"] = 0
@@ -121,7 +124,7 @@ def start_session(topic, difficulty):
 # داخل session.py
 def stop_session():
     from documents_handler import clear_old_assets
-    # تنظيف شامل لكل بيانات المحاضرة والمود
+    # تنظيف شامل لكل بيانات المحاضرة والمود والذاكرة
     session.update({
         "active": False,
         "mode": "conversation", # العودة للوضع الافتراضي
@@ -130,13 +133,20 @@ def stop_session():
         "lecture_started": False,
         "lecture_goals": None,
         "waiting_for_answer": False,
-        "pending_questions": []
+        "pending_questions": [],
+        "urgent_questions": [],       # 👈 تصفير الأسئلة العاجلة القديمة
+        "deferred_questions": [],     # 👈 تصفير الأسئلة المؤجلة
+        "chat_history": [],           # 👈 (الأهم) مسح ذاكرة المحادثة لكي لا يتذكر المحاضرة
+        "current_question": None,     # 👈 إزالة أي سؤال كان ينتظر إجابته
+        "bingo_answer_received": False
     })
+    
     try:
         clear_old_assets()
     except:
         pass
-    print("🧹 Session data cleared and reset to conversation mode.")
+    print("🧹 Session data, queues, and chat history cleared! Reset to conversation mode.")
+
 
 
 def session_is_active():
