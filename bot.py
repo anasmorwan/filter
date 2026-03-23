@@ -258,6 +258,7 @@ async def heartbeat_loop():
 
     from session import get_silence_duration, get_session_info, session_is_active
     from buffer import pop_window_messages
+    from buffer import get_recent_messages
     
     session = get_session_info()
     mode = session.get("mode", "lecture")
@@ -272,6 +273,10 @@ async def heartbeat_loop():
             if not session_is_active():
                 continue
 
+            
+            current_messages = get_recent_messages()
+
+
             # 🌟 المنطق الجديد: متى نسمح بالتوليد المسبق (Preload) أثناء التحدث؟
             if session.get("is_speaking"):
                 from voice import get_voice_queue_size
@@ -280,11 +285,9 @@ async def heartbeat_loop():
                 if session.get("waiting_for_answer"):
                     allow_ai_preload = False
 
-                from buffer import get_recent_messages
-                current_messages = get_recent_messages()
-
+                
                 # شرط 2: إذا تجمع 3 أسئلة أو أكثر أثناء حديث المحاضر، نجهز الإجابة فوراً
-                if sum(1 for m in current_messages if m['type'] == 'question') >= 3:
+                elif sum(1 for m in current_messages if m['type'] == 'question') >= 3:
                     allow_ai_preload = True
 
                 # شرط 3: إذا كانوا صامتين (يستمعون)، والطابور المستقبلي فارغ تماماً، نجهز الشريحة القادمة
