@@ -40,7 +40,8 @@ def move_to_next_stage():
     return False
 
 
-
+def get_stage_elapsed_minutes():
+    return (time.time() - session["stage_start_time"]) / 60
 
 
 
@@ -104,8 +105,12 @@ session = {
     }
 }
 
+
+    
 def start_session(topic, difficulty):
     session["mode"] = "conversation"
+    session["stage_start_time"] = time.time()
+    session["current_stage_index"] = 0
     session["persona"] = "coach"
     session["active"] = True
     session["topic"] = topic
