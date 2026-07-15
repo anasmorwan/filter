@@ -12,7 +12,7 @@ from dotenv import load_dotenv # اختياري إذا كنت تستخدم مل�
 
 
 # from queue_manager import check_message_window,  process_message_window
-from session import start_session, stop_session, session_is_active, get_session_info, add_to_chat_history, get_chat_history, start_lecture_session, update_ai_timestamp, change_ai_voice
+from session import start_session, get_current_stage, stop_session, session_is_active, get_session_info, add_to_chat_history, get_chat_history, start_lecture_session, update_ai_timestamp, change_ai_voice
 from filter import should_store_message
 from buffer import add_message, should_process_window, pop_window_messages, get_recent_messages, should_interrupt
 from message_classifier import classify_message
