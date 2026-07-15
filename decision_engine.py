@@ -188,12 +188,26 @@ def decide_lecture_logic(messages, session, stats):
 
 """
 
-
 def decide_conversation_logic(messages, session, stats): # منطقك القديم هنا
-    
-    stage = session.get("stage", "INTRO")
-    conversation_stage = session.get("conversation_stage", "DISCUSSION")
+    from session import get_current_stage, move_to_next_stage, get_stage_elapsed_minutes
 
+    stage = get_current_stage()
+    stage_type = stage["type"]
+    elapsed = get_stage_elapsed_minutes()
+
+    # شرط الانتقال: خلصنا الوقت الأدنى + في تفاعل كافٍ (مش بس وقت)
+    ready_to_advance = elapsed >= stage["min_duration"] and stats["answers_count"] >= 2
+    # صمام أمان: لو المرحلة طالت جداً بدون تفاعل، انتقل بالإجبار (ضعف الوقت الأدنى)
+    force_advance = elapsed >= stage["min_duration"] * 2
+
+    if (ready_to_advance or force_advance) and stage_type != "summary":
+        if move_to_next_stage():
+            stage = get_current_stage()
+            stage_type = stage["type"]
+            print(f"🧠 -> Stage advanced to {stage['name']}")
+    
+    
+    
     session_minutes = get_session_minutes()
 
     now = time.time()
@@ -211,13 +225,27 @@ def decide_conversation_logic(messages, session, stats): # منطقك القدي
     # مراحل الدرس
     # --------------------------------
 
-    if conversation_stage == "INTRO":
-        session["conversation_stage"] = "WARMUP"
+    # الآن اختر الأكشن بناءً على نوع المرحلة
+    if stage_type == "hook":
         return "INTRO_LESSON"
 
-    if conversation_stage == "WARMUP" and stats["answers"] >= 2:
-        session["conversation_stage"] = "DISCUSSION"
+    if stage_type == "game":
+        return decide_game_action(stage["game_type"], stats, session)
 
+    if stage_type == "teaching":
+        if stats["questions"] > 0:
+            return "ANSWER_QUESTION"
+        if stats["answers"] >= 2:
+            return "ASK_FOLLOWUP"
+        return "GENERAL_COMMENT"
+
+    if stage_type == "feedback":
+        return "GIVE_CONFIDENCE_BOOST"   # أكشن جديد تضيفه في prompts.py
+
+    if stage_type == "summary":
+        return "OUTRO_LESSON"
+
+    
     # --------------------------------
     # صمت في الصف
     # --------------------------------
