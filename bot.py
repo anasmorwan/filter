@@ -487,12 +487,8 @@ async def start_cmd(client, message):
     if len(parts) >= 3:
         difficulty = parts[2]
 
-    if len(parts) >= 4:
-        persona = parts[3]
-    else:
-        persona = None
 
-    start_session(topic, difficulty, persona=persona)
+    start_session(topic, difficulty)
     await message.reply_text(f"Session started! Topic: {topic}, Difficulty: {difficulty}")
     
 @bot_app.on_message(filters.command("stopsession") & filters.user(ADMIN_ID) & filters.private)
