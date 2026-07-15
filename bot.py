@@ -354,6 +354,12 @@ async def heartbeat_loop():
                         if action == "TEACH_NEXT_CHUNK": 
                             action = "EVALUATE_STUDENT_ANSWERS"
                         await handle_action(action, messages)
+                        
+                    else:  # 🟢 conversation mode مع رسائل بانتظار التقييم
+                        print(f"💓 [HEARTBEAT] Evaluating {len(messages)} conversation messages...")
+                        action = decide_next_action(messages)
+                        if action != "WAIT":
+                            await handle_action(action, messages)
                     
                 else:
                     if mode == "lecture":
