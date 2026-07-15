@@ -225,6 +225,7 @@ def decide_conversation_logic(messages, session, stats): # منطقك القدي
 
     time_since_ai = now - last_ai
     time_since_ai = max(0, min(time_since_ai, 120))
+    progress = session.get("topic_progress", 0)
 
     if not messages:
         return "WAKE_UP_SESSION"
