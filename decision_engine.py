@@ -124,6 +124,14 @@ def decide_next_action(messages):
 # ---------------------------------------------------------
 # منطق اتخاذ القرار لوضع المحاضرة (The Brain)
 # ---------------------------------------------------------
+def decide_game_action(game_type, stats, session):
+    if game_type == "word_association":
+        return "WORD_ASSOCIATION_TURN"
+    if game_type == "guessing_game":
+        return "GUESSING_GAME_TURN"
+    return "GENERAL_COMMENT"
+
+
 def decide_lecture_logic(messages, session, stats):
     waiting = session.get("waiting_for_answer", False)
     bingo = session.get("bingo_answer_received", False)
@@ -304,11 +312,6 @@ def decide_conversation_logic(messages, session, stats): # منطقك القدي
         session["conversation_stage"] = "SUMMARY"
         return "SUMMARIZE_DISCUSSION"
 
-    if conversation_stage == "SUMMARY":
-        session["stage"] = "WARMUP"
-        session["topic_progress"] = 0
-        session["conversation_stage"] = "DISCUSSION"
-        return "ASK_NEW_TOPIC_QUESTION"
 
     # --------------------------------
     # نهاية الدرس
