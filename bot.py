@@ -307,6 +307,15 @@ async def heartbeat_loop():
             
             # --- تحديد Limit الافتراضي بناءً على حالة الجلسة ---
             dynamic_limit = 10 # القيمة الأساسية للجروبات الكبيرة
+
+            if mode == "conversation":
+                stage = get_current_stage()
+            if stage["type"] == "game":
+                dynamic_limit = 8   # الألعاب توقيتها أسرع
+            elif session.get("waiting_for_answer"):
+                dynamic_limit = 15
+            else:
+                dynamic_limit = 12
             
             
             if mode == "lecture":
