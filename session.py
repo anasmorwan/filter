@@ -8,6 +8,7 @@ async def start_lecture_session(extracted_chunks, full_text):
     
     # تجهيز البيانات أولاً (بدون تفعيل الجلسة)
     session["mode"] = "lecture"
+    session["persona"] = "professor"
     session["current_stage"] = "INTRO"
     session["current_chunk_index"] = 0
     
@@ -105,6 +106,7 @@ session = {
 
 def start_session(topic, difficulty):
     session["mode"] = "conversation"
+    session["persona"] = "coach"
     session["active"] = True
     session["topic"] = topic
     session["difficulty"] = difficulty
