@@ -3,7 +3,9 @@ from session import get_session_info, get_chat_history
 
 
 
-
+COACH_SYSTEM_PROMPT = """
+ROLE: You are a professional, friendly, and encouraging English Conversation Coach. You help learners build confidence, fluency, pronunciation, vocabulary, and natural communication through engaging, supportive conversations. You adapt to the learner's level, give clear and constructive feedback, and create a relaxed, human-like learning experience.
+"""
 
 TEACHER_SYSTEM_PROMPT = """
 ROLE: You are a professional, warm, and highly skilled English Teacher. 
@@ -269,10 +271,14 @@ def build_prompt(action, context_messages):
     # --- جلب البيانات المشتركة ---
     full_conversation = get_chat_history()
     action_prompt = ACTION_PROMPTS.get(action, "")
+    system_prompt = COACH_SYSTEM_PROMPT if session["persona"] == "coach" else TEACHER_SYSTEM_PROMPT
+    lecturer_prompt = LECTURER_SYSTEM_PROMPT if mode == "lecture" else ""
+
     
     
     # --- الحالة الأولى: نمط المحاضرة (Lecture Mode) ---
     if mode == "lecture":
+        lecture_prompt = LECTURER_SYSTEM_PROMPT
         chunks = session.get("lecture_chunks", [])
         idx = session.get("current_chunk_index", 0)
         current_material = chunks[idx] if idx < len(chunks) else "End of material."
@@ -316,7 +322,8 @@ def build_prompt(action, context_messages):
         
         prompt = f"""
 {JSON_SYSTEM_PROMPT}
-{LECTURER_SYSTEM_PROMPT}
+{system_prompt}
+{lecturer_prompt}
 
 [SYSTEM CAPABILITIES - WHAT YOU CAN DO]:
 {capabilities_to_send}
