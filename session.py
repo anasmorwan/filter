@@ -64,6 +64,7 @@ session = {
     "waiting_for_answer": False,
     "pending_questions": [],
     "mode": "conversation",  # 👈 إما 'conversation' أو 'lecture'
+    "persona": "coach",
     "active": False,
     "start_time": None,
     "topic": None,
