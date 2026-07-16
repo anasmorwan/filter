@@ -253,138 +253,94 @@ async def handle_conversation_action(action, session, understanding, ai_data):
     
 
 async def heartbeat_loop():
-    await asyncio.sleep(10) 
+    await asyncio.sleep(10)
     print("💓 [HEARTBEAT] System is now ACTIVE and monitoring...", flush=True)
 
-    from session import get_silence_duration, get_session_info, session_is_active
-    from buffer import pop_window_messages
-    from buffer import get_recent_messages
-    
-    session = get_session_info()
-    mode = session.get("mode", "lecture")
+    from session import get_silence_duration, get_session_info, session_is_active, get_current_stage
+    from buffer import pop_window_messages, get_recent_messages
 
     while True:
         try:
-            await asyncio.sleep(2) # 💡 تقليل وقت الفحص لـ 2 ثانية ليكون أسرع في الاستجابة للـ Bingo
-            session = get_session_info() 
+            await asyncio.sleep(2)
+            session = get_session_info()
             mode = session.get("mode", "conversation")
-            
-            
+
             if not session_is_active():
                 continue
 
-            
             current_messages = get_recent_messages()
 
-
-            # 🌟 المنطق الجديد: متى نسمح بالتوليد المسبق (Preload) أثناء التحدث؟
             if session.get("is_speaking"):
                 from voice import get_voice_queue_size
-
                 allow_ai_preload = False
                 if session.get("waiting_for_answer"):
                     allow_ai_preload = False
-
-                
-                # شرط 2: إذا تجمع 3 أسئلة أو أكثر أثناء حديث المحاضر، نجهز الإجابة فوراً
                 elif sum(1 for m in current_messages if m['type'] == 'question') >= 3:
                     allow_ai_preload = True
-
-                # شرط 3: إذا كانوا صامتين (يستمعون)، والطابور المستقبلي فارغ تماماً، نجهز الشريحة القادمة
                 elif get_voice_queue_size() == 0:
                     allow_ai_preload = True
 
-                # إذا لم تتحقق شروط التجهيز المسبق، نوقف المحرك كالمعتاد
                 if not allow_ai_preload:
                     continue
                 else:
                     print("⚡ [PRELOAD] AI is preparing the next response while speaking!", flush=True)
 
-                
-                
-
             silence_time = get_silence_duration()
-            
-            # --- تحديد Limit الافتراضي بناءً على حالة الجلسة ---
-            dynamic_limit = 10 # القيمة الأساسية للجروبات الكبيرة
+            dynamic_limit = 10
 
-            if mode == "conversation":
-                stage = get_current_stage()
-            if stage["type"] == "game":
-                dynamic_limit = 8   # الألعاب توقيتها أسرع
-            elif session.get("waiting_for_answer"):
-                dynamic_limit = 15
-            else:
-                dynamic_limit = 12
-            
-            
+            # 🟢 حساب dynamic_limit مرة واحدة بس، حسب الوضع
             if mode == "lecture":
                 if session.get("waiting_for_answer") or session.get("current_question"):
-                    dynamic_limit = 12 # نعطيهم 12 ثانية فقط للتفكير في وضع المحاضرة لكي لا يطول الانتظار
-                else:
-                    dynamic_limit = 4 # 🚀 توقف قصير جداً (4 ثوانٍ) بين الشريحة والأخرى لالتقاط الأنفاس
-
-            else:
-                # وضع المحادثة (Conversation)
-                if len(session.get("stats", {}).get("unique_users", [])) <= 5:
                     dynamic_limit = 12
-                if session.get("waiting_for_answer") or session.get("current_question"):
+                else:
+                    dynamic_limit = 4
+
+            else:  # conversation
+                stage = get_current_stage()
+                if stage["type"] == "game":
+                    dynamic_limit = 8
+                elif session.get("waiting_for_answer") or session.get("current_question"):
                     dynamic_limit = 15
-            
-            # 🚀 التدخل الديناميكي الفوري (Bingo Override)
+                elif len(session.get("stats", {}).get("unique_users", [])) <= 5:
+                    dynamic_limit = 12
+
             if session.get("bingo_answer_received"):
                 print("⚡ [HEARTBEAT] Perfect answer detected! Cutting silence short.", flush=True)
-                dynamic_limit = 0 # تصفير إجباري ليتدخل الـ AI فوراً ويقيم الإجابة
+                dynamic_limit = 0
 
-            # طباعة للمراقبة (فقط إذا تجاوز 3 ثواني لتقليل الإزعاج)
             if silence_time > 3:
                 print(f"💓 Silence: {int(silence_time)}s / Limit: {dynamic_limit}s", flush=True)
 
-            # --- فحص تجاوز الحد ---
             if silence_time >= dynamic_limit:
-                mode = session.get("mode", "conversation")
                 messages = pop_window_messages()
-                
+
                 if messages:
-                    if mode == " lecture":
-                        # 🚨 إذا وجدت رسائل، الأولوية للتقييم وليس للشرح الجديد
-                        print(f"💓 [HEARTBEAT] Evaluating {len(messages)} messages...")
-                        action = decide_next_action(messages)
-                        # إذا محرك القرار أخطأ وأعطى TEACH، نصلحه يدوياً هنا
-                        if action == "TEACH_NEXT_CHUNK": 
-                            action = "EVALUATE_STUDENT_ANSWERS"
+                    print(f"💓 [HEARTBEAT] Evaluating {len(messages)} messages...")
+                    action = decide_next_action(messages)
+                    if mode == "lecture" and action == "TEACH_NEXT_CHUNK":
+                        action = "EVALUATE_STUDENT_ANSWERS"
+                    if action != "WAIT":
                         await handle_action(action, messages)
-                        
-                    else:  # 🟢 conversation mode مع رسائل بانتظار التقييم
-                        print(f"💓 [HEARTBEAT] Evaluating {len(messages)} conversation messages...")
-                        action = decide_next_action(messages)
-                        if action != "WAIT":
-                            await handle_action(action, messages)
-                    
+
                 else:
                     if mode == "lecture":
-                        # 🚨 الحل السحري هنا: إذا كان ينتظر إجابة وطال الصمت، لا تعطِ Hint
-                        # بل اجعله يجيب وينتقل للشريحة التالية
                         if session.get("waiting_for_answer"):
-                            print("💓 [HEARTBEAT] Students silent. AI will provide answer and MOVE ON.")
+                            print("💓 [HEARTBEAT] Students silent. AI will answer and MOVE ON.")
                             await handle_action("ANSWER_AND_CONTINUE", [])
                         else:
                             print("💓 [HEARTBEAT] Continuing lecture flow...")
                             await handle_action("TEACH_NEXT_CHUNK", [])
                     else:
-                        # وضع المحادثة العادي
-                        action = decide_next_action(messages)
-                        if action != "WAIT":
-                            await handle_action(action, messages)
-                    
-                    # 🚨 تصفير الأعلام فوراً بعد اتخاذ الإجراء
+                        await handle_action("WAKE_UP_SESSION", [])
+
                     session["waiting_for_answer"] = False
                     session["bingo_answer_received"] = False
-
 
         except Exception as e:
             print(f"❌ [HEARTBEAT ERROR]: {e}", flush=True)
 
+            
+            
 
 
             """
