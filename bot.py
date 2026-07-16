@@ -373,8 +373,10 @@ async def heartbeat_loop():
                             await handle_action("TEACH_NEXT_CHUNK", [])
                     else:
                         # وضع المحادثة العادي
-                        await handle_action("WAKE_UP_SESSION", [])
-
+                        action = decide_next_action(messages)
+                        if action != "WAIT":
+                            await handle_action(action, messages)
+                    
                     # 🚨 تصفير الأعلام فوراً بعد اتخاذ الإجراء
                     session["waiting_for_answer"] = False
                     session["bingo_answer_received"] = False
