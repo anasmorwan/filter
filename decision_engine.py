@@ -189,23 +189,15 @@ def decide_lecture_logic(messages, session, stats):
     # 5. إذا كان هناك رسائل تفاعل عادية (مثل "نعم"، "أكمل") ولا ننتظر إجابة
     print(f"🧠 -> Advancing to chunk {current_index + 1}.")
     return "TEACH_NEXT_CHUNK"
-    """
-    # د. الانتقال الطبيعي للشريحة التالية
-     print(f"🧠 -> Advancing to chunk {current_index + 1}.")
-     return "TEACH_NEXT_CHUNK"
 
-"""
-
-def decide_conversation_logic(messages, session, stats): # منطقك القديم هنا
+def decide_conversation_logic(messages, session, stats):
     from session import get_current_stage, move_to_next_stage, get_stage_elapsed_minutes
 
     stage = get_current_stage()
     stage_type = stage["type"]
     elapsed = get_stage_elapsed_minutes()
 
-    # شرط الانتقال: خلصنا الوقت الأدنى + في تفاعل كافٍ (مش بس وقت)
     ready_to_advance = elapsed >= stage["min_duration"] and stats["answers_count"] >= 2
-    # صمام أمان: لو المرحلة طالت جداً بدون تفاعل، انتقل بالإجبار (ضعف الوقت الأدنى)
     force_advance = elapsed >= stage["min_duration"] * 2
 
     if (ready_to_advance or force_advance) and stage_type != "summary":
@@ -213,30 +205,15 @@ def decide_conversation_logic(messages, session, stats): # منطقك القدي
             stage = get_current_stage()
             stage_type = stage["type"]
             print(f"🧠 -> Stage advanced to {stage['name']}")
-    
-    
-    
-    session_minutes = get_session_minutes()
 
-    now = time.time()
+    # 🟢 امسح "if not messages: return WAKE_UP_SESSION" من هنا تماماً
+    # وخلي كل فرع stage يقرر بنفسه سلوكه وقت السكوت
 
-    # حماية من last_ai_message غير المهيأ
-    last_ai = session.get("last_ai_message", now)
-
-    time_since_ai = now - last_ai
-    time_since_ai = max(0, min(time_since_ai, 120))
-    progress = session.get("topic_progress", 0)
-
-    if not messages:
-        return "WAKE_UP_SESSION"
-
-    # --------------------------------
-    # مراحل الدرس
-    # --------------------------------
-
-    # الآن اختر الأكشن بناءً على نوع المرحلة
     if stage_type == "hook":
-        return "INTRO_LESSON"
+        if not session.get("intro_given"):
+            session["intro_given"] = True
+            return "INTRO_LESSON"
+        return "GENERAL_COMMENT"   # لو لسه في hook وسبق قدّم، ميكررش نفس الانترو
 
     if stage_type == "game":
         return decide_game_action(stage["game_type"], stats, session)
@@ -246,93 +223,15 @@ def decide_conversation_logic(messages, session, stats): # منطقك القدي
             return "ANSWER_QUESTION"
         if stats["answers"] >= 2:
             return "ASK_FOLLOWUP"
-        return "GENERAL_COMMENT"
+        return "GENERAL_COMMENT"   # ✅ ده اللي هيخلي الدرس يكمل طبيعي وقت السكوت
 
     if stage_type == "feedback":
-        return "GIVE_CONFIDENCE_BOOST"   # أكشن جديد تضيفه في prompts.py
+        return "GIVE_CONFIDENCE_BOOST"
 
     if stage_type == "summary":
-        return "OUTRO_LESSON"
-
-    
-    # --------------------------------
-    # صمت في الصف
-    # --------------------------------
-
-    if stats["total"] == 0:
-
-        if time_since_ai > SILENCE_LIMIT:
-            return "WAKE_UP_SESSION"
-
+        if not session.get("outro_given"):
+            session["outro_given"] = True
+            return "OUTRO_LESSON"
         return "WAIT"
 
-    # --------------------------------
-    # أسئلة الطلاب
-    # --------------------------------
-
-    if stats["questions"] > 0 and stats["answers"] == 0:
-        return "ANSWER_QUESTION"
-
-    if stats["questions"] > 0 and stats["answers"] > 0:
-        return "EVALUATE_STUDENT_ANSWERS"
-
-    # --------------------------------
-    # متابعة السؤال الحالي
-    # --------------------------------
-
-    if session.get("current_question"):
-
-        if stats["answers_count"] >= 3:
-            session["current_question"] = None
-            return "GIVE_FEEDBACK_ON_ANSWERS"
-
-    # --------------------------------
-    # توسيع النقاش
-    # --------------------------------
-
-    if stats["answers"] >= 2 and progress < 40:
-        session["topic_progress"] = progress + 5
-        return "ASK_FOLLOWUP"
-
-    if stats["answers"] >= 2 and progress < 60:
-        session["topic_progress"] = progress + 10
-        return "ENCOURAGE_DISCUSSION"
-
-    # --------------------------------
-    # الطلاب مرتبكون
-    # --------------------------------
-
-    if stats["short_answers"] > stats["answers"]:
-        return "GIVE_HINT"
-
-    # --------------------------------
-    # تلخيص النقاش
-    # --------------------------------
-
-    if progress >= 60 and stats["answers"] >= 3:
-        session["conversation_stage"] = "SUMMARY"
-        return "SUMMARIZE_DISCUSSION"
-
-
-    # --------------------------------
-    # نهاية الدرس
-    # --------------------------------
-
-    if session_minutes > 10:
-        return "OUTRO_LESSON"
-
-    if session_minutes > 50 or progress >= 80:
-
-        if stats["questions"] > 0:
-            return "ANSWER_QUESTION"
-
-        return "LESSON_WRAPPING_UP"
-
-    # --------------------------------
-    # تعليق عام
-    # --------------------------------
-
     return "GENERAL_COMMENT"
-
-
-
