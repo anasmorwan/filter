@@ -325,110 +325,25 @@ async def heartbeat_loop():
                 else:
                     if mode == "lecture":
                         if session.get("waiting_for_answer"):
-                            print("💓 [HEARTBEAT] Students silent. AI will answer and MOVE ON.")
                             await handle_action("ANSWER_AND_CONTINUE", [])
                         else:
-                            print("💓 [HEARTBEAT] Continuing lecture flow...")
                             await handle_action("TEACH_NEXT_CHUNK", [])
                     else:
-                        await handle_action("WAKE_UP_SESSION", [])
+                        action = decide_next_action(messages)   # messages = [] — بس دلوقتي هيستشير الـ stages
+                        if action != "WAIT":
+                            await handle_action(action, messages)
 
-                    session["waiting_for_answer"] = False
-                    session["bingo_answer_received"] = False
-
+                session["waiting_for_answer"] = False
+                session["bingo_answer_received"] = False
+                
         except Exception as e:
             print(f"❌ [HEARTBEAT ERROR]: {e}", flush=True)
 
             
             
-
-
-            """
-                    # 🔴 هنا التعديل الجوهري للـ Lecture
-                    if not session.get("waiting_for_answer"):
-                        if mode == "lecture":
-                            print("💓 [HEARTBEAT] Lecture Mode: Moving to next slide smoothly...", flush=True)
-                            await handle_action("TEACH_NEXT_CHUNK", []) # الانتقال للشريحة التالية بدلاً من إيقاظ الجلسة
-                        else:
-                            print("💓 [HEARTBEAT] Dead air detected. Waking up session...", flush=True)
-                            await handle_action("WAKE_UP_SESSION", [])
-                    else:
-                        # انتهى وقت التفكير ولم يجب أحد
-                        if mode == "lecture":
-                            print("💓 [HEARTBEAT] Lecture Mode: No answers. Giving correct answer and continuing...", flush=True)
-                            # في المحاضرة، لا نضيع وقتاً في التلميحات، نقيّم ونكمل الشرح فوراً
-                            await handle_action("EVALUATE_AND_CONTINUE", []) 
-                        else:
-                            print("💓 [HEARTBEAT] No answers received. Giving a hint...", flush=True)
-                            await handle_action("GIVE_HINT", [])
-                         """
-            
                     
 
-        
-"""
-async def heartbeat_loop():
-    # تأخير بسيط للتأكد من أن كل شيء اشتغل أولاً
-    await asyncio.sleep(10) 
-    print("💓 [HEARTBEAT] System is now ACTIVE and monitoring...", flush=True)
 
-    from session import get_silence_duration, get_session_info, session_is_active
-    from buffer import pop_window_messages
-    
-    MAX_SILENCE_SECONDS = 10 # زدنا الوقت قليلاً للتجربة
-    session = get_session_info()
-
-    while True:
-        try:
-            await asyncio.sleep(5) # يفحص كل 5 ثواني
-            
-            if not session_is_active():
-                # print("💓 [HEARTBEAT] Session inactive, skipping...") # اختيارية لتجنب إزعاج اللوج
-                continue
-
-            if session["is_speaking"]:
-                continue # توقف عن حساب الصمت، المدرس يتحدث الآن!
-
-            if session["waiting_for_answer"]:
-                # ننتظر إجابة الطالب، نوقف إرسال أي شرح جديد مؤقتاً
-                dynamic_limit = 10 # نعطي الطالب وقتاً أطول للتفكير
-
-
-                
-            silence_time = get_silence_duration()
-            print(f"💓 [HEARTBEAT] Silence duration: {int(silence_time)}s", flush=True)
-            # --- حساب الحد الأقصى للديناميكية ---
-            # إذا كنت وحدك (Unique users = 1)، اجعل الصمت أقصر (مثلاً 15 ثانية)
-            if len(session["stats"]["unique_users"]) <= 5:
-                dynamic_limit = 3 
-
-            elif session["mode"] == "lecture":
-                dynamic_limit = 10
-            else:
-                dynamic_limit = 20 # للجروبات الكبيرة
-
-            # إذا كان هناك سؤال حالي ينتظر إجابة، اجعل الانتظار أقل لكي يحفزهم المدرس
-            if session.get("current_question"):
-                dynamic_limit = 5
-            
-
-            if silence_time > dynamic_limit:
-                print(f"🚨 [HEARTBEAT] Threshold reached ({MAX_SILENCE_SECONDS}s)! Activating AI...", flush=True)
-                
-                messages = pop_window_messages()
-                
-                if messages:
-                    print(f"💓 [HEARTBEAT] Found {len(messages)} pending messages. Evaluating...", flush=True)
-                    # await handle_action("EVALUATE_STUDENT_ANSWERS", messages)
-                    decide_next_action(messages)
-                else:
-                    print("💓 [HEARTBEAT] Dead air detected. Waking up session...", flush=True)
-                    await handle_action("WAKE_UP_SESSION", [])
-                    
-        except Exception as e:
-            print(f"❌ [HEARTBEAT ERROR]: {e}", flush=True)
-
-"""
 # ............. Handlers and commands........
 # لاحظ: نقلنا الأوامر لتكون في الأعلى، وأضفنا async/await
 @bot_app.on_message(filters.command("ping") & filters.user(ADMIN_ID) & filters.private)
@@ -649,21 +564,7 @@ async def get_chat_id(client, message):
     )
 
 
-"""
-async def daily_report_loop():
 
-    while True:
-
-        await asyncio.sleep(3600)  # فحص كل ساعة
-
-        report = get_daily_report_if_changed()
-
-        if report:
-            await bot_app.send_message(
-                GROUP_ID,
-                report
-            )
-"""
 
 # ........... الدوال العامة يجب أن تكون في الأسفل ...........
 @bot_app.on_message(filters.text & filters.chat(CHAT_ID))
@@ -733,3 +634,5 @@ if __name__ == "__main__":
     # استخدام loop لتشغيل المهمة الشاملة
     asyncio.get_event_loop().run_until_complete(start_all())
 
+
+د
