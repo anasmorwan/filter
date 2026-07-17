@@ -1,6 +1,7 @@
-pyrofork
-tgcrypto
-py-tgcalls
+pyrofork==2.3.69
+py-tgcalls==2.3.3
+ntgcalls==2.2.5
+tgcrypto==1.2.5
 gTTS
 pydub
 openai
