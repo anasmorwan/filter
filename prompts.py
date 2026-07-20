@@ -92,26 +92,6 @@ capabilities = """
     """
 
 
-ACTION_PROMPTS = {
-    # ... (باقي الأفعال)
-
-    "TEACH_NEXT_CHUNK": """
-    ACTION: Teach the [LECTURE MATERIAL] like a master educator keeping the class on their toes.
-    
-    EXECUTION RECIPE (Follow this flow):
-    1. THE HOOK & AWARENESS (1 sentence): Acknowledge a new 'Urgent Question' (if any) by the student's name. If no questions, casually anchor the room using [PROGRESS TRACKING] or [SYSTEM CAPABILITIES] (e.g., "Moving to the next slide, keep in mind we have a quiz later...").
-    2. DECONSTRUCT & ELEVATE (2-3 sentences): State the core concept from the material, BUT immediately attach a "Value-Add" (a memory trick, a "why it matters clinically", or a clever analogy). Make the complex simple.
-    3. THE CLOSING TACTIC: DO NOT END WITH A BORING QUESTION LIKE "Is that clear?" or "Any questions?". Instead, use one of these dynamic closers:
-       - A Cliffhanger: "But what happens if this mechanism fails? We'll see exactly that in the next slide."
-       - A Golden Rule: "If you remember only one thing from today, let it be this..."
-       - A Casual Nudge: "I'm watching the chat, so interrupt me if this analogy didn't click."
-    
-    CONSTRAINTS:
-    - Maximum 130 words.
-    - NEVER just read the text back to them. Add your professor's touch.
-    """,
-    # ...
-}
 
 ACTION_PROMPTS = {
 
@@ -220,6 +200,36 @@ CONSTRAINT: No "value of topic" talk. No "exciting" descriptions.
     # CONVERSATION MODE LOGIC (محرك المحادثة الحرة)
     # --------------------------------
 
+     "CONTINUE_TEACHING": """
+    ACTION: The room is silent — no one has responded. Do NOT fill this with a short filler.
+    Proactively add a new related idea, example, or angle on the current topic to re-spark interest.
+    - 2-4 sentences, vary the approach (fact / mini-scenario / rephrased question).
+    - End with a light question. Set expects_answer to true.
+""",
+   "ANSWER_INTERRUPTION": """
+ACTION: A student interrupted your speech with an important question/comment.
+- Address it directly and briefly (1-2 sentences).
+- Acknowledge the interruption naturally (e.g., "Good catch—").
+- Bridge back to what you were saying.
+- Limit: 40 words.
+""",
+"GIVE_CONFIDENCE_BOOST": """
+ACTION: Encourage the students to build confidence speaking.
+- Praise effort/progress specifically based on recent context, not generically.
+- Optionally invite them to try one more sentence on the topic.
+- Limit: 3 sentences.
+""",
+"WORD_ASSOCIATION_TURN": """
+ACTION: Lead one round of a word-association game related to the topic.
+- Give one word, ask the student for a related word/phrase in English.
+- Keep it light and fast. Limit: 2 sentences.
+""",
+"GUESSING_GAME_TURN": """
+ACTION: Lead one round of a guessing game related to the topic.
+- Give a clue (not the answer). Ask them to guess.
+- Limit: 3 sentences.
+""",
+
     "INTRO_LESSON": """
     ACTION: Start the conversation session.
     - Greet warmly and introduce the topic.
@@ -291,8 +301,12 @@ def build_prompt(action, context_messages):
     
     # --- جلب البيانات المشتركة ---
     full_conversation = get_chat_history()
-    action_prompt = ACTION_PROMPTS.get(action, "")
-    system_prompt = COACH_SYSTEM_PROMPT if session["persona"] == "coach" else TEACHER_SYSTEM_PROMPT
+    action_prompt = ACTION_PROMPTS.get(action)
+    if action_prompt is None:
+        print(f"⚠️ [PROMPT MISSING] No prompt defined for action: {action}")
+        action_prompt = "Continue naturally based on context."  # fallback آمن بدل فاضي
+    persona = session.get("persona", "professor")
+    system_prompt = COACH_SYSTEM_PROMPT if persona == "coach" else TEACHER_SYSTEM_PROMPT
     lecturer_prompt = LECTURER_SYSTEM_PROMPT if mode == "lecture" else COACH_SYSTEM_PROMPT
 
     
