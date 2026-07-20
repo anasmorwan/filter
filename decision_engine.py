@@ -223,6 +223,9 @@ def decide_conversation_logic(messages, session, stats):
             return "ANSWER_QUESTION"
         if stats["answers"] >= 2:
             return "ASK_FOLLOWUP"
+        if stats["total"] == 0:
+            return "CONTINUE_TEACHING"  # 🆕 صمت كامل → مساهمة حقيقية
+            
         return "GENERAL_COMMENT"   # ✅ ده اللي هيخلي الدرس يكمل طبيعي وقت السكوت
 
     if stage_type == "feedback":
